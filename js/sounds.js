@@ -7,6 +7,7 @@ export function unlockAudio() {
   return actx;
 }
 const r = (a, b) => a + Math.random() * (b - a);
+const BOOST = 2.6;   // az állathangok és csengések legyenek hangosabbak a robot beszédénél
 
 // Egy "hangszalag-szerű" hang: fűrészhullám + formáns szűrő + vibrato + burkoló
 function voice(t, { f0, f1 = f0, dur = 0.12, vol = 0.18, form = 1800, q = 5, vib = 0, type = 'sawtooth' }) {
@@ -14,7 +15,7 @@ function voice(t, { f0, f1 = f0, dur = 0.12, vol = 0.18, form = 1800, q = 5, vib
   const o = c.createOscillator(), bp = c.createBiquadFilter(), g = c.createGain();
   o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(40, f1), t + dur);
   bp.type = 'bandpass'; bp.frequency.value = form; bp.Q.value = q;
-  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + Math.min(0.02, dur / 3)); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  vol *= BOOST; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(Math.min(vol, 0.9), t + Math.min(0.02, dur / 3)); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   if (vib) { const l = c.createOscillator(), lg = c.createGain(); l.frequency.value = vib; lg.gain.value = f0 * 0.04; l.connect(lg); lg.connect(o.frequency); l.start(t); l.stop(t + dur + 0.05); }
   o.connect(bp); bp.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur + 0.05);
 }
@@ -22,7 +23,7 @@ function breath(t, dur = 0.08, vol = 0.05) {      // halk "lehelet" a kacagásho
   const c = actx; if (!c) return;
   const n = c.createBufferSource(), b = c.createBuffer(1, Math.ceil(c.sampleRate * dur), c.sampleRate), d = b.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
-  n.buffer = b; const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 2500; const g = c.createGain(); g.gain.value = vol;
+  n.buffer = b; vol *= BOOST; const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 2500; const g = c.createGain(); g.gain.value = vol;
   n.connect(hp); hp.connect(g); g.connect(c.destination); n.start(t);
 }
 
@@ -36,7 +37,7 @@ const SOUNDS = {
   // csicsergés (nyuszi / madár)
   chirp() { const t = actx.currentTime; for (let i = 0; i < 3; i++) voice(t + i * 0.11, { f0: 1500 + i * 120, f1: 2500 + i * 100, dur: 0.07, vol: 0.12, form: 3000, q: 8, type: 'triangle' }); },
   // dorombolás (cica): mély, hullámzó zümmögés
-  purr() { const c = actx, t = c.currentTime, d = r(1.0, 1.5), o = c.createOscillator(), g = c.createGain(), lp = c.createBiquadFilter(), l = c.createOscillator(), lg = c.createGain(); o.type = 'sawtooth'; o.frequency.value = r(62, 74); lp.type = 'lowpass'; lp.frequency.value = 380; g.gain.value = 0.0001; l.frequency.value = r(21, 27); lg.gain.value = 0.09; l.connect(lg); lg.connect(g.gain); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.12, t + 0.15); g.gain.linearRampToValueAtTime(0.0001, t + d); o.connect(lp); lp.connect(g); g.connect(c.destination); o.start(t); l.start(t); o.stop(t + d + 0.05); l.stop(t + d + 0.05); },
+  purr() { const c = actx, t = c.currentTime, d = r(1.0, 1.5), o = c.createOscillator(), g = c.createGain(), lp = c.createBiquadFilter(), l = c.createOscillator(), lg = c.createGain(); o.type = 'sawtooth'; o.frequency.value = r(62, 74); lp.type = 'lowpass'; lp.frequency.value = 380; g.gain.value = 0.0001; l.frequency.value = r(21, 27); lg.gain.value = 0.22; l.connect(lg); lg.connect(g.gain); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.3, t + 0.15); g.gain.linearRampToValueAtTime(0.0001, t + d); o.connect(lp); lp.connect(g); g.connect(c.destination); o.start(t); l.start(t); o.stop(t + d + 0.05); l.stop(t + d + 0.05); },
   // vakkantás (kutya / róka): két rövid "vau"
   yip() { const t = actx.currentTime; for (let i = 0; i < 2; i++) voice(t + i * 0.22, { f0: 520, f1: 760, dur: 0.12, vol: 0.2, form: 1100, q: 3 }); },
   // ujjongás: emelkedő hármashangzat (tapsoló csengés)

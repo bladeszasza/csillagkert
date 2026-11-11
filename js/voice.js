@@ -68,7 +68,7 @@ export function say(text, { rate = 0.85, remember = true } = {}) {
       const synth = window.speechSynthesis;
       synth.cancel();
       const u = new SpeechSynthesisUtterance(spoken);
-      u.voice = voice; u.lang = voice.lang || 'hu-HU'; u.rate = rate; u.pitch = 1.25;
+      u.voice = voice; u.lang = voice.lang || 'hu-HU'; u.rate = rate; u.pitch = 1.25; u.volume = 0.75;   // a hangeffektek maradjanak hangosabbak a beszédnél
       u.onstart = () => emit(true);
       u.onend = u.onerror = finish;
       synth.speak(u);

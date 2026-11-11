@@ -73,7 +73,7 @@ onMood(text => { const m = moodFor(text); if (m) emote(m[0], m[1]); });   // az 
 // Ha a gyerek mellé koppint (nem gombra / rajzterületre), Rozi emlékeztet a feladatra
 let lastNudge = 0;
 $('stage').addEventListener('pointerdown', e => {
-  if (e.target.closest('button, canvas, .answers, .cards, .items, .mathrow, .animal')) return;
+  if (e.target.closest('button, canvas, .answers, .cards, .items, .mathrow, .animal, .hd, .feedpad, .agrid, .apal, .aprog, .food')) return;
   if (Date.now() - lastNudge < 3000) return;
   lastNudge = Date.now(); repeatLast();
 });

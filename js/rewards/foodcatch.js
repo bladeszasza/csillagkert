@@ -32,7 +32,7 @@ export function run(container) {
   function unlock() { unlockAudio(); try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); } catch (e) {} }
   function chime(f = 700) {
     try { if (!audio) return; const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime;
-      o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.15, t); g.gain.exponentialRampToValueAtTime(.001, t + .3);
+      o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.35, t); g.gain.exponentialRampToValueAtTime(.001, t + .3);
       o.connect(g); g.connect(audio.destination); o.start(t); o.stop(t + .3); } catch (e) {}
   }
   const move = e => { const r = root.getBoundingClientRect(); catX = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); unlock(); };

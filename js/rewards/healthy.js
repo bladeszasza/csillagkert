@@ -71,9 +71,9 @@ export function run(container, opts = {}) {
   } catch (e) { console.warn('3D állatok nem indultak el, emoji marad', e); st3 = null; root.querySelectorAll('.hd-pal .face').forEach(f => { f.style.opacity = 1; }); }
 
   function unlock() { try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); } catch (e) {} }
-  function ding(f = 660, d = 0.25) { try { if (!audio) return; const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime; o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.12, t); g.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(g); g.connect(audio.destination); o.start(t); o.stop(t + d + .05); } catch (e) {} }
+  function ding(f = 660, d = 0.25) { try { if (!audio) return; const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime; o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.3, t); g.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(g); g.connect(audio.destination); o.start(t); o.stop(t + d + .05); } catch (e) {} }
   root.addEventListener('pointerdown', () => { unlock(); unlockAudio(); });
-  const say2 = (t) => { bubble.textContent = t; bubble.classList.add('on'); clearTimeout(say2.t); say2.t = setTimeout(() => bubble.classList.remove('on'), 2800); return say(t, { remember: false }); };
+  const say2 = (t, speak = true) => { bubble.textContent = t; bubble.classList.add('on'); clearTimeout(say2.t); say2.t = setTimeout(() => bubble.classList.remove('on'), 2200); return speak ? say(t, { remember: false }) : Promise.resolve(); };
 
   function dispense() {
     if (!alive || current || !root.isConnected) return;
@@ -82,7 +82,7 @@ export function run(container, opts = {}) {
     const el = document.createElement('div'); el.className = 'hd-item drop'; el.textContent = emoji; tray.appendChild(el);
     current = { el, healthy, name, emoji }; ding(520); setTimeout(() => ding(780), 120);
     wire(current);
-    say2(healthy ? `${name}! Ez egészséges. Etesd meg vele a cicát vagy a barátait!` : `${name}! Ez édesség. Tedd a dobozba, ajándék lesz belőle!`);
+    say2(healthy ? `${name}. Egészséges!` : `${name}. Édesség!`);
   }
 
   function rectOf(el) { return el.getBoundingClientRect(); }
@@ -96,7 +96,7 @@ export function run(container, opts = {}) {
     el.addEventListener('pointercancel', () => { start = null; back(item); });
     el.addEventListener('pointerup', async e => {
       if (!start) return; const s = start; start = null;
-      if (!s.moved) { back(item); say2(item.healthy ? `${item.name}. Ez egészséges! Etesd meg a cicát!` : `${item.name}. Ez édesség. Dobozold be ajándéknak!`); return; }
+      if (!s.moved) { back(item); say2(item.healthy ? `${item.name}. Egészséges! Etesd meg a cicát!` : `${item.name}. Édesség! Ez a dobozba megy.`); return; }
       const palIdx = pals.findIndex(p => over(e, p)), onBox = over(e, box);
       if (palIdx >= 0) return feedPal(item, palIdx);
       if (onBox) return boxIt(item);
@@ -113,10 +113,10 @@ export function run(container, opts = {}) {
       await sleep(320); item.el.remove(); current = null;
       fed++; fedEl.textContent = fed; ding(700 + (fed % 5) * 90);
       face.classList.add('happy'); ps[i].happy = performance.now() + 1300; ps[i].nom = performance.now() + 500; pal.querySelector('.hearts').textContent = '❤️❤️'; happy(PALS[i]);
-      say2(i === 0 ? 'Nyam-nyam! A cica nagyon örül az egészséges ételnek!' : 'Nyam-nyam! Nagyon örül az egészséges ételnek!');
+      say2('❤️', false);                       // etetés után csak az állat hangja szól
       await sleep(1100); face.classList.remove('happy'); pal.querySelector('.hearts').textContent = '';
     } else {
-      back(item); face.classList.add('shake'); ps[i].shake = performance.now() + 700; say2('Köszönöm, de az édességet inkább dobozoljuk be ajándéknak!');
+      back(item); face.classList.add('shake'); ps[i].shake = performance.now() + 700; say2('Ez édesség, a dobozba megy!');
       await sleep(900); face.classList.remove('shake');
     }
     busy = false; if (!current) setTimeout(dispense, 500);
@@ -129,9 +129,9 @@ export function run(container, opts = {}) {
       item.el.style.transform = `translate(${a.left + a.width / 2 - (b.left + b.width / 2)}px, ${a.top + a.height / 2 - (b.top + b.height / 2)}px) scale(.3)`; item.el.style.opacity = 0;
       await sleep(320); item.el.remove(); current = null; inBox++; cntEl.textContent = inBox; box.classList.add('pop'); ding(500, 0.2); await sleep(250); box.classList.remove('pop');
       if (inBox >= cap) await wrap();
-      else say2('Beletettük a dobozba!');
+      else say2('📦', false);
     } else {
-      back(item); box.classList.add('shake'); say2('Ezt együk meg! Etesd meg vele a cicát vagy a barátait!'); await sleep(900); box.classList.remove('shake');
+      back(item); box.classList.add('shake'); say2('Ezt együk meg! Etesd meg a cicát!'); await sleep(900); box.classList.remove('shake');
     }
     busy = false; if (!current) setTimeout(dispense, 500);
   }
@@ -139,15 +139,15 @@ export function run(container, opts = {}) {
   async function wrap() {                              // becsomagolás és átadás
     const [emoji, who] = rnd(RECIPIENTS);
     box.querySelector('.lid').textContent = '🎁'; box.classList.add('closed'); ding(660); await sleep(250); ding(880); happy('🦄');
-    say2(`Becsomagoltuk az édességeket ajándéknak! Átadjuk ${who}.`);
+    say2(`Ajándék ${who}!`);
     giftEl.innerHTML = `<div class="who">${emoji}</div><div class="pk">🎁</div>`; giftEl.classList.add('go');
     await sleep(2600); giftEl.classList.remove('go'); giftEl.innerHTML = '';
     gifts++; giftsEl.textContent = gifts; inBox = 0; cntEl.textContent = 0; box.classList.remove('closed'); box.querySelector('.lid').textContent = '📦';
-    say2('Az ajándékot átadtuk! Köszönik!');
+    say2('🎁', false);
     await sleep(900);
   }
 
-  const intro = rounds ? 'Most etesd meg a barátaidat az egészséges ételekkel! Az édességet tedd a dobozba, abból ajándék lesz!' : 'Hami-adagoló! Az egészséges ételt etesd meg a cicával és a barátaival. Az édességet tedd a dobozba, az lesz az ajándék!';
+  const intro = rounds ? 'Etesd meg a barátokat! Az édesség a dobozba megy.' : 'Hami-adagoló! Az egészséges az állatoké, az édesség a dobozba megy.';
   say(intro, { remember: false }).then(() => setTimeout(dispense, 500)); setTimeout(dispense, 9000);
   return () => { alive = false; clearTimeout(say2.t); cancelAnimationFrame(raf); st3?.dispose(); st3 = null; try { audio && audio.close(); } catch (e) {} };
 }

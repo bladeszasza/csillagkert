@@ -21,7 +21,7 @@ export function run(container, { animal, name, food }) {
     const btns = [...container.querySelectorAll('.food')];
     let wrong = 0, locked = false, finished = false;
     const A = withArt(name), Acap = withArt(name, true);
-    const speakQ = `Éhes ${A}! Mit eszik ${A}? Húzd az ételt ${A} szájához!`;
+    const speakQ = `Éhes ${A}! Mit eszik?`;
 
     function toAnimal(btn) { // az étel az állathoz repül
       const a = animalEl.getBoundingClientRect(), b = btn.getBoundingClientRect();
@@ -37,7 +37,7 @@ export function run(container, { animal, name, food }) {
       if (f.ok) {
         finished = true; btn.style.opacity = 0; animalEl.classList.add('munch'); bubble.textContent = '😋 nyam-nyam!';
         happy(animal); setTimeout(() => happy(animal), 700);
-        await say(`Nyam-nyam! ${Acap} kedvenc étele ${withArt(f.name)}!`);
+        await sleep(1400);                                    // jóllakás: csak az állat hangja szól, a robot hallgat
         const { run: runHealthy } = await import('../rewards/healthy.js');   // utána a barátok etetése / ajándékozás
         let stopH = null;
         await new Promise(done => { stopH = runHealthy(container, { rounds: true, onDone: done }); });
@@ -46,12 +46,12 @@ export function run(container, { animal, name, food }) {
       } else {
         wrong++; btn.style.transition = 'transform .4s'; btn.style.transform = ''; btn.style.zIndex = '';
         animalEl.classList.add('shake'); bubble.textContent = '🙅 ez nem az enyém';
-        await say(`Ezt nem eszi ${A}. Gondold végig, mit eszik ${A}?`, { remember: false });
+        await say(`Ezt nem eszi ${A}.`, { remember: false });
         animalEl.classList.remove('shake'); bubble.textContent = '';
         if (wrong >= 2) {
           const bad = btns.filter((b, k) => !foods[k].ok && b.style.opacity !== '0' && !b.classList.contains('gone'));
           if (bad.length > 1) bad[0].classList.add('gone');
-          await say(`Segítek! ${Acap} kedvenc étele ${withArt(good.name)}.`, { remember: false });
+          await say(`Segítek! Nézd, melyik ragyog.`, { remember: false });
           btns[foods.indexOf(good)].classList.add('glow');
         }
         locked = false;
