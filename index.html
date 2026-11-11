@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#bfefff">
+<title>Csillagkert</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="garden"></canvas>
+
+<!-- Csillagmérő + gombok -->
+<header id="hud" hidden>
+  <div id="meter" aria-label="Csillagok">
+    <span class="slot" data-i="0">★</span><span class="slot" data-i="1">★</span><span class="slot" data-i="2">★</span>
+  </div>
+  <button id="again" class="round" aria-label="Mondd újra">🔊</button>
+</header>
+
+<!-- Első koppintás: ez oldja fel a hangot az iPaden -->
+<section id="start">
+  <div class="card">
+    <div class="big-emoji">🐱⭐🦄</div>
+    <h1>Csillagkert</h1>
+    <button id="start-btn" class="giant">Koppints ide!</button>
+  </div>
+</section>
+
+<!-- Főképernyő a kertben -->
+<section id="home" hidden>
+  <button id="next" class="giant">▶ Tovább</button>
+</section>
+
+<!-- Feladat -->
+<section id="stage" hidden></section>
+
+<!-- Jutalom -->
+<section id="reward" hidden>
+  <div class="card wide">
+    <h2>🎉 Megvan a 3 csillag!</h2>
+    <div class="choices">
+      <button class="choice" data-game="sparkhorn"><span>🦄</span>Unikornis-futás</button>
+      <button class="choice" data-game="bubbles"><span>🫧</span>Buborékpukkasztás</button>
+    </div>
+  </div>
+</section>
+<section id="game" hidden>
+  <div id="game-bar"><button id="game-back" class="round" aria-label="Vissza">⬅</button></div>
+  <div id="game-body"></div>
+</section>
+
+<!-- Szülői sarok: 3 mp-ig nyomva tartva nyílik -->
+<button id="parent-btn" aria-label="Szülői beállítások (tartsd nyomva)">⚙</button>
+<div id="parent" hidden>
+  <div class="card wide">
+    <h2>Szülői sarok</h2>
+    <label>A gyerek neve (csak ezen az eszközön tárolódik)
+      <input id="p-name" type="text" autocomplete="off" maxlength="30">
+    </label>
+    <label>Jutalomjáték hossza
+      <select id="p-minutes"><option value="2">2 perc</option><option value="4">4 perc</option><option value="6">6 perc</option><option value="10">10 perc</option></select>
+    </label>
+    <p id="p-voice"></p>
+    <div class="row">
+      <button id="p-test" class="small">🔊 Hangpróba</button>
+      <button id="p-reset" class="small danger">Újrakezdés</button>
+      <button id="p-close" class="small ok">Kész</button>
+    </div>
+    <p class="hint">Ha nincs magyar hang: Beállítások → Kisegítő lehetőségek → Felolvasott tartalom → Hangok → Magyar.</p>
+  </div>
+</div>
+<div id="fly-layer"></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
