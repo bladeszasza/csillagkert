@@ -53,7 +53,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 
 #stage {
   position: fixed; inset: 0; z-index: 15; display: flex; flex-direction: column; align-items: center;
-  justify-content: center; padding: 100px 16px 24px; background: rgba(255,255,255,.35);
+  justify-content: center; padding: 100px 16px 24px; background: rgba(236,248,255,.82);
 }
 .activity { width: min(96vw, 900px); display: flex; flex-direction: column; align-items: center; gap: 18px; height: 100%; }
 .prompt { font-size: clamp(24px, 4.4vw, 38px); font-weight: 800; text-align: center; background: var(--card); padding: 10px 26px; border-radius: 24px; }
@@ -92,7 +92,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 
 #parent-btn {
   position: fixed; left: 8px; bottom: 8px; width: 48px; height: 48px; border-radius: 50%; z-index: 50;
-  background: rgba(255,255,255,.35); font-size: 22px; opacity: .55;
+  background: rgba(236,248,255,.82); font-size: 22px; opacity: .55;
 }
 #parent label { display: block; text-align: left; font-weight: 700; margin: 10px 0; }
 #parent input, #parent select { width: 100%; font: inherit; padding: 12px; border-radius: 14px; border: 2px solid #cdb8f2; margin-top: 6px; }
@@ -102,3 +102,21 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .small.ok { background: var(--mint); } .small.danger { background: #ffd2d2; }
 
 .fly { position: fixed; z-index: 70; font-size: 80px; pointer-events: none; transition: transform .9s cubic-bezier(.5,-.3,.4,1.2), opacity .9s; color: var(--gold); text-shadow: 0 0 20px #ffd85a; }
+
+/* --- további feladattípusok --- */
+.answer.pic { font-size: clamp(64px, 12vw, 110px); min-width: 170px; position: relative; }
+.answer.pic small { font-size: 20px; letter-spacing: 0; color: var(--ink); font-weight: 800; margin-top: 4px; }
+.answer.done { opacity: .55; transform: scale(.92); }
+.badge { position: absolute; top: -10px; right: -10px; min-width: 38px; height: 38px; border-radius: 50%; background: var(--mint); color: var(--ink); font-size: 24px; line-height: 38px; text-align: center; font-weight: 900; }
+.badge:empty { display: none; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 14px; width: min(94vw, 640px); }
+.mcard { aspect-ratio: 1; border-radius: 24px; background: #fff; box-shadow: 0 6px 0 #cdb8f2; position: relative; font-size: clamp(48px, 10vw, 80px); transition: transform .25s; }
+.mcard .face { display: none; } .mcard.up .face, .mcard.matched .face { display: inline; } .mcard.up .back, .mcard.matched .back { display: none; }
+.mcard.up { transform: scale(1.06); } .mcard.matched { background: #d9f7ea; box-shadow: none; opacity: .8; }
+.dots { display: flex; gap: 16px; } .dot { width: 34px; height: 34px; border-radius: 50%; background: #e4dcf5; transition: background .2s, transform .2s; } .dot.on { background: var(--gold); transform: scale(1.25); }
+.clap { font-size: clamp(60px, 14vw, 110px); padding: .15em .6em; }
+.palette { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.swatch { width: 60px; height: 60px; border-radius: 50%; border: 5px solid #fff; box-shadow: 0 4px 10px rgba(60,20,120,.3); } .swatch.sel { border-color: var(--ink); transform: scale(1.15); }
+.swatch.emo { background: #fff; font-size: 30px; }
+.dress { position: absolute; left: 0; right: 0; bottom: 14px; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.dress .row { display: flex; gap: 12px; }

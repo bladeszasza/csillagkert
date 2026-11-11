@@ -4,7 +4,7 @@ import { attachPen } from '../pen.js';
 import { say } from '../voice.js';
 
 // Útvonalak 0..1 koordinátákban
-const PATHS = {
+export const PATHS = {
   hullam: t => ({ x: 0.08 + 0.84 * t, y: 0.5 + 0.22 * Math.sin(t * Math.PI * 4) }),
   cikcak: t => {
     const k = t * 6, i = Math.floor(Math.min(k, 5.999)), f = k - i;
@@ -12,6 +12,9 @@ const PATHS = {
     return { x: 0.08 + 0.84 * ((i + f) / 6), y: y0 + (y1 - y0) * f };
   },
   hurok: t => ({ x: 0.12 + 0.76 * t + 0.16 * Math.sin(t * Math.PI * 6), y: 0.5 - 0.22 * Math.cos(t * Math.PI * 6) + 0.22 * 0 }),
+  kor: t => ({ x: 0.5 + 0.26 * Math.sin(t * Math.PI * 2), y: 0.5 - 0.3 * Math.cos(t * Math.PI * 2) }),
+  hegyek: t => ({ x: 0.08 + 0.84 * t, y: 0.72 - 0.4 * Math.abs(Math.sin(t * Math.PI * 3)) }),
+  spiral: t => { const a = t * Math.PI * 5, r = 0.06 + 0.26 * t; return { x: 0.5 + r * Math.cos(a) * 1.1, y: 0.5 + r * Math.sin(a) }; },
   lejto: t => ({ x: 0.1 + 0.8 * t, y: 0.25 + 0.5 * t * t * (3 - 2 * t) }),
 };
 

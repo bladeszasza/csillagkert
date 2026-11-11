@@ -59,5 +59,5 @@ export function attachPen(canvas, { onStart, onMove, onEnd, color = '#8e5be8', b
   // a kontextusmenü / kijelölés ne zavarjon
   canvas.addEventListener('contextmenu', e => e.preventDefault());
 
-  return { ctx, clear() { ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight); }, destroy() { ro.disconnect(); } };
+  return { ctx, setColor(c) { color = c; }, setWidth(w) { baseWidth = w; }, clear() { ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight); }, destroy() { ro.disconnect(); } };
 }

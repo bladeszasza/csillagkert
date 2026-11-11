@@ -9,10 +9,18 @@ const $ = id => document.getElementById(id);
 const activities = {
   trace: () => import('./activities/trace.js'),
   count: () => import('./activities/count.js'),
+  pick: () => import('./activities/pick.js'),
+  order: () => import('./activities/order.js'),
+  memory: () => import('./activities/memory.js'),
+  clap: () => import('./activities/clap.js'),
+  draw: () => import('./activities/draw.js'),
+  betu: () => import('./activities/betu.js'),
 };
 const rewards = {
   sparkhorn: () => import('./rewards/sparkhorn.js'),
   bubbles: () => import('./rewards/bubbles.js'),
+  starcatch: () => import('./rewards/starcatch.js'),
+  dressup: () => import('./rewards/dressup.js'),
 };
 const PRAISE = ['Ügyes vagy!', 'Nagyszerű!', 'Szuper!', 'Csodás!', 'Ez az!'];
 const sleep = ms => new Promise(r => setTimeout(r, ms));
