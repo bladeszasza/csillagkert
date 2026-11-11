@@ -21,6 +21,9 @@ export const CURRICULUM = [
   pick('🍎', 'Mivel látunk?', '👀 szem', '👂 fül', '👃 orr'),
   { type: 'draw', template: 'nap' },
 
+  withQ('☀️<br>🏠', pick('🔺', 'Mi van fent?', '☀️ nap', '🏠 ház')),
+  withQ('🍎🍎🍎<br>🍌🍌', pick('🔢', 'Melyikből van több?', '🍎 alma', '🍌 banán')),
+
   { type: 'trace', path: 'lejto' },
   { type: 'count', n: 3 },
   pick('🔺', 'Melyik a háromszög?', '🔺 háromszög', '🔴 kör', '🟦 négyzet'),
@@ -29,6 +32,9 @@ export const CURRICULUM = [
   pick('🌍', 'Ki oltja a tüzet?', '🧑‍🚒 tűzoltó', '🧑‍⚕️ orvos', '🧑‍🍳 szakács'),
   order('🍎', 'Hogyan mossunk kezet? Koppints sorrendben!', '🚰 vizezd be', '🧼 szappanozd', '👏 dörzsöld', '💦 öblítsd', '🧻 töröld meg'),
   { type: 'betu', text: 'O', say: 'Fesd át az O betűt!' },
+
+  withQ('☀️<br>🏠', pick('🔺', 'Mi van lent?', '🏠 ház', '☀️ nap')),
+  withQ('➡️', pick('🔺', 'Merre mutat a nyíl?', '👉 jobbra', '👈 balra')),
 
   { type: 'trace', path: 'cikcak' },
   { type: 'count', n: 4 },
@@ -39,6 +45,9 @@ export const CURRICULUM = [
   pick('🍎', 'Melyik az egészséges?', '🥕 répa', '🍭 nyalóka', '🍟 sült krumpli'),
   { type: 'draw', template: 'haz' },
 
+  withQ('🐟🐟<br>🐥🐥🐥🐥', pick('🔢', 'Melyikből van kevesebb?', '🐟 hal', '🐥 csibe')),
+  withQ('⬅️', pick('🔺', 'Merre mutat a nyíl?', '👈 balra', '👉 jobbra')),
+
   { type: 'trace', path: 'kor' },
   { type: 'count', n: 5 },
   pick('🔺', 'Melyik a nagyobb?', '🐘 elefánt', '🐭 egér', '🐜 hangya'),
@@ -48,6 +57,9 @@ export const CURRICULUM = [
   pick('🍎', 'Mit használunk fogmosáshoz?', '🪥 fogkefe', '🍬 cukorka', '🧦 zokni'),
   { type: 'betu', text: 'A', say: 'Fesd át az A betűt!' },
 
+  withQ('🍎 🐱 🍌', pick('🔺', 'Mi van az alma és a banán között?', '🐱 cica', '🚗 autó')),
+  order('🌍', 'Melyik nap után melyik jön? Koppints sorrendben!', '1️⃣ hétfő', '2️⃣ kedd', '3️⃣ szerda', '4️⃣ csütörtök', '5️⃣ péntek', '6️⃣ szombat', '7️⃣ vasárnap'),
+
   { type: 'trace', path: 'hurok' },
   { type: 'count', n: 6 },
   pick('🔺', 'Melyik sárga?', '🌼 virág', '🥦 brokkoli', '🫐 áfonya'),
@@ -56,6 +68,8 @@ export const CURRICULUM = [
   order('🌍', 'Mi történik a nap folyamán? Koppints sorrendben!', '🌅 reggel', '☀️ dél', '🌇 este', '🌙 éjszaka'),
   pick('🍎', 'Esik az eső. Mit viszünk magunkkal?', '☂️ esernyő', '🕶️ napszemüveg', '🩴 papucs'),
   { type: 'draw', template: 'virag' },
+
+  pick('🌍', 'Melyik nap jön péntek után?', '🎈 szombat', '🎒 hétfő', '📚 szerda'),
 
   { type: 'trace', path: 'hegyek' },
   { type: 'count', n: 7 },
@@ -80,3 +94,19 @@ export const CURRICULUM = [
   word('🐱', 'macska', 'macs', 'ka'),
   withQ('⭐ 🌙 ⭐ 🌙 ⭐ ❓', pick('🧩', 'Mi jön ezután?', '🌙 hold', '⭐ csillag', '☀️ nap')),
 ];
+
+// Állomások a kertben (szabad választáshoz és a szülői áttekintéshez)
+export const STATIONS = [
+  { id: 'ceruza', emoji: '✏️', name: 'Ceruzavár' },
+  { id: 'szamol', emoji: '🔢', name: 'Számoló rét' },
+  { id: 'forma', emoji: '🔺', name: 'Formák és színek' },
+  { id: 'hang', emoji: '🔤', name: 'Hangok háza' },
+  { id: 'okos', emoji: '🧩', name: 'Okoskodó' },
+  { id: 'vilag', emoji: '🌍', name: 'Világunk' },
+  { id: 'egeszseg', emoji: '🍎', name: 'Egészség' },
+  { id: 'rajz', emoji: '🎨', name: 'Rajzasztal' },
+];
+const BY_TYPE = { trace: 'ceruza', betu: 'ceruza', count: 'szamol', memory: 'okos', clap: 'hang', draw: 'rajz' };
+const BY_ICON = { '🔺': 'forma', '🔤': 'hang', '🧩': 'okos', '🌍': 'vilag', '🍎': 'egeszseg', '🔢': 'szamol' };
+export const stationOf = item => BY_TYPE[item.type] || BY_ICON[item.icon] || 'okos';
+export const itemsOf = id => CURRICULUM.filter(i => stationOf(i) === id);

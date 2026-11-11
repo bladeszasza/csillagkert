@@ -1,5 +1,5 @@
 import { createGarden } from './garden.js';
-import { CURRICULUM } from './curriculum.js';
+import { CURRICULUM, STATIONS, itemsOf, stationOf } from './curriculum.js';
 import { progress } from './progress.js';
 import { say, repeatLast, hasHungarianVoice } from './voice.js';
 import { renderMeter, flyStar } from './stars.js';
@@ -31,7 +31,16 @@ try { garden = createGarden($('garden')); garden.setStars(progress.get().total);
 catch (e) { console.warn('3D nem indult el', e); } // a feladatok 3D nélkül is működnek
 
 setupParent(() => location.reload());
-renderMeter(progress.get().meter % 3);
+const perReward = () => progress.get().perReward || 3;
+renderMeter(Math.min(progress.get().meter, perReward()), perReward());
+
+// Állomások: a gyerek szabadon is választhat (a "Tovább" gomb a sorrendet követi)
+$('stations').innerHTML = STATIONS.map(st => `<button class="station" data-st="${st.id}" aria-label="${st.name}"><span>${st.emoji}</span><small>${st.name}</small></button>`).join('');
+$('stations').addEventListener('click', e => {
+  const b = e.target.closest('.station'); if (!b) return;
+  const list = itemsOf(b.dataset.st); if (!list.length) return;
+  runItem(list[(progress.get().sp[b.dataset.st] || 0) % list.length], b.dataset.st, 'station');
+});
 
 // Ha nincs magyar hang, azt már az indulóképernyőn jelezzük (a szülőnek)
 const checkVoice = () => { $('voice-warn').hidden = hasHungarianVoice(); };
@@ -43,30 +52,33 @@ $('again').addEventListener('click', () => repeatLast());
 $('start-btn').addEventListener('click', async () => {
   $('start').hidden = true; $('hud').hidden = false;
   say(name() ? `Szia ${name()}! Gyűjtsünk csillagokat!` : 'Szia! Gyűjtsünk együtt csillagokat!');
-  if (progress.get().meter >= 3) openReward(); else $('home').hidden = false;
+  if (progress.get().meter >= perReward()) openReward(); else $('home').hidden = false;
 });
 
-// 2) Tovább: a következő feladat a tananyagsorból
-$('next').addEventListener('click', async () => {
+// 2) Egy feladat lefuttatása: "Tovább" (sorrend) vagy szabadon választott állomás
+async function runItem(item, station, via) {
   $('home').hidden = true;
-  const item = CURRICULUM[progress.get().index % CURRICULUM.length];
   const mod = await activities[item.type]();
   $('stage').hidden = false;
   await mod.run($('stage'), item);
   $('stage').hidden = true; $('stage').innerHTML = '';
-  const meter = progress.addStar();
+  const meter = progress.addStar(station, via);
   garden?.setStars(progress.get().total);
   garden?.cheer();
-  say(PRAISE[progress.get().total % PRAISE.length] + (name() && meter === 3 ? ' ' + name() + '!' : ''), { remember: false });
-  await flyStar(meter - 1);
+  say(PRAISE[progress.get().total % PRAISE.length] + (name() && meter >= perReward() ? ' ' + name() + '!' : ''), { remember: false });
+  await flyStar(Math.min(meter, perReward()) - 1);
   await sleep(900);
-  if (meter >= 3) openReward(); else $('home').hidden = false;
+  if (meter >= perReward()) openReward(); else $('home').hidden = false;
+}
+$('next').addEventListener('click', () => {
+  const item = CURRICULUM[progress.get().index % CURRICULUM.length];
+  runItem(item, stationOf(item), 'next');
 });
 
 // 3) Jutalom: 3 csillag után egy időre szóló játék, utána magától visszatér
 function openReward() {
   $('reward').hidden = false;
-  say('Megvan a három csillag! Válassz egy játékot!');
+  say('Megvan az összes csillag! Válassz egy játékot!');
 }
 let stopGame = null, gameTimer = null;
 document.querySelectorAll('.choice').forEach(btn => btn.addEventListener('click', async () => {
@@ -82,7 +94,7 @@ async function endReward() {
   try { stopGame?.(); } catch (e) {}
   stopGame = null;
   $('game-body').innerHTML = ''; $('game').hidden = true;
-  progress.resetMeter(); renderMeter(0);
+  progress.resetMeter(); renderMeter(0, perReward());
   $('home').hidden = false;
-  say('Ez nagyon jó volt! Gyűjtsünk még három csillagot!');
+  say('Ez nagyon jó volt! Gyűjtsünk még csillagokat!');
 }

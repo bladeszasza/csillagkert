@@ -14,7 +14,7 @@
 <!-- Csillagmérő + gombok -->
 <header id="hud" hidden>
   <div id="meter" aria-label="Csillagok">
-    <span class="slot" data-i="0">★</span><span class="slot" data-i="1">★</span><span class="slot" data-i="2">★</span>
+    
   </div>
   <button id="again" class="round" aria-label="Mondd újra">🔊</button>
 </header>
@@ -31,6 +31,7 @@
 
 <!-- Főképernyő a kertben -->
 <section id="home" hidden>
+  <div id="stations"></div>
   <button id="next" class="giant">▶ Tovább</button>
 </section>
 
@@ -40,7 +41,7 @@
 <!-- Jutalom -->
 <section id="reward" hidden>
   <div class="card wide">
-    <h2>🎉 Megvan a 3 csillag!</h2>
+    <h2>🎉 Megvan az összes csillag!</h2>
     <div class="choices">
       <button class="choice" data-game="sparkhorn"><span>🦄</span>Unikornis-futás</button>
       <button class="choice" data-game="bubbles"><span>🫧</span>Buborékpukkasztás</button>
@@ -65,7 +66,14 @@
     <label>Jutalomjáték hossza
       <select id="p-minutes"><option value="2">2 perc</option><option value="4">4 perc</option><option value="6">6 perc</option><option value="10">10 perc</option></select>
     </label>
+    <label>Hány csillag kell a jutalomjátékhoz?
+      <select id="p-per"><option value="3">3 csillag</option><option value="4">4 csillag</option><option value="5">5 csillag</option></select>
+    </label>
+    <label hidden>Felolvasó hang
+      <select id="p-voicesel"></select>
+    </label>
     <p id="p-voice"></p>
+    <div id="p-stats"></div>
     <div class="row">
       <button id="p-test" class="small">🔊 Hangpróba</button>
       <button id="p-reset" class="small danger">Újrakezdés</button>

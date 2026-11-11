@@ -1,8 +1,12 @@
-// Csillagmérő: ★☆☆ — a csillag látványosan odarepül és kigyullad.
+// Csillagmérő: ★☆☆ — a csillag látványosan odarepül és kigyullad. A helyek száma beállítható (3–5).
 const meter = () => document.getElementById('meter');
 
-export function renderMeter(count) {
-  meter().querySelectorAll('.slot').forEach((el, i) => el.classList.toggle('on', i < count));
+export function renderMeter(count, slots) {
+  const el = meter();
+  if (slots && el.querySelectorAll('.slot').length !== slots) {
+    el.innerHTML = Array.from({ length: slots }, (_, i) => `<span class="slot" data-i="${i}">★</span>`).join('');
+  }
+  el.querySelectorAll('.slot').forEach((s, i) => s.classList.toggle('on', i < count));
 }
 
 // Egy csillag a képernyő közepéről a soron következő mérőhelyre repül.

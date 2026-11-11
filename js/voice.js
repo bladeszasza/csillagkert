@@ -1,15 +1,22 @@
 // Magyar felolvasás egyetlen helyen. A böngésző speechSynthesis API-ját használja.
 // iPaden az első hangot felhasználói koppintásnak kell elindítania (lásd main.js: start-gomb).
+import { progress } from './progress.js';
 
 let voice = null;
 let enabled = true;
 let lastText = '';
 
+const isHu = v => (v.lang || '').toLowerCase().replace('_', '-').startsWith('hu');
+
+export function listHuVoices() {
+  if (!('speechSynthesis' in window)) return [];
+  return window.speechSynthesis.getVoices().filter(isHu);
+}
+
 function pickVoice() {
-  if (!('speechSynthesis' in window)) return null;
-  const all = window.speechSynthesis.getVoices();
-  const hu = all.filter(v => (v.lang || '').toLowerCase().replace('_', '-').startsWith('hu'));
-  voice = hu[0] || null;
+  const hu = listHuVoices();
+  const saved = progress.get().voiceURI;
+  voice = hu.find(v => v.voiceURI === saved) || hu[0] || null;
   return voice;
 }
 
@@ -19,6 +26,7 @@ if ('speechSynthesis' in window) {
 }
 
 export function hasHungarianVoice() { return !!(voice || pickVoice()); }
+export function chooseVoice(uri) { progress.set({ voiceURI: uri || '' }); pickVoice(); }
 export function setVoiceEnabled(v) { enabled = v; }
 
 // Kimondja a szöveget. Ha nincs magyar hang, nem mond semmit (a feladatok képileg is megoldhatók).

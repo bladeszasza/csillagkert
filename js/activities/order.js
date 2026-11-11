@@ -12,7 +12,7 @@ export function run(container, { prompt, say: sayText, steps, icon = '🔢' }) {
     container.innerHTML = `
       <div class="activity">
         <div class="prompt">${prompt} ${icon}</div>
-        <div class="answers">${order.map((s, i) => `<button class="answer pic" data-i="${i}">${s.t}<small>${s.name}</small><b class="badge"></b></button>`).join('')}</div>
+        <div class="answers">${order.map((s, i) => `<button class="answer pic" data-i="${i}">${s.t}${s.name ? `<small>${s.name}</small>` : ''}<b class="badge"></b></button>`).join('')}</div>
       </div>`;
     const btns = [...container.querySelectorAll('.answer')];
     let next = 0, wrong = 0, locked = false;
@@ -24,7 +24,7 @@ export function run(container, { prompt, say: sayText, steps, icon = '🔢' }) {
         btn.classList.add('done'); btn.querySelector('.badge').textContent = String(next + 1);
         next++; wrong = 0; refreshHint();
         if (next === steps.length) { locked = true; await say('Pontosan így van! Ügyes!'); resolve(); }
-        else say(order[i].name, { remember: false });
+        else say(order[i].name || order[i].t, { remember: false });
       } else {
         locked = true; wrong++; btn.classList.add('shake');
         say('Majdnem! Gondold végig, mi jön most?', { remember: false });
