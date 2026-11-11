@@ -29,12 +29,15 @@ export function run(container, { text = 'A', useName = false, say: sayText }) {
       c.setLineDash([2, 14]); c.lineWidth = 5; c.lineCap = 'round'; c.strokeStyle = '#8e5be8'; c.strokeText(word, W / 2, H / 2);
       // minták a betű belsejéből
       const img = c.getImageData(0, 0, guide.width, guide.height), step = Math.round(14 * dpr);
-      samples = [];
+      samples = Object.assign([], { old: samples.filter(s => s.hit) });
       for (let y = 0; y < guide.height; y += step) for (let x = 0; x < guide.width; x += step) {
         const a = img.data[(y * guide.width + x) * 4 + 3];
         if (a > 200) samples.push({ x: x / dpr, y: y / dpr, hit: false });
       }
+      // korábbi lefedettség átvitele (forgatásnál ne kelljen újrakezdeni)
+      const old = samples.old || [];
       covered = 0;
+      for (const s of samples) { s.nx = s.x / W; s.ny = s.y / H; if (old.some(o => (o.nx - s.nx) ** 2 + (o.ny - s.ny) ** 2 < 0.0009)) { s.hit = true; covered++; } }
     }
     function mark(p) {
       const R2 = 30 * 30;

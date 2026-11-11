@@ -3,23 +3,24 @@
 import { say } from '../voice.js';
 
 const THINGS = ['🍎', '🌸', '🐟', '🎈', '🦋', '🍓', '🐥', '⭐'];
-const NAMES = ['egy', 'kettő', 'három', 'négy', 'öt', 'hat', 'hét', 'nyolc', 'kilenc', 'tíz'];
+const NAMES = ['egy', 'kettő', 'három', 'négy', 'öt', 'hat', 'hét', 'nyolc', 'kilenc', 'tíz', 'tizenegy', 'tizenkettő', 'tizenhárom', 'tizennégy', 'tizenöt', 'tizenhat', 'tizenhét', 'tizennyolc', 'tizenkilenc', 'húsz'];
+const THING_NAME = { '🍎': 'alma', '🌸': 'virág', '🐟': 'hal', '🎈': 'lufi', '🦋': 'pillangó', '🍓': 'eper', '🐥': 'csibe', '⭐': 'csillag' };
 
-function dots(n) { return '●'.repeat(Math.min(n, 5)) + (n > 5 ? '<br>' + '●'.repeat(n - 5) : ''); }
+function dots(n) { return '●'.repeat(Math.min(n, 10)); }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 export function run(container, { n = 3 }) {
   return new Promise(resolve => {
     const thing = THINGS[Math.floor(Math.random() * THINGS.length)];
     const options = new Set([n]);
-    const pool = [n - 2, n - 1, n + 1, n + 2].filter(x => x >= 1 && x <= 10);
+    const pool = [n - 2, n - 1, n + 1, n + 2].filter(x => x >= 1 && x <= 20);
     while (options.size < 3 && pool.length) options.add(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
     const opts = [...options].sort((a, b) => a - b);
 
     container.innerHTML = `
       <div class="activity">
         <div class="prompt">Hány van? Számold meg! 🔢</div>
-        <div class="items">${Array.from({ length: n }, (_, i) => `<span class="item" data-i="${i}">${thing}</span>`).join('')}</div>
+        <div class="items">${Array.from({ length: n }, (_, i) => `<span class="item${n > 10 ? ' sm' : ''}" data-i="${i}">${thing}</span>`).join('')}</div>
         <div class="answers">${opts.map(o => `<button class="answer" data-n="${o}">${o}<small>${dots(o)}</small></button>`).join('')}</div>
       </div>`;
     const items = [...container.querySelectorAll('.item')];
@@ -43,7 +44,7 @@ export function run(container, { n = 3 }) {
       const val = +btn.dataset.n;
       if (val === n) {
         finished = true; btn.classList.add('win');
-        await say('Igen! ' + NAMES[n - 1] + '!');
+        await say(`Hány ${THING_NAME[thing]} van? Igen! ${NAMES[n - 1]} ${THING_NAME[thing]} van!`);
         resolve();
       } else {
         locked = true; wrong++;
@@ -60,6 +61,6 @@ export function run(container, { n = 3 }) {
         locked = false;
       }
     }));
-    say(`Hány ${thing === '🍎' ? 'alma' : 'darab'} van? Számold meg!`);
+    say(`Hány ${THING_NAME[thing]} van? Számold meg!`);
   });
 }

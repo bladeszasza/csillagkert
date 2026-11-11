@@ -23,11 +23,11 @@ export function run(container, { prompt, say: sayText, steps, icon = '🔢' }) {
       if (order[i] === steps[next]) {
         btn.classList.add('done'); btn.querySelector('.badge').textContent = String(next + 1);
         next++; wrong = 0; refreshHint();
-        if (next === steps.length) { locked = true; await say('Pontosan így van! Ügyes!'); resolve(); }
+        if (next === steps.length) { locked = true; await say('Pontosan így van! ' + steps.map(s => s.name || s.t).join(', ') + '.'); resolve(); }
         else say(order[i].name || order[i].t, { remember: false });
       } else {
         locked = true; wrong++; btn.classList.add('shake');
-        say('Majdnem! Gondold végig, mi jön most?', { remember: false });
+        say('Majdnem! Gondold végig, mi jön most? ' + (sayText || prompt), { remember: false });
         await sleep(900); btn.classList.remove('shake'); locked = false; refreshHint();
       }
     }));

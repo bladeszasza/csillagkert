@@ -73,9 +73,22 @@ export function run(container, { path = 'hullam', say: sayText }) {
         gctx.strokeStyle = '#ff5d8f'; gctx.lineWidth = 8; gctx.beginPath(); gctx.arc(p.x, p.y, 34, 0, 7); gctx.stroke();
       }
       const a = points[0], b = points[N];
-      gctx.font = '56px serif'; gctx.textAlign = 'center'; gctx.textBaseline = 'middle';
-      gctx.fillText(done || reached >= N - 3 ? '🌟' : '⭐', b.x, b.y - (path === 'kor' ? 52 : 0));
-      gctx.fillText('🐾', a.x, a.y);
+      star(b.x, b.y - (path === 'kor' ? 52 : 0), done || reached >= N - 3 ? 34 : 28, done || reached >= N - 3);
+      paw(a.x, a.y);
+    }
+
+    function star(x, y, r, glow) {
+      gctx.save(); gctx.beginPath();
+      for (let i = 0; i < 10; i++) { const rad = i % 2 ? r * 0.45 : r, ang = -Math.PI / 2 + i * Math.PI / 5; gctx.lineTo(x + Math.cos(ang) * rad, y + Math.sin(ang) * rad); }
+      gctx.closePath(); gctx.fillStyle = '#ffcf3f'; gctx.strokeStyle = '#e69a00'; gctx.lineWidth = 4; gctx.lineJoin = 'round';
+      if (glow) { gctx.shadowColor = '#ffd85a'; gctx.shadowBlur = 24; }
+      gctx.fill(); gctx.stroke(); gctx.restore();
+    }
+    function paw(x, y) {
+      gctx.save(); gctx.fillStyle = '#3b2a63';
+      gctx.beginPath(); gctx.ellipse(x, y + 6, 15, 12, 0, 0, 7); gctx.fill();
+      for (const [dx, dy] of [[-17, -9], [-6, -19], [6, -19], [17, -9]]) { gctx.beginPath(); gctx.ellipse(x + dx, y + dy, 6, 8, 0, 0, 7); gctx.fill(); }
+      gctx.restore();
     }
 
     function check(p) {

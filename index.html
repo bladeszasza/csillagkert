@@ -11,6 +11,25 @@
 <body>
 <canvas id="garden"></canvas>
 
+<!-- Rozi, a robot: ő beszél. Rá koppintva megismétli a feladatot. -->
+<div id="rozi-bubble"></div>
+<button id="robot" data-mood="idle" aria-label="Rozi a robot – koppints, ha újra hallani szeretnéd" hidden>
+  <svg viewBox="0 0 100 110" width="100%" height="100%">
+    <line x1="50" y1="14" x2="50" y2="4" stroke="#9aa6c9" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="50" cy="5" r="6" fill="#ffcf3f" class="antenna"/>
+    <rect x="12" y="16" width="76" height="62" rx="26" fill="#e8ecff" stroke="#8e5be8" stroke-width="4"/>
+    <rect x="22" y="28" width="56" height="30" rx="14" fill="#2b2a55"/>
+    <g class="eyes"><ellipse class="eye" cx="38" cy="43" rx="8" ry="9" fill="#7fe0ff"/><ellipse class="eye" cx="62" cy="43" rx="8" ry="9" fill="#7fe0ff"/>
+      <path class="lash" d="M28 33 l-5 -4 M32 31 l-3 -5 M72 33 l5 -4 M68 31 l3 -5" stroke="#7fe0ff" stroke-width="2.5" stroke-linecap="round"/></g>
+    <path class="smile" d="M39 64 Q50 74 61 64" fill="none" stroke="#ff5d8f" stroke-width="4.5" stroke-linecap="round"/>
+    <rect class="mouth" x="40" y="64" width="20" height="6" rx="3" fill="#ff5d8f"/>
+    <circle class="cheek" cx="20" cy="62" r="5" fill="#ffb3d6"/><circle class="cheek" cx="80" cy="62" r="5" fill="#ffb3d6"/>
+    <path d="M70 14 q12 -10 20 2 q-8 8 -20 -2z M70 14 q-6 -12 -18 -4 q6 10 18 4z" fill="#ff8fc8" stroke="#d94f9a" stroke-width="2"/>
+    <rect x="30" y="80" width="40" height="22" rx="10" fill="#c9d2f5" stroke="#8e5be8" stroke-width="3"/>
+    <circle cx="50" cy="91" r="5" fill="#ffcf3f"/>
+  </svg>
+</button>
+
 <!-- Csillagmérő + gombok -->
 <header id="hud" hidden>
   <div id="meter" aria-label="Csillagok">
@@ -37,15 +56,31 @@
 
 <!-- Feladat -->
 <section id="stage" hidden></section>
+<button id="stage-x" class="round xbtn" aria-label="Kilépek" hidden>✕</button>
+
+<!-- Név (elsőre; átugorható) -->
+<section id="name-screen" hidden>
+  <div class="card">
+    <button id="name-skip" class="round xbtn in" aria-label="Átugrom">✕</button>
+    <h2>Hogy hívnak? 🌟</h2>
+    <input id="name-input" type="text" autocomplete="off" maxlength="30" placeholder="Írd ide a neved">
+    <div style="margin-top:18px"><button id="name-ok" class="giant">Kész</button></div>
+  </div>
+</section>
 
 <!-- Jutalom -->
 <section id="reward" hidden>
   <div class="card wide">
+    <button id="reward-x" class="round xbtn in" aria-label="Nem kérek">✕</button>
     <h2>🎉 Megvan az összes csillag!</h2>
     <div class="choices">
       <button class="choice" data-game="sparkhorn"><span>🦄</span>Unikornis-futás</button>
       <button class="choice" data-game="bubbles"><span>🫧</span>Buborékpukkasztás</button>
-      <button class="choice" data-game="starcatch"><span>🐱</span>Csillagfogó</button>
+      <button class="choice" data-game="foodcatch"><span>🐱</span>Etesd a cicát</button>
+      <button class="choice" data-game="healthy"><span>🍎</span>Hami-adagoló</button>
+      <button class="choice" data-game="race"><span>🏁</span>Felhővár-verseny</button>
+      <button class="choice" data-game="openworld"><span>🌈</span>Szabad futás</button>
+      <button class="choice" data-game="pet"><span>🐾</span>Barátom</button>
       <button class="choice" data-game="dressup"><span>👑</span>Unikornis-öltöztető</button>
     </div>
   </div>
@@ -66,8 +101,8 @@
     <label>Jutalomjáték hossza
       <select id="p-minutes"><option value="2">2 perc</option><option value="4">4 perc</option><option value="6">6 perc</option><option value="10">10 perc</option></select>
     </label>
-    <label>Hány csillag kell a jutalomjátékhoz?
-      <select id="p-per"><option value="3">3 csillag</option><option value="4">4 csillag</option><option value="5">5 csillag</option></select>
+    <label>Hány csillag kell kezdetben a jutalomjátékhoz? (minden kör után +2)
+      <select id="p-per"><option value="5">5 csillag</option><option value="7">7 csillag</option><option value="10">10 csillag</option><option value="15">15 csillag</option></select>
     </label>
     <label hidden>Felolvasó hang
       <select id="p-voicesel"></select>

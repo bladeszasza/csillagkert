@@ -6,6 +6,15 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
 // options: [{ t: '🍎', name: 'alma', ok: true }, ...]; q: opcionális nagy kérdéssor (pl. minta)
+// A helyes válasz kimondása a feladattal együtt: "Melyikből van kevesebb? Igen, ebből van kevesebb: hal."
+function explain(prompt, o) {
+  const nm = o.name || '';
+  let m;
+  if ((m = /Melyikből van (több|kevesebb)/.exec(prompt))) return `${prompt} Igen, ebből van ${m[1]}: ${nm}.`;
+  if (/^Melyik (a|az) /.test(prompt)) return `${prompt} Igen, ez a ${nm}!`;
+  return `${prompt} Igen, ${nm || 'ez az'}!`;
+}
+
 export function run(container, { prompt, say: sayText, options, q, icon = '🧠' }) {
   return new Promise(resolve => {
     const opts = shuffle(options);
@@ -24,12 +33,12 @@ export function run(container, { prompt, say: sayText, options, q, icon = '🧠'
       const o = opts[i];
       if (o.ok) {
         finished = true; btn.classList.add('win');
-        await say('Igen!' + (o.name ? ' ' + o.name + '!' : ''));
+        await say(explain(prompt, o));
         resolve();
       } else {
         locked = true; wrong++;
         btn.classList.add('shake');
-        say(wrong === 1 ? 'Majdnem! Próbáld újra!' : 'Semmi baj, gondold végig!', { remember: false });
+        say((wrong === 1 ? 'Majdnem! Próbáld újra! ' : 'Semmi baj, gondold végig! ') + (sayText || (prompt + (names.length ? ' ' + names.join(', ') + '?' : ''))), { remember: false });
         await sleep(900);
         btn.classList.remove('shake');
         if (wrong >= 2) {

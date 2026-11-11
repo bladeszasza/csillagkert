@@ -11,8 +11,13 @@ export function attachPen(canvas, { onStart, onMove, onEnd, color = '#8e5be8', b
   function size() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const r = canvas.getBoundingClientRect();
-    canvas.width = Math.max(1, Math.round(r.width * dpr));
-    canvas.height = Math.max(1, Math.round(r.height * dpr));
+    const nw = Math.max(1, Math.round(r.width * dpr)), nh = Math.max(1, Math.round(r.height * dpr));
+    if (nw === canvas.width && nh === canvas.height) return;
+    let snap = null;                       // a már megrajzolt vonalat átmentjük (forgatásnál ne vesszen el)
+    if (canvas.width > 1 && canvas.height > 1) { snap = document.createElement('canvas'); snap.width = canvas.width; snap.height = canvas.height; snap.getContext('2d').drawImage(canvas, 0, 0); }
+    canvas.width = nw; canvas.height = nh;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    if (snap) ctx.drawImage(snap, 0, 0, nw, nh);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   }

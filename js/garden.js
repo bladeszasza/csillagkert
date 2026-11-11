@@ -83,12 +83,15 @@ export function createGarden(canvas) {
   function cheer() { cheerUntil = performance.now() + 1400; }
 
   function resize() {
-    const w = window.innerWidth, h = window.innerHeight;
+    const w = canvas.clientWidth || window.innerWidth, h = canvas.clientHeight || window.innerHeight;
     renderer.setSize(w, h, false); camera.aspect = w / h;
-    camera.position.set(0, h > w ? 5.4 : 4.2, h > w ? 12 : 9); camera.lookAt(0, 1.2, 0);
+    camera.position.set(0, h > w ? 5.4 : 4.2, h > w ? 12 : 9); camera.lookAt(0, (h < 640 && w > h) ? -0.3 : 1.2, 0);
     camera.updateProjectionMatrix();
   }
-  window.addEventListener('resize', resize); resize();
+  window.addEventListener('resize', resize); window.addEventListener('orientationchange', () => setTimeout(resize, 250));
+  if ('ResizeObserver' in window) new ResizeObserver(resize).observe(canvas);
+  window.visualViewport?.addEventListener('resize', resize);
+  resize();
 
   function frame(now) {
     const t = now / 1000;
