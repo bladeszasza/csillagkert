@@ -120,3 +120,8 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .swatch.emo { background: #fff; font-size: 30px; }
 .dress { position: absolute; left: 0; right: 0; bottom: 14px; display: flex; flex-direction: column; gap: 8px; align-items: center; }
 .dress .row { display: flex; gap: 12px; }
+
+/* iPad: a beviteli mezők ne örököljék a kijelölés-tiltást (különben nem lehet gépelni) */
+input, select, textarea { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+.pad .clear { position: absolute; right: 14px; bottom: 14px; z-index: 3; width: 60px; height: 60px; font-size: 28px; opacity: .85; }
+#voice-warn { margin-top: 14px; padding: 8px 14px; border-radius: 16px; background: #fff3cd; font-size: 16px; font-weight: 700; }

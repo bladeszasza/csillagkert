@@ -1,7 +1,7 @@
 import { createGarden } from './garden.js';
 import { CURRICULUM } from './curriculum.js';
 import { progress } from './progress.js';
-import { say, repeatLast } from './voice.js';
+import { say, repeatLast, hasHungarianVoice } from './voice.js';
 import { renderMeter, flyStar } from './stars.js';
 import { setupParent } from './parent.js';
 
@@ -32,6 +32,10 @@ catch (e) { console.warn('3D nem indult el', e); } // a feladatok 3D nélkül is
 
 setupParent(() => location.reload());
 renderMeter(progress.get().meter % 3);
+
+// Ha nincs magyar hang, azt már az indulóképernyőn jelezzük (a szülőnek)
+const checkVoice = () => { $('voice-warn').hidden = hasHungarianVoice(); };
+setTimeout(checkVoice, 800); setTimeout(checkVoice, 2500);
 
 $('again').addEventListener('click', () => repeatLast());
 

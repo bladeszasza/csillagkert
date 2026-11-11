@@ -33,7 +33,7 @@ export const CURRICULUM = [
   { type: 'trace', path: 'cikcak' },
   { type: 'count', n: 4 },
   pick('🔺', 'Melyik piros?', '🍎 alma', '🍌 banán', '🫐 áfonya'),
-  pick('🔤', 'Mi rímel a hal szóra?', '🧣 sál', '🐱 cica', '🌞 nap'),
+  pick('🔤', 'Mi rímel a kéz szóra?', '🍯 méz', '🐱 cica', '🌞 nap'),
   withQ('🔴 🔵 🔴 🔵 🔴 ❓', pick('🧩', 'Mi jön ezután?', '🔵 kék', '🔴 piros', '🟡 sárga')),
   pick('🌍', 'Mikor megyünk aludni?', '🌙 éjszaka', '☀️ délben', '🌅 reggel'),
   pick('🍎', 'Melyik az egészséges?', '🥕 répa', '🍭 nyalóka', '🍟 sült krumpli'),
@@ -77,6 +77,6 @@ export const CURRICULUM = [
 
   { type: 'trace', path: 'hullam' },
   { type: 'count', n: 10 },
-  word('🐱', 'macska', 'mac', 'ska'),
+  word('🐱', 'macska', 'macs', 'ka'),
   withQ('⭐ 🌙 ⭐ 🌙 ⭐ ❓', pick('🧩', 'Mi jön ezután?', '🌙 hold', '⭐ csillag', '☀️ nap')),
 ];

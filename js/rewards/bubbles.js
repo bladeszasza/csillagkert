@@ -8,10 +8,12 @@ export function run(container) {
   function size() { const d = Math.min(devicePixelRatio || 1, 2); w = canvas.clientWidth; h = canvas.clientHeight; canvas.width = w * d; canvas.height = h * d; ctx.setTransform(d, 0, 0, d, 0, 0); }
   size(); window.addEventListener('resize', size);
   function chime() {
-    try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); const o = audio.createOscillator(), g = audio.createGain();
+    try { if (!audio) return; const o = audio.createOscillator(), g = audio.createGain();
       o.type = 'sine'; o.frequency.value = 520 + Math.random() * 600; g.gain.setValueAtTime(.15, audio.currentTime); g.gain.exponentialRampToValueAtTime(.001, audio.currentTime + .25);
       o.connect(g); g.connect(audio.destination); o.start(); o.stop(audio.currentTime + .25); } catch (e) {}
   }
+  function unlock() { try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); } catch (e) {} }
+  canvas.addEventListener('pointerdown', unlock); canvas.addEventListener('pointerup', unlock);
   function spawn() { bubbles.push({ x: Math.random() * w, y: h + 60, r: 36 + Math.random() * 44, vy: 40 + Math.random() * 60, c: colors[(Math.random() * colors.length) | 0], ph: Math.random() * 6 }); }
   canvas.addEventListener('pointerdown', e => {
     const r = canvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;

@@ -7,10 +7,12 @@ export function run(container) {
   function size() { const d = Math.min(devicePixelRatio || 1, 2); w = canvas.clientWidth; h = canvas.clientHeight; canvas.width = w * d; canvas.height = h * d; ctx.setTransform(d, 0, 0, d, 0, 0); }
   size(); window.addEventListener('resize', size);
   function chime() {
-    try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); const o = audio.createOscillator(), g = audio.createGain();
+    try { if (!audio) return; const o = audio.createOscillator(), g = audio.createGain();
       o.type = 'triangle'; o.frequency.value = 700 + Math.random() * 500; g.gain.setValueAtTime(.15, audio.currentTime); g.gain.exponentialRampToValueAtTime(.001, audio.currentTime + .3);
       o.connect(g); g.connect(audio.destination); o.start(); o.stop(audio.currentTime + .3); } catch (e) {}
   }
+  function unlock() { try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); } catch (e) {} }
+  canvas.addEventListener('pointerdown', unlock); canvas.addEventListener('pointerup', unlock);
   const move = e => { const r = canvas.getBoundingClientRect(); catX = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); };
   canvas.addEventListener('pointerdown', move); canvas.addEventListener('pointermove', move);
   let last = performance.now(), acc = 0;

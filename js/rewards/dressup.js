@@ -2,7 +2,7 @@
 export function run(container) {
   const BODY = ['#ffffff', '#ffd6ea', '#d6e6ff', '#e6d6ff', '#fff0b8'];
   const MANE = ['#ff5d8f', '#8e5be8', '#4aa8ff', '#4cc38a', '#ffb020'];
-  const ACC = ['', '🪽', '👑', '🎀', '🌈'];
+  const ACC = ['', '🦋', '👑', '🎀', '🌈'];
   const sel = { body: 0, mane: 0, acc: 2 };
   container.innerHTML = `<canvas></canvas>
     <div class="dress">
@@ -22,8 +22,8 @@ export function run(container) {
     const body = BODY[sel.body], mane = MANE[sel.mane];
     ctx.lineWidth = 5; ctx.strokeStyle = '#3b2a63'; ctx.lineJoin = ctx.lineCap = 'round';
     const ell = (x, y, rx, ry, fill, rot = 0) => { ctx.fillStyle = fill; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rot, 0, 7); ctx.fill(); ctx.stroke(); };
-    if (sel.acc === 1) { ctx.font = '170px serif'; ctx.textAlign = 'center'; ctx.fillText('🪽', -40, -50); }
-    ctx.fillStyle = body; for (const lx of [-90, -50, 50, 90]) { ctx.beginPath(); ctx.roundRect(lx - 14, 40, 28, 110, 12); ctx.fill(); ctx.stroke(); }
+    if (sel.acc === 1) { ctx.font = '170px serif'; ctx.textAlign = 'center'; ctx.fillText('🦋', -40, -50); }
+    ctx.fillStyle = body; for (const lx of [-90, -50, 50, 90]) { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(lx - 14, 40, 28, 110, 12); else ctx.rect(lx - 14, 40, 28, 110); ctx.fill(); ctx.stroke(); }
     ell(-120, 10, 40, 80, mane, 0.5);                               // farok
     ell(0, 0, 130, 85, body);                                       // test
     ell(110, -75, 36, 70, body, 0.35);                              // nyak
