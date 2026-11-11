@@ -2,10 +2,76 @@
 // állatetetés ("hami az állatoknak"). type → js/activities/<type>.js. A pick(...) segéd: az ELSŐ válasz a helyes
 // (futáskor összekeveredik), formátum: 'emoji név'. A kiválasztás (js/queue.js) a megoldottakat kerüli.
 
+import { withArt, artLetter } from './hu.js';
+
+// Kijelentések a helyes válaszhoz: kulcs = kérdés|helyes válasz neve. Elhangzik: "Igen! <kijelentés>"
+const FACTS = {
+  'Melyik a kör?|kör': 'Ez a kör. A körnek nincs sarka, gömbölyű.',
+  'Mi van fent?|nap': 'A nap fent van az égen, a ház pedig lent van a földön.',
+  'Mi van lent?|ház': 'A ház lent van a földön, a nap pedig fent van az égen.',
+  'Melyik évszakban esik a hó?|tél': 'Télen esik a hó, és hideg van.',
+  'Mivel gondolkodunk?|agy': 'Az agyunkkal gondolkodunk.',
+  'Melyikből van több?|alma': 'Az almából van több, mint a banánból.',
+  'Mivel látunk?|szem': 'A szemünkkel látunk.',
+  'Mi melegített és világított az ősembereknek?|tűz': 'Az ősemberek tűzzel melegedtek, és a tűz világított is nekik.',
+  'Melyik a háromszög?|háromszög': 'Ez a háromszög. A háromszögnek három sarka van.',
+  'Melyik nem illik közéjük?|autó': 'Az autó nem gyümölcs, a többi mind gyümölcs, ezért az autó nem illik közéjük.',
+  'Ki oltja a tüzet?|tűzoltó': 'A tűzoltó oltja el a tüzet.',
+  'Mivel lélegzünk?|tüdő': 'A tüdőnkkel lélegzünk.',
+  'Mi jön ezután?|kék': 'Utána a kék jön: piros, kék, piros, kék, piros, kék.',
+  'Melyik szám nagyobb?|tizennégy': 'A tizennégy nagyobb, mint a kilenc.',
+  'Mikor megyünk aludni?|éjszaka': 'Éjszaka megyünk aludni, amikor sötét van.',
+  'Melyik az egészséges?|répa': 'A répa egészséges, sok vitamin van benne.',
+  'Hol laktak a királyok és a lovagok régen?|vár': 'A királyok és a lovagok régen várban laktak.',
+  'Melyik piros?|alma': 'Az alma piros.',
+  'Mi rímel a kéz szóra?|méz': 'A kéz és a méz rímel egymásra.',
+  'Mivel rágunk?|fog': 'A fogunkkal rágunk.',
+  'Melyikből van kevesebb?|hal': 'Halból van kevesebb, mint csibéből.',
+  'Kinek a kicsinye a csibe?|tyúk': 'A csibe a tyúk kicsinye.',
+  'Mit használunk fogmosáshoz?|fogkefe': 'Fogmosáshoz fogkefét használunk.',
+  'Merre mutat a nyíl?|jobbra': 'A nyíl jobbra mutat.',
+  'Merre mutat a nyíl?|balra': 'A nyíl balra mutat.',
+  'Melyik nap jön péntek után?|szombat': 'Péntek után szombat jön.',
+  'Mit építettek az egyiptomiak a fáraóknak?|piramis': 'Az egyiptomiak piramist építettek a fáraóknak.',
+  'Mi folyik az ereinkben?|vér': 'Az ereinkben vér folyik.',
+  'Melyik nem illik közéjük?|fa': 'A fa nem állat, a többi mind állat, ezért a fa nem illik közéjük.',
+  'Ki védte a várat?|lovag': 'A várat a lovagok védték.',
+  'Melyik sárga?|virág': 'Ez a virág sárga. A brokkoli zöld, az áfonya pedig kék.',
+  'Mi van az alma és a banán között?|cica': 'A cica van az alma és a banán között.',
+  'Esik az eső. Mit viszünk magunkkal?|esernyő': 'Esőben esernyőt viszünk magunkkal.',
+  'Mivel fogunk meg dolgokat?|kéz': 'A kezünkkel fogunk meg dolgokat.',
+  'Melyik szám kisebb?|nyolc': 'A nyolc kisebb, mint a tizenhét.',
+  'Melyik állat neve kezdődik S betűvel?|sün': 'A sün, a sapka és a sajt is ugyanazzal a hanggal kezdődik.',
+  'Melyik nem illik közéjük?|szék': 'A szék nem labda, a többi mind labda, ezért a szék nem illik közéjük.',
+  'Mivel szagolunk?|orr': 'Az orrunkkal szagolunk.',
+  'Mivel ízlelünk?|nyelv': 'A nyelvünkkel ízlelünk.',
+  'Mi jön ezután?|hold': 'Utána a hold jön: csillag, hold, csillag, hold, csillag, hold.',
+  'Hány ujjunk van két kezünkön?|tíz': 'Két kezünkön tíz ujjunk van.',
+  'Mi segít, hogy kipihenjük magunkat?|alvás': 'Alvással pihenjük ki magunkat.',
+  'Hogyan világítottak régen, villany nélkül?|gyertyával': 'Régen villany nélkül gyertyával világítottak.',
+  'Melyik szám jön a 12 után?|tizenhárom': 'A tizenkettő után a tizenhárom jön.',
+  'Melyik szerv pumpálja a vért?|szív': 'A szív pumpálja a vért az egész testünkben.',
+  'Mi élt nagyon régen, az emberek előtt?|dinoszaurusz': 'A dinoszauruszok az emberek előtt éltek, nagyon régen.',
+  'Piros a lámpa. Mit csinálsz?|megállok': 'Piros lámpánál megállunk, és megvárjuk a zöldet.',
+  'Mi jön ezután? Találd ki a szabályt!|kék': 'Utána a kék jön: két piros és egy kék ismétlődik.',
+  'Hány taps lesz összesen?|három': 'Háromszor tapsolunk, tehát három taps lesz.',
+  'Ha sötét van a szobában, mit kapcsolunk fel?|lámpát': 'Ha sötét van a szobában, felkapcsoljuk a lámpát.',
+};
+const ORDER_FACTS = {
+  'Hogyan mossunk kezet? Koppints sorrendben!': 'Kezet így mosunk: először bevizezzük, aztán szappanozzuk, dörzsöljük, öblítjük, végül megtöröljük.',
+  'Mi történik a nap folyamán? Koppints sorrendben!': 'A nap így telik: reggel, dél, este, éjszaka.',
+  'Hogyan növünk? Koppints sorrendben!': 'Így növünk: először baba vagyunk, aztán gyerek, felnőtt, végül idős.',
+  'Melyik nap után melyik jön? Koppints sorrendben!': 'A hét napjai: hétfő, kedd, szerda, csütörtök, péntek, szombat, vasárnap.',
+  'Hogyan nő a virág? Koppints sorrendben!': 'Először mag van, abból csíra nő, végül virág lesz belőle.',
+  'Hogyan változott a közlekedés? Koppints sorrendben!': 'Régen lovon jártak, aztán jött a vonat, az autó, és végül a repülő.',
+  'Hogyan készítünk szendvicset? Koppints sorrendben!': 'Szendvicset így készítünk: kenyeret veszünk elő, megkenjük vajjal, sajtot teszünk rá, és megesszük.',
+  'Hogyan mosunk fogat? Koppints sorrendben!': 'Fogat így mosunk: fogkrémet teszünk a kefére, megsúrolunk minden fogat, kiöblítjük a szánkat, és mosolygunk.',
+  'Rendezd sorba a számokat a legkisebbtől a legnagyobbig!': 'A számok így követik egymást: három, hét, tizenkettő, tizennyolc.',
+};
 const opt = (s, ok) => { const i = s.indexOf(' '); return i < 0 ? { t: s, ok } : { t: s.slice(0, i), name: s.slice(i + 1), ok }; };
-const pick = (icon, prompt, correct, ...wrong) => ({ type: 'pick', icon, prompt, options: [opt(correct, true), ...wrong.map(w => opt(w, false))] });
+const pick = (icon, prompt, correct, ...wrong) => ({ type: 'pick', icon, prompt, fact: FACTS[prompt + '|' + (opt(correct, true).name || '')], options: [opt(correct, true), ...wrong.map(w => opt(w, false))] });
 const withQ = (q, p) => ({ ...p, q });
-const order = (icon, prompt, ...steps) => ({ type: 'order', icon, prompt, steps: steps.map(s => opt(s)) });
+const order = (icon, prompt, ...steps) => ({ type: 'order', icon, prompt, fact: ORDER_FACTS[prompt], steps: steps.map(s => opt(s)) });
 const word = (t, name, ...parts) => ({ type: 'clap', word: { t, name, parts } });
 const music = (mode, notes, say) => ({ type: 'music', mode, notes, say });
 const math = (a, b, op) => ({ type: 'math', a, b, op });
@@ -21,9 +87,10 @@ const WRONG = { alma: '🍎 alma', kutya: '🐶 kutya', macska: '🐱 macska', l
 function lesson(L, [w1, w2], wrongs) {
   const wa = wrongs.slice(0, 2).map(k => WRONG[k]), wb = wrongs.slice(1, 3).map(k => WRONG[k]);
   const q = (right, example, wr) => ({ ...pick('🔤', `Melyik szó kezdődik ${L} betűvel?`, right, ...wr),
-    say: `Melyik szó kezdődik ugyanazzal a hanggal, mint a ${example.split(' ')[1]}?` });
+    say: `Melyik szó kezdődik ugyanazzal a hanggal, mint ${withArt(example.split(' ')[1])}?`,
+    fact: `${withArt(right.split(' ')[1], true)} ugyanazzal a hanggal kezdődik, mint ${withArt(example.split(' ')[1])}.` });
   return { type: 'seq', icon: '🔤', key: 'betu-' + L, steps: [
-    { type: 'betu', text: L, say: `Fesd át a ${L} betűt!` },
+    { type: 'betu', text: L, say: `Fesd át ${artLetter(L)} ${L} betűt!` },
     q(w1, w2, wa), q(w2, w1, wb),
   ] };
 }
@@ -137,7 +204,7 @@ const BASE = [
   { type: 'count', n: 13 },
   math(10, 3, '-'),
   word('🌻', 'napraforgó', 'nap', 'ra', 'for', 'gó'),
-  pick('🔤', 'Melyik állat neve kezdődik S hanggal?', '🦔 sün', '🐝 méh', '🦆 kacsa'),
+  { ...pick('🔤', 'Melyik állat neve kezdődik S betűvel?', '🦔 sün', '🐝 méh', '🦆 kacsa'), say: 'Melyik állat neve kezdődik ugyanúgy, mint a sapka?' },
   withQ('⚽ 🏀 🎾 🪑', pick('🧩', 'Melyik nem illik közéjük?', '🪑 szék', '⚽ foci', '🎾 teniszlabda')),
   pick('🔢', 'Melyik szám kisebb?', num(8), num(17)),
   pick('🍎', 'Mivel szagolunk?', '👃 orr', '👂 fül', '👀 szem'),

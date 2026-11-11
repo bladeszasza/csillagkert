@@ -2,7 +2,7 @@ import { createGarden } from './garden.js';
 import { STATIONS, stationOf, idOf } from './curriculum.js';
 import { nextItem, stationItem, noteRound } from './queue.js';
 import { progress } from './progress.js';
-import { say, repeatLast, hasHungarianVoice, onSpeaking, onMood, stopSpeaking } from './voice.js';
+import { say, repeatLast, hasHungarianVoice, onSpeaking, onMood, stopSpeaking, setMuted } from './voice.js';
 import { emote, moodFor, introduce } from './robot.js';
 import { renderMeter, flyStar } from './stars.js';
 import { setupParent } from './parent.js';
@@ -11,7 +11,6 @@ const $ = id => document.getElementById(id);
 
 // --- Nagyítás letiltása (iPaden a viewport-meta nem elég): csípés és gesztusok tiltva ---
 ['gesturestart', 'gesturechange', 'gestureend'].forEach(ev => document.addEventListener(ev, e => e.preventDefault(), { passive: false }));
-document.addEventListener('touchstart', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.scale && e.scale !== 1)) e.preventDefault(); }, { passive: false });
 document.addEventListener('wheel', e => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
 document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && ['+', '-', '=', '0'].includes(e.key)) e.preventDefault(); });
@@ -29,6 +28,7 @@ const activities = {
   seq: () => import('./activities/seq.js'),
   music: () => import('./activities/music.js'),
   feed: () => import('./activities/feed.js'),
+  algo: () => import('./activities/algo.js'),
 };
 const rewards = {
   sparkhorn: () => import('./rewards/sparkhorn.js'),
@@ -81,9 +81,10 @@ $('stage').addEventListener('pointerdown', e => {
 // 1) Az első koppintás oldja fel a hangot (iOS)
 $('start-btn').addEventListener('click', async () => {
   $('start').hidden = true; $('hud').hidden = false; $('robot').hidden = false;
-  if (!progress.get().introDone) await introduce();          // Rozi bemutatkozik (egyszer)
+  const justIntro = !progress.get().introDone;
+  if (justIntro) await introduce();                          // Rozi bemutatkozik (egyszer)
   if (!name() && !progress.get().nameAsked) await askName();
-  say(name() ? `Szia ${name()}! Én Rozi vagyok. Gyűjtsünk csillagokat!` : 'Szia! Gyűjtsünk együtt csillagokat!');
+  say(justIntro ? (name() ? `Örülök, ${name()}! Gyűjtsünk együtt csillagokat!` : 'Gyűjtsünk együtt csillagokat!') : (name() ? `Szia ${name()}! Gyűjtsünk csillagokat!` : 'Szia! Gyűjtsünk csillagokat!'), { remember: false });
   if (progress.get().meter >= perReward()) openReward(); else $('home').hidden = false;
 });
 
@@ -91,7 +92,7 @@ $('start-btn').addEventListener('click', async () => {
 function askName() {
   return new Promise(resolve => {
     $('name-screen').hidden = false;
-    say('Szia! Én Rozi vagyok, a robot. Hogy hívnak?');
+    say(progress.get().introDone ? 'Hogy hívnak?' : 'Hogy hívnak?', { remember: false });
     const done = save => {
       if (save && $('name-input').value.trim()) progress.set({ name: $('name-input').value.trim() });
       progress.set({ nameAsked: true });
@@ -106,14 +107,19 @@ function askName() {
 // 2) Egy feladat lefuttatása: "Tovább" (sorrend) vagy szabadon választott állomás. Az X gombbal kiléphet.
 let currentAbort = null;
 async function runItem(item, station, via) {
+  setMuted(false); garden?.pause(true);
   $('home').hidden = true;
   const mod = await activities[item.type]();
   $('stage').hidden = false; $('stage-x').hidden = false;
   const aborted = new Promise(r => { currentAbort = () => r('abort'); });
   const res = await Promise.race([mod.run($('stage'), item).then(() => 'done'), aborted]);
   currentAbort = null;
-  $('stage-x').hidden = true; $('stage').hidden = true; $('stage').innerHTML = '';
-  if (res === 'abort') { stopSpeaking(); $('home').hidden = false; say('Semmi baj! Válassz mást, vagy játssz, ha kedved van.', { remember: false }); return; }
+  $('stage-x').hidden = true; $('stage').hidden = true; $('stage').innerHTML = ''; garden?.pause(false);
+  if (res === 'abort') {
+    stopSpeaking(); setMuted(true); $('home').hidden = false;           // a megszakított feladat ne beszéljen tovább
+    setTimeout(() => { setMuted(false); say('Semmi baj! Válassz mást, vagy játssz, ha kedved van.', { remember: false }); }, 700);
+    return;
+  }
   const meter = progress.addStar(station, idOf(item));
   if (via === 'next') noteRound(item);
   garden?.setStars(progress.get().total);
@@ -134,12 +140,13 @@ function openReward() {
   $('reward').hidden = false;
   say(`Megvan mind a ${perReward()} csillag! Válassz egy játékot!`);
 }
-$('reward-x').addEventListener('click', () => {      // ha nem akar játszani
-  $('reward').hidden = true; progress.resetMeter(); renderMeter(0, perReward()); $('home').hidden = false;
-  stopSpeaking(); say('Semmi baj! Gyűjtsünk még csillagokat!', { remember: false });
+$('reward-x').addEventListener('click', () => {      // ha nem akar játszani: a megszerzett csillagok megmaradnak
+  $('reward').hidden = true; $('home').hidden = false;
+  stopSpeaking(); say('Semmi baj! A csillagaid megvannak, játszhatsz később is.', { remember: false });
 });
 let stopGame = null, gameTimer = null;
 document.querySelectorAll('.choice').forEach(btn => btn.addEventListener('click', async () => {
+  setMuted(false); garden?.pause(true);
   $('reward').hidden = true; $('game').hidden = false;
   const mod = await rewards[btn.dataset.game]();
   stopGame = mod.run($('game-body'), { onGift: id => progress.addGift(id) });
@@ -151,7 +158,7 @@ async function endReward() {
   clearTimeout(gameTimer);
   try { stopGame?.(); } catch (e) {}
   stopGame = null;
-  $('game-body').innerHTML = ''; $('game').hidden = true;
+  $('game-body').innerHTML = ''; $('game').hidden = true; garden?.pause(false);
   progress.completeReward();                       // a következő jutalomhoz több csillag kell
   progress.resetMeter(); renderMeter(0, perReward());
   $('home').hidden = false;

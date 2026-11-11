@@ -2,6 +2,7 @@
 // az állat nem haragszik; két hibánál megtanítjuk, mi a kedvence. A tanulság: ki mit eszik.
 import { say } from '../voice.js';
 import { happy } from '../sounds.js';
+import { withArt } from '../hu.js';
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -12,14 +13,15 @@ export function run(container, { animal, name, food }) {
     const good = foods.find(f => f.ok);
     container.innerHTML = `
       <div class="activity feedpad">
-        <div class="prompt">Éhes a ${name}! Mit eszik? 🍽️</div>
+        <div class="prompt">Éhes ${withArt(name)}! Mit eszik? 🍽️</div>
         <div class="animal-wrap"><div class="animal" id="animal">${animal}</div><div class="bubble" id="bubble"></div></div>
         <div class="answers foods">${foods.map((f, i) => `<button class="answer pic food" data-i="${i}">${f.t}<small>${f.name}</small></button>`).join('')}</div>
       </div>`;
     const animalEl = container.querySelector('#animal'), bubble = container.querySelector('#bubble');
     const btns = [...container.querySelectorAll('.food')];
     let wrong = 0, locked = false, finished = false;
-    const speakQ = `Éhes a ${name}! Mit eszik a ${name}? Húzd az ételt a ${name} szájához!`;
+    const A = withArt(name), Acap = withArt(name, true);
+    const speakQ = `Éhes ${A}! Mit eszik ${A}? Húzd az ételt ${A} szájához!`;
 
     function toAnimal(btn) { // az étel az állathoz repül
       const a = animalEl.getBoundingClientRect(), b = btn.getBoundingClientRect();
@@ -35,19 +37,21 @@ export function run(container, { animal, name, food }) {
       if (f.ok) {
         finished = true; btn.style.opacity = 0; animalEl.classList.add('munch'); bubble.textContent = '😋 nyam-nyam!';
         happy(animal); setTimeout(() => happy(animal), 700);
-        await say(`Nyam-nyam! A ${name} kedvenc étele a ${f.name}!`);
+        await say(`Nyam-nyam! ${Acap} kedvenc étele ${withArt(f.name)}!`);
         const { run: runHealthy } = await import('../rewards/healthy.js');   // utána a barátok etetése / ajándékozás
-        await new Promise(done => runHealthy(container, { rounds: true, onDone: done }));
+        let stopH = null;
+        await new Promise(done => { stopH = runHealthy(container, { rounds: true, onDone: done }); });
+        try { stopH?.(); } catch (e) {}                       // a 3D jelenet és a ciklus megszűnik
         resolve();
       } else {
         wrong++; btn.style.transition = 'transform .4s'; btn.style.transform = ''; btn.style.zIndex = '';
         animalEl.classList.add('shake'); bubble.textContent = '🙅 ez nem az enyém';
-        await say(`Ezt nem eszi a ${name}. Gondold végig, mit eszik a ${name}?`, { remember: false });
+        await say(`Ezt nem eszi ${A}. Gondold végig, mit eszik ${A}?`, { remember: false });
         animalEl.classList.remove('shake'); bubble.textContent = '';
         if (wrong >= 2) {
           const bad = btns.filter((b, k) => !foods[k].ok && b.style.opacity !== '0' && !b.classList.contains('gone'));
           if (bad.length > 1) bad[0].classList.add('gone');
-          await say(`Segítek! A ${name} kedvenc étele a ${good.name}.`, { remember: false });
+          await say(`Segítek! ${Acap} kedvenc étele ${withArt(good.name)}.`, { remember: false });
           btns[foods.indexOf(good)].classList.add('glow');
         }
         locked = false;

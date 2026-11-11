@@ -5,6 +5,7 @@ import { progress } from './progress.js';
 
 let voice = null;
 let enabled = true;
+let muted = false;
 let lastText = '';
 const listeners = new Set();
 const moodListeners = new Set();
@@ -51,7 +52,9 @@ export function forSpeech(text) {
 }
 
 // Kimondja a szöveget. Ha nincs magyar hang, nem mond semmit (a feladatok képileg is megoldhatók).
+export function setMuted(v) { muted = !!v; }
 export function say(text, { rate = 0.85, remember = true } = {}) {
+  if (muted) return Promise.resolve();
   if (remember) lastText = text;
   moodListeners.forEach(cb => { try { cb(text); } catch (e) {} });
   if (!enabled || !('speechSynthesis' in window)) return Promise.resolve();

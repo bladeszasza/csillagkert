@@ -79,7 +79,7 @@ export function createGarden(canvas) {
     while (flowerCount < target) { addFlower(flowerCount, flowerCount >= target - 1 && total > 0 && flowerCount > 0); flowerCount++; }
   }
 
-  let cheerUntil = 0;
+  let cheerUntil = 0, paused = false;
   function cheer() { cheerUntil = performance.now() + 1400; }
 
   function resize() {
@@ -94,6 +94,7 @@ export function createGarden(canvas) {
   resize();
 
   function frame(now) {
+    if (paused) { requestAnimationFrame(frame); return; }
     const t = now / 1000;
     const cheering = now < cheerUntil;
     cat.position.y = cheering ? Math.abs(Math.sin(t * 9)) * 0.7 : Math.sin(t * 2) * 0.04;
@@ -110,5 +111,5 @@ export function createGarden(canvas) {
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
-  return { setStars, cheer };
+  return { setStars, cheer, pause: p => { paused = !!p; } };
 }

@@ -336,3 +336,10 @@ button { touch-action: none; }
 .hd-top { padding-left: 96px; padding-right: 96px; }
 .hd-pal .face { opacity: 0; }                  /* a 3D állat a helyén látszik; ez csak a hely */
 .hd-pal .hearts { z-index: 3; }
+
+#game-bar { left: 12px; right: auto; top: 104px; }
+
+/* Rozi bemutatkozása: nagyban, de oldalt – a cica látszik; a buborék fent */
+#robot.intro { left: 3vw; top: 9vh; transform: scale(2.6); transform-origin: top left; }
+#rozi-bubble { top: 10vh; bottom: auto; left: 50%; transform: translateX(-24%); max-width: min(56vw, 460px); text-align: left; }
+@media (orientation: portrait) { #rozi-bubble { left: 50%; top: 24vh; transform: translateX(-30%); max-width: min(62vw, 440px); } #robot.intro { top: 7vh; } }

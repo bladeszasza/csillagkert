@@ -61,6 +61,8 @@ const SPECIES = {
   cat: { body: 0xffb870, accent: 0xff8fc8, ear: 'tri', tail: 'long' },
   dog: { body: 0xc8895a, accent: 0x6b4226, ear: 'floppy', tail: 'long' },
   fox: { body: 0xff8a3d, accent: 0xffffff, ear: 'tri', tail: 'puff' },
+  bear: { body: 0xb9814f, accent: 0xe2c49a, ear: 'round', tail: 'puff' },
+  panda: { body: 0xffffff, accent: 0x2b2b3a, ear: 'round', tail: 'puff' },
 };
 export const SPECIES_LIST = Object.keys(SPECIES);
 
@@ -76,6 +78,7 @@ export function makeFriend(kind = 'bunny') {
     const cheek = ball(0.06, 0xffb3d6, 1, 1, 0.4); cheek.position.set(sx * 0.2, -0.07, -0.24); head.add(cheek);
     let ear;
     if (sp.ear === 'long') { ear = ball(0.09, sp.body, 0.7, 2.6, 0.5); ear.position.set(sx * 0.12, 0.5, 0); ear.rotation.z = -sx * 0.15; }
+    else if (sp.ear === 'round') { ear = ball(0.11, sp.accent, 1, 1, 0.6); ear.position.set(sx * 0.24, 0.27, 0.0); }
     else if (sp.ear === 'floppy') { ear = ball(0.1, sp.accent, 0.6, 1.6, 0.4); ear.position.set(sx * 0.3, 0.05, 0); ear.rotation.z = sx * 0.4; }
     else { ear = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.22, 4), mat(sp.body)); ear.position.set(sx * 0.17, 0.3, 0); ear.rotation.z = -sx * 0.2; }
     head.add(ear);

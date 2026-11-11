@@ -4,6 +4,7 @@
 //   highlow – mély és magas hang, majd "melyik volt a magasabb?"
 //   loud    – halk és hangos hang, majd "melyik volt a hangosabb?"
 import { say } from '../voice.js';
+import { artLetter } from '../hu.js';
 
 const NOTES = {
   do: { f: 261.63, c: '#ff5d5d', name: 'dó', letter: 'C' },
@@ -12,7 +13,7 @@ const NOTES = {
   fa: { f: 349.23, c: '#4cc38a', name: 'fá', letter: 'F' },
   szo: { f: 392.0, c: '#3bb7c9', name: 'szó', letter: 'G' },
   la: { f: 440.0, c: '#4a7dff', name: 'lá', letter: 'A' },
-  szi: { f: 493.88, c: '#9b5de5', name: 'szí', letter: 'H' },
+  szi: { f: 493.88, c: '#9b5de5', name: 'tí', letter: 'H' },
 };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const rnd = a => a[Math.floor(Math.random() * a.length)];
@@ -49,7 +50,7 @@ export function run(container, { mode = 'learn', notes = ['do', 'mi', 'szo'], sa
       html(`<div class="answers"><div class="answer key big" style="background:${n.c}">${n.name}<small>${n.letter}</small></div></div>`);
       setPrompt('Hallgasd meg a hangot! 🎵');
       const k = container.querySelector('.key');
-      await say(`Ez a ${n.name} hang. Más néven a ${n.letter} hang. Hallgasd meg!`);
+      await say(`Ez a ${n.name} hang. Más néven ${artLetter(n.letter)} ${n.letter} hang. Hallgasd meg!`);
       if (!alivePing()) return false;
       k.classList.add('ring'); await tone(n.f, { dur: 1.2 }); k.classList.remove('ring');
       await sleep(1000);                                   // 1 másodperc csend, hogy "megülepedjen"

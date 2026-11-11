@@ -121,6 +121,7 @@ export function run(container, { path = 'hullam', say: sayText }) {
     container.querySelector('.clear').addEventListener('click', () => { const c = ink.getContext('2d'); c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, ink.width, ink.height); c.restore(); });
     // 6 mp tétlenség: felvillan a következő pötty, és újra elhangzik az utasítás
     timer = setInterval(() => {
+      if (!ink.isConnected) { clearInterval(timer); return; }
       if (done) return;
       if (reached === lastSeen) { hint = true; draw(); say(instruction, { remember: false }); }
       lastSeen = reached;

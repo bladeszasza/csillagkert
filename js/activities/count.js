@@ -1,6 +1,7 @@
 // Megszámlálás 1–10: hány van? Büntetés nélkül: tévedésre megszámoljuk együtt,
 // 2. tévedésre eltűnik egy rossz válasz, 3.-ra a jó felragyog.
 import { say } from '../voice.js';
+import { numAttr } from '../hu.js';
 
 const THINGS = ['🍎', '🌸', '🐟', '🎈', '🦋', '🍓', '🐥', '⭐'];
 const NAMES = ['egy', 'kettő', 'három', 'négy', 'öt', 'hat', 'hét', 'nyolc', 'kilenc', 'tíz', 'tizenegy', 'tizenkettő', 'tizenhárom', 'tizennégy', 'tizenöt', 'tizenhat', 'tizenhét', 'tizennyolc', 'tizenkilenc', 'húsz'];
@@ -29,6 +30,7 @@ export function run(container, { n = 3 }) {
 
     async function countAloud() {
       for (let i = 0; i < items.length; i++) {
+        if (!container.isConnected) return;
         items[i].classList.add('pulse');
         await say(NAMES[i], { remember: false, rate: 0.8 });
         await sleep(150);
@@ -44,7 +46,7 @@ export function run(container, { n = 3 }) {
       const val = +btn.dataset.n;
       if (val === n) {
         finished = true; btn.classList.add('win');
-        await say(`Hány ${THING_NAME[thing]} van? Igen! ${NAMES[n - 1]} ${THING_NAME[thing]} van!`);
+        await say(`Hány ${THING_NAME[thing]} van? Igen! ${numAttr(NAMES[n - 1])} ${THING_NAME[thing]} van!`);
         resolve();
       } else {
         locked = true; wrong++;

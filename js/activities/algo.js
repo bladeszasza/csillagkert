@@ -69,6 +69,7 @@ export function run(container, level) {
     async function exec() {
       running = true; robot = { x: start[0], y: start[1] }; place(); await sleep(450);
       for (let i = 0; i < program.length; i++) {
+        if (!container.isConnected) return { ok: null };
         render(i);
         const t = program[i], [dx, dy] = DIRS[t.dir];
         for (let k = 0; k < t.times; k++) {
@@ -88,6 +89,7 @@ export function run(container, level) {
       if (running || finished) return;
       if (!program.length) { say('Előbb rakd össze a programot a nyilakkal!', { remember: false }); return; }
       const res = await exec(); running = false;
+      if (res.ok === null) return;
       if (res.ok) { finished = true; gridEl.classList.add('win'); happy('🦄'); await say('A robot odaért a csillaghoz! Szuper programozó vagy!'); resolve(); return; }
       fails++; robot = { x: start[0], y: start[1] }; place(); render(res.step);
       if (fails === 1) say(`Majdnem! A robot elakadt ${res.why}. Nézd meg a megjelölt lépést, és javítsd ki! Koppints egy lépésre, ha ki akarod venni.`, { remember: false });

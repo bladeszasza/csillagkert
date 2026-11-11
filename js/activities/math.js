@@ -1,6 +1,7 @@
 // Összeadás és kivonás 20-ig, képekkel. Tévedésnél nem csak "rossz": közösen megszámoljuk
 // (összeadásnál a két csoportot, kivonásnál elvesszük a megadott darabot, és megszámoljuk a maradékot).
 import { say } from '../voice.js';
+import { ACC_NUM } from '../hu.js';
 
 export const NUMS = ['nulla', 'egy', 'kettő', 'három', 'négy', 'öt', 'hat', 'hét', 'nyolc', 'kilenc', 'tíz', 'tizenegy', 'tizenkettő', 'tizenhárom', 'tizennégy', 'tizenöt', 'tizenhat', 'tizenhét', 'tizennyolc', 'tizenkilenc', 'húsz'];
 const THINGS = ['🍎', '🌸', '🍓', '🎈', '🐥', '⭐', '🦋', '🍪'];
@@ -31,20 +32,20 @@ export function run(container, { a, b, op }) {
     const answers = [...container.querySelectorAll('.answer')];
     const all = () => [...container.querySelectorAll('.item')];
     let wrong = 0, locked = false, finished = false;
-    const question = add ? `Mennyi ${NUMS[a]} meg ${NUMS[b]}? Számold össze!` : `Van ${NUMS[a]}. Elveszünk ${NUMS[b]}-t. Mennyi marad?`;
+    const question = add ? `Mennyi ${NUMS[a]} meg ${NUMS[b]}? Számold össze!` : `Van ${NUMS[a]}. Elveszünk ${ACC_NUM[b]}. Mennyi marad?`;
 
     async function teach() {
       const items = all();
       if (add) {
         await say(`Nézzük meg együtt! Van ${NUMS[a]}, és jön még ${NUMS[b]}. Számoljuk meg mindet!`, { remember: false });
-        for (let i = 0; i < items.length; i++) { items[i].classList.add('pulse'); await say(NUMS[i + 1], { remember: false, rate: 0.8 }); await sleep(120); items[i].classList.remove('pulse'); }
+        for (let i = 0; i < items.length; i++) { if (!container.isConnected) return; items[i].classList.add('pulse'); await say(NUMS[i + 1], { remember: false, rate: 0.8 }); await sleep(120); items[i].classList.remove('pulse'); }
         await say(`Összesen ${NUMS[result]}.`, { remember: false });
       } else {
-        await say(`Nézzük meg együtt! Van ${NUMS[a]}. Elveszünk ${NUMS[b]}-t.`, { remember: false });
-        for (let i = 0; i < b; i++) { const it = items[a - 1 - i]; it.classList.add('gone'); await say(`elvesz`, { remember: false, rate: 0.9 }); await sleep(100); }
+        await say(`Nézzük meg együtt! Van ${NUMS[a]}. Elveszünk ${ACC_NUM[b]}.`, { remember: false });
+        for (let i = 0; i < b; i++) { if (!container.isConnected) return; const it = items[a - 1 - i]; it.classList.add('gone'); await say(`elvesz`, { remember: false, rate: 0.9 }); await sleep(100); }
         const left = items.slice(0, result);
         await say('Számoljuk meg, mennyi maradt!', { remember: false });
-        for (let i = 0; i < left.length; i++) { left[i].classList.add('pulse'); await say(NUMS[i + 1], { remember: false, rate: 0.8 }); await sleep(120); left[i].classList.remove('pulse'); }
+        for (let i = 0; i < left.length; i++) { if (!container.isConnected) return; left[i].classList.add('pulse'); await say(NUMS[i + 1], { remember: false, rate: 0.8 }); await sleep(120); left[i].classList.remove('pulse'); }
         await say(`Maradt ${NUMS[result]}.`, { remember: false });
       }
       // visszaállítjuk a képet a következő próbálkozáshoz

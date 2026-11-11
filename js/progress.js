@@ -1,5 +1,4 @@
 // Haladás és beállítások helyben (localStorage). Minden hívás védett: privát módban is működik, csak nem ment.
-import { CURRICULUM, itemsOf, idOf, STATIONS } from './curriculum.js';
 
 const KEY = 'csillagkert_v1';
 const fresh = () => ({
@@ -17,13 +16,8 @@ try { const raw = localStorage.getItem(KEY); hadSave = !!raw; state = { ...fresh
 if (typeof state.done !== 'object' || !state.done) state.done = {};
 if (!Array.isArray(state.gifts)) state.gifts = [];
 
-// Régi mentésből (index/sp számlálók) átvesszük, mi volt már meg, hogy ne játszassuk újra
-if (!state.seen || typeof state.seen !== 'object') {
-  state.seen = {};
-  const t0 = Date.now() - 1e9;
-  for (let i = 0; i < (state.index || 0) && i < CURRICULUM.length; i++) state.seen[idOf(CURRICULUM[i])] = t0 + i;
-  for (const st of STATIONS) { const l = itemsOf(st.id); for (let i = 0; i < (state.sp?.[st.id] || 0) && i < l.length; i++) state.seen[idOf(l[i])] = t0 + i; }
-}
+// Régi mentésben nem volt "seen": üresről indul (a feladatsor azóta átrendeződött, a régi számlálók félrevezetőek lennének)
+if (!state.seen || typeof state.seen !== 'object') state.seen = {};
 delete state.index; delete state.sp;
 if (!state.v2) { if (hadSave) state.perReward = 10; state.v2 = true; }   // korábbi mentés: 3 helyett 10 csillag
 
@@ -42,5 +36,5 @@ export const progress = {
   addGift(id) { if (!state.gifts.includes(id)) { state.gifts.push(id); save(); } },
   resetMeter() { state.meter = 0; save(); },
   set(patch) { Object.assign(state, patch); save(); },
-  reset() { const keep = { name: state.name, nameAsked: state.nameAsked, rewardMinutes: state.rewardMinutes, perReward: state.perReward, voiceURI: state.voiceURI }; state = { ...fresh(), seen: {}, ...keep }; save(); },
+  reset() { const keep = { name: state.name, nameAsked: state.nameAsked, introDone: state.introDone, rewardMinutes: state.rewardMinutes, perReward: state.perReward, voiceURI: state.voiceURI, v2: true }; state = { ...fresh(), seen: {}, ...keep }; save(); },
 };

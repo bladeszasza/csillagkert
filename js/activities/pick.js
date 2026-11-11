@@ -10,12 +10,12 @@ const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { c
 function explain(prompt, o) {
   const nm = o.name || '';
   let m;
-  if ((m = /Melyikből van (több|kevesebb)/.exec(prompt))) return `${prompt} Igen, ebből van ${m[1]}: ${nm}.`;
-  if (/^Melyik (a|az) /.test(prompt)) return `${prompt} Igen, ez a ${nm}!`;
-  return `${prompt} Igen, ${nm || 'ez az'}!`;
+  if ((m = /Melyikből van (több|kevesebb)/.exec(prompt))) return `Igen, ebből van ${m[1]}: ${nm}.`;
+  return nm ? `Igen, ez ${withArt(nm)}!` : 'Igen, ez az!';      // a kérdést nem ismételjük
 }
 
-export function run(container, { prompt, say: sayText, options, q, icon = '🧠' }) {
+import { withArt } from '../hu.js';
+export function run(container, { prompt, say: sayText, options, q, icon = '🧠', fact }) {
   return new Promise(resolve => {
     const opts = shuffle(options);
     container.innerHTML = `
@@ -33,7 +33,7 @@ export function run(container, { prompt, say: sayText, options, q, icon = '🧠'
       const o = opts[i];
       if (o.ok) {
         finished = true; btn.classList.add('win');
-        await say(explain(prompt, o));
+        await say(fact ? `Igen! ${fact}` : explain(prompt, o));
         resolve();
       } else {
         locked = true; wrong++;

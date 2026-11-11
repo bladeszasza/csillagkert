@@ -53,7 +53,9 @@ export function run(container, opts = {}) {
     });
     const t0 = performance.now();
     const loop = now => {
-      if (!st3) return; const t = (now - t0) / 1000, rr = st3.hostRect();
+      if (!st3) return;
+      if (!root.isConnected) { alive = false; st3.dispose(); st3 = null; return; }   // megszakított feladat: ne maradjon futó jelenet
+      const t = (now - t0) / 1000, rr = st3.hostRect();
       pals.forEach((pal, i) => {
         const r = pal.querySelector('.face').getBoundingClientRect(), m = models[i], s = ps[i];
         const hopT = Math.max(0, (s.happy - now) / 1300), nomT = Math.max(0, (s.nom - now) / 500), shT = Math.max(0, (s.shake - now) / 700);
@@ -74,7 +76,7 @@ export function run(container, opts = {}) {
   const say2 = (t) => { bubble.textContent = t; bubble.classList.add('on'); clearTimeout(say2.t); say2.t = setTimeout(() => bubble.classList.remove('on'), 2800); return say(t, { remember: false }); };
 
   function dispense() {
-    if (!alive || current) return;
+    if (!alive || current || !root.isConnected) return;
     if (queue && !queue.length) { if (!busy) { alive = false; setTimeout(() => opts.onDone?.(), 600); } return; }
     const healthy = queue ? queue.shift() : Math.random() < 0.6, [emoji, name] = rnd(healthy ? HEALTHY : SWEETS);
     const el = document.createElement('div'); el.className = 'hd-item drop'; el.textContent = emoji; tray.appendChild(el);

@@ -5,7 +5,7 @@ const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { c
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // steps: helyes sorrendben [{ t, name }]
-export function run(container, { prompt, say: sayText, steps, icon = '🔢' }) {
+export function run(container, { prompt, say: sayText, steps, icon = '🔢', fact }) {
   return new Promise(resolve => {
     let order = shuffle(steps);
     if (order.every((s, i) => s === steps[i])) order = order.reverse();
@@ -23,7 +23,7 @@ export function run(container, { prompt, say: sayText, steps, icon = '🔢' }) {
       if (order[i] === steps[next]) {
         btn.classList.add('done'); btn.querySelector('.badge').textContent = String(next + 1);
         next++; wrong = 0; refreshHint();
-        if (next === steps.length) { locked = true; await say('Pontosan így van! ' + steps.map(s => s.name || s.t).join(', ') + '.'); resolve(); }
+        if (next === steps.length) { locked = true; await say(fact || ('Pontosan így van! ' + steps.map(s => s.name || s.t).join(', ') + '.')); resolve(); }
         else say(order[i].name || order[i].t, { remember: false });
       } else {
         locked = true; wrong++; btn.classList.add('shake');
