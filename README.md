@@ -24,7 +24,9 @@ Feladatok → csillagok → jutalomjáték. Hibázásért nincs büntetés: szel
 
 ## Telepítés a főképernyőre
 
-Safari → Megosztás → „Főképernyőhöz adás". Így teljes képernyőn indul, és a mentés biztonságosabb.
+Safari → Megosztás → „Főképernyőhöz adás". Így teljes képernyőn indul.
+Figyelem: a főképernyőre telepített példány **külön mentést** használ, mint a Safari-ban megnyitott oldal,
+ott a csillagok elölről indulnak. (A mentés fájlba írása és visszatöltése a következő mérföldkőben érkezik.)
 
 ## Fejlesztés és tesztek
 

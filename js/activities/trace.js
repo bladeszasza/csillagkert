@@ -14,7 +14,8 @@ export const PATHS = {
   },
   hurok: t => ({ x: 0.12 + 0.76 * t + 0.16 * Math.sin(t * Math.PI * 6), y: 0.5 - 0.22 * Math.cos(t * Math.PI * 6) }),
   kor: t => ({ x: 0.5 + 0.26 * Math.sin(t * Math.PI * 2), y: 0.5 - 0.3 * Math.cos(t * Math.PI * 2) }),
-  nyolcas: t => ({ x: 0.5 + 0.32 * Math.sin(t * Math.PI * 2), y: 0.5 - 0.26 * Math.sin(t * Math.PI * 4) }),
+  // fekvő nyolcas: a bal csúcsból indul és oda ér vissza, középen keresztezi önmagát
+  nyolcas: t => ({ x: 0.5 - 0.32 * Math.cos(t * Math.PI * 2), y: 0.5 + 0.24 * Math.sin(t * Math.PI * 4) }),
   hegyek: t => ({ x: 0.08 + 0.84 * t, y: 0.72 - 0.4 * Math.abs(Math.sin(t * Math.PI * 3)) }),
   spiral: t => { const a = t * Math.PI * 5, r = 0.06 + 0.26 * t; return { x: 0.5 + r * Math.cos(a) * 1.1, y: 0.5 + r * Math.sin(a) }; },
   lejto: t => ({ x: 0.1 + 0.8 * t, y: 0.25 + 0.5 * t * t * (3 - 2 * t) }),
@@ -74,7 +75,8 @@ export function run(container, { path = 'hullam', say: sayText }) {
         gctx.strokeStyle = '#ff5d8f'; gctx.lineWidth = 8; gctx.beginPath(); gctx.arc(p.x, p.y, 34, 0, 7); gctx.stroke();
       }
       const a = points[0], b = points[N];
-      star(b.x, b.y - (path === 'kor' ? 52 : 0), done || reached >= N - 3 ? 34 : 28, done || reached >= N - 3);
+      star(b.x, b.y - (Math.hypot(a.x - b.x, a.y - b.y) < 10 ? 52 : 0),   // zárt alakzatnál a csillag a mancs fölé kerül
+       done || reached >= N - 3 ? 34 : 28, done || reached >= N - 3);
       paw(a.x, a.y);
     }
 

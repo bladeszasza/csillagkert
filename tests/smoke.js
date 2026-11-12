@@ -78,7 +78,7 @@ async function testAbort() {
 async function testClap() {
   const mod = await import('../js/activities/clap.js'), ac = new AbortController(), d = host(); setScope(ac.signal);
   mod.run(d, { word: { t: '🐘', name: 'elefánt', parts: ['e', 'le', 'fánt'] } });
-  ok('tapsolás: induláskor nincs előre kirakott pötty', d.querySelectorAll('.dot').length === 0 || !!d.querySelector('#taps'), `pöttyök: ${d.querySelectorAll('#taps .dot').length}`);
+  ok('tapsolás: induláskor nincs előre kirakott pötty', d.querySelectorAll('#taps .dot').length === 0 && d.querySelectorAll('.dots .dot').length === 0, `pöttyök: ${d.querySelectorAll('#taps .dot').length}`);
   ac.abort(); stopSpeaking(); setScope(null); d.remove();
 }
 

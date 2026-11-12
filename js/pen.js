@@ -1,7 +1,7 @@
 // Közös ceruza/ujj rajzréteg. Apple Pencil: nyomásérzékeny vonal, sima ív (coalesced events),
 // tenyér-elutasítás: amíg a ceruza aktív, az ujj érintését figyelmen kívül hagyjuk.
 
-let lastPenAt = 0;
+let lastPenAt = -1e9;     // még nem volt ceruza (0-val az oldal betöltése utáni első 4 mp-ben az ujj nem rajzolhatott)
 
 export function attachPen(canvas, { onStart, onMove, onEnd, color = '#8e5be8', baseWidth = 14 } = {}) {
   const ctx = canvas.getContext('2d');
