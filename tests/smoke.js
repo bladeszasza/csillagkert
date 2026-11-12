@@ -89,7 +89,10 @@ async function testStart() {
     if (seenTypes.has(it.type + (it.mode || ''))) continue; seenTypes.add(it.type + (it.mode || ''));
     const ac = new AbortController(), d = host(); setScope(ac.signal);
     let err = null;
-    try { const mod = await import(`../js/activities/${it.type}.js`); const p = mod.run(d, it); p?.catch?.(e => { err = e; }); await wait(150); } catch (e) { err = e; }
+    try {
+      const mod = await import(`../js/activities/${it.type}.js`); const p = mod.run(d, it); p?.catch?.(e => { err = e; });
+      for (let k = 0; k < 60 && !d.children.length && !err; k++) await wait(50);      // a lecke-sor a lépését külön tölti be: lassú hálózaton tovább tart
+    } catch (e) { err = e; }
     ok(`elindul: ${it.type}${it.mode ? ' / ' + it.mode : ''}`, !err && d.children.length > 0, err ? err.message : '');
     ac.abort(); stopSpeaking(); setScope(null); d.remove(); await wait(30);
   }
