@@ -3,7 +3,7 @@
 // változatuk kikerült innen. type → js/activities/<type>.js. A pick(...) segéd: az ELSŐ válasz a helyes (futáskor
 // összekeveredik), formátum: 'emoji név'. A sorrendet az ütemező adja (js/scheduler-core.js), nem ez a lista.
 
-import { withArt, artLetter } from './hu.js';
+import { artLetter } from './hu.js';
 import { MEALS, ANY, friendById } from './friends.js';
 
 // Kijelentések a helyes válaszhoz: kulcs = kérdés|helyes válasz neve. Elhangzik: "Igen! <kijelentés>"
@@ -17,7 +17,6 @@ const FACTS = {
   'Mikor látjuk a csillagokat az égen?|éjszaka': 'Éjszaka, amikor sötét van, látjuk a csillagokat.',
   'Melyik az egészséges?|répa': 'A répa egészséges, sok vitamin van benne.',
   'Hol laktak a királyok és a lovagok régen?|vár': 'A királyok és a lovagok régen várban laktak.',
-  'Mi rímel a kéz szóra?|méz': 'A kéz és a méz rímel egymásra.',
   'Mivel rágunk?|fog': 'A fogunkkal rágunk.',
   'Kinek a kicsinye a csibe?|tyúk': 'A csibe a tyúk kicsinye.',
   'Mivel mosunk fogat?|fogkefe': 'Fogat fogkefével mosunk.',
@@ -26,7 +25,6 @@ const FACTS = {
   'Kik védték a várat?|lovagok': 'A várat a lovagok védték.',
   'Esik az eső. Mit viszünk magunkkal?|esernyő': 'Esőben esernyőt viszünk magunkkal.',
   'Mivel fogjuk meg a kanalat?|kéz': 'A kanalat a kezünkkel fogjuk meg.',
-  'Melyik állat neve kezdődik S betűvel?|sün': 'A sün, a sapka és a sajt is ugyanazzal a hanggal kezdődik.',
   'Mivel szagolunk?|orr': 'Az orrunkkal szagolunk.',
   'Mivel érezzük az ízeket?|nyelv': 'A nyelvünkkel érezzük az ízeket.',
   'Hány ujjunk van két kezünkön?|tíz': 'Két kezünkön tíz ujjunk van.',
@@ -53,7 +51,6 @@ const opt = (s, ok) => { const i = s.indexOf(' '); return i < 0 ? { t: s, ok } :
 const pick = (icon, prompt, correct, ...wrong) => ({ type: 'pick', icon, prompt, fact: FACTS[prompt + '|' + (opt(correct, true).name || '')], options: [opt(correct, true), ...wrong.map(w => opt(w, false))] });
 const withQ = (q, p) => ({ ...p, q });
 const order = (icon, prompt, ...steps) => ({ type: 'order', icon, prompt, fact: ORDER_FACTS[prompt], steps: steps.map(s => opt(s)) });
-const word = (t, name, ...parts) => ({ type: 'clap', word: { t, name, parts } });
 const music = (mode, notes, say) => ({ type: 'music', mode, notes, say });
 const algo = o => ({ type: 'algo', ...o });
 // Állatetetés: a kert valódi lakóját etetjük (js/friends.js: ki mit eszik). A kulcs az állat és a jó étel párja.
@@ -63,25 +60,15 @@ const feed = ([kind, good, ...rest]) => {
   return good === ANY ? { ...base, key: `feed-${kind}-mind`, any: rest } : { ...base, key: `feed-${kind}-${good}`, good, wrong: rest };
 };
 
-// Betűlecke: 1) betű átírása, 2–3) melyik szó kezdődik ezzel a hanggal? — egyetlen csillagért.
-// A kérdésben mindig a MÁSIK helyes szó a példa, hogy ne áruljuk el a választ. Csak egyszerű hangokkal kezdődő szavak.
-const WRONG = { alma: '🍎 alma', kutya: '🐶 kutya', macska: '🐱 macska', labda: '⚽ labda', fa: '🌳 fa', beka: '🐸 béka' };
-function lesson(L, [w1, w2], wrongs) {
-  const wa = wrongs.slice(0, 2).map(k => WRONG[k]), wb = wrongs.slice(1, 3).map(k => WRONG[k]);
-  const q = (right, example, wr) => ({ ...pick('🔤', `Melyik szó kezdődik ${L} betűvel?`, right, ...wr),
-    say: `Melyik szó kezdődik ugyanazzal a hanggal, mint ${withArt(example.split(' ')[1])}?`,
-    fact: `${withArt(right.split(' ')[1], true)} ugyanazzal a hanggal kezdődik, mint ${withArt(example.split(' ')[1])}.` });
-  return { type: 'seq', icon: '🔤', key: 'betu-' + L, steps: [
-    { type: 'betu', text: L, say: `Fesd át ${artLetter(L)} ${L} betűt!` },
-    q(w1, w2, wa), q(w2, w1, wb),
-  ] };
-}
+// Betű átírása (Ceruzavár). A betűleckék hang-kérdései a Hangok háza sablonjaiba kerültek (js/content/hang.js);
+// a betűk átírása itt marad, amíg a Ceruzavár is sablonokból nem jön (M4 harmadik része).
+const letter = L => ({ type: 'betu', text: L, say: `Fesd át ${artLetter(L)} ${L} betűt!` });
 
 const BASE = [
   // ✏️ Ceruzavár · 🔤 Hangok · 🌍 Világunk · 🍎 Egészség · 🫀 Testünk · 🏺 Időutazás · 🎵 Zene · 🤖 Robotpálya · 🎨 Rajz
   { type: 'trace', path: 'hullam', say: 'Kövesd a hullámos vonalat a kiscicától a csillagig!' },
   music('highlow', [], 'Ismerkedjünk a hangokkal! Vannak mély és magas hangok.'),
-  lesson('A', ['🍎 alma', '🚗 autó'], ['kutya', 'macska', 'labda']),
+  letter('A'),
   algo({ w: 4, h: 2, start: [0, 0], goal: [3, 0], max: 5, say: 'Ismerkedj a robottal! Nyomd meg a jobbra nyilat annyiszor, ahányat a robotnak lépnie kell, aztán indítsd el!' }),
   pick('🫀', 'Melyik szerv pumpálja a vért?', '❤️ szív', '🧠 agy', '🦷 fog'),
   pick('🏺', 'Melyik állat élt nagyon régen, és ma már nem él?', '🦖 dinoszaurusz', '🐶 kutya', '🐱 cica'),
@@ -95,7 +82,6 @@ const BASE = [
   pick('🏺', 'Mivel melegedtek az ősemberek?', '🔥 tűz', '🧊 jég', '🌧️ eső'),
 
   { type: 'trace', path: 'cikcak' },
-  word('🍎', 'alma', 'al', 'ma'),
   pick('🌍', 'Ki oltja a tüzet?', '🧑‍🚒 tűzoltó', '🧑‍⚕️ orvos', '🧑‍🍳 szakács'),
   music('learn', ['szo', 'mi', 'la']),
   order('🍎', 'Hogyan mossunk kezet? Koppints sorrendben!', '🚰 vizezd be', '🧼 szappanozd be', '🫧 dörzsöld habosra', '💧 öblítsd le', '🧻 töröld meg'),
@@ -103,7 +89,7 @@ const BASE = [
   { type: 'betu', useName: true, text: 'M', say: 'Írd át a betűket! Ez a te neved!' },
 
   { type: 'trace', path: 'kor' },
-  lesson('M', ['🐱 macska', '🐷 malac'], ['alma', 'kutya', 'labda']),
+  letter('M'),
   algo({ w: 3, h: 3, start: [0, 2], goal: [2, 0], max: 6 }),
   pick('🌍', 'Mikor látjuk a csillagokat az égen?', '🌙 éjszaka', '☀️ délben', '🌤️ délután'),
   music('loud', [], 'Vannak halk és hangos hangok is.'),
@@ -113,7 +99,6 @@ const BASE = [
 
   { type: 'trace', path: 'hurok' },
   music('same', [], 'Figyeld meg, egyforma-e két hang!'),
-  pick('🔤', 'Mi rímel a kéz szóra?', '🍯 méz', '🐱 cica', '🌞 nap'),
   pick('🫀', 'Mivel rágunk?', '🦷 fog', '👃 orr', '👂 fül'),
   music('learn', ['mi', 're', 'do']),
   withQ('🐥', pick('🌍', 'Kinek a kicsinye a csibe?', '🐔 tyúk', '🐮 tehén', '🐷 malac')),
@@ -121,8 +106,7 @@ const BASE = [
   { type: 'draw', template: 'virag' },
 
   { type: 'trace', path: 'hegyek' },
-  word('🐘', 'elefánt', 'e', 'le', 'fánt'),
-  lesson('O', ['✂️ olló', '👃 orr'], ['alma', 'kutya', 'macska']),
+  letter('O'),
   order('🤖', 'Hogyan készítünk szendvicset? Koppints sorrendben!', '🍞 kenyeret veszünk elő', '🧈 megkenjük vajjal', '🧀 sajtot teszünk rá', '🥪 megesszük'),
   pick('🌍', 'Melyik nap jön péntek után?', '🎈 szombat', '🎒 hétfő', '📚 szerda'),
   pick('🫀', 'Mivel hallunk?', '👂 fül', '👃 orr', '🦶 láb'),
@@ -131,10 +115,9 @@ const BASE = [
 
   { type: 'trace', path: 'spiral' },
   music('updown', [], 'A hang felfelé is mehet, lefelé is.'),
-  word('🦋', 'pillangó', 'pil', 'lan', 'gó'),
   order('🌍', 'Mi történik a nap folyamán? Koppints sorrendben!', '🌅 reggel', '☀️ dél', '🌇 este', '🌙 éjszaka'),
   order('🫀', 'Hogyan változunk az évek alatt? Koppints sorrendben!', '👶 baba', '🧒 gyerek', '🧑 felnőtt', '🧓 idős'),
-  lesson('L', ['⚽ labda', '💡 lámpa'], ['macska', 'alma', 'kutya']),
+  letter('L'),
   algo({ w: 4, h: 3, start: [0, 0], goal: [3, 2], walls: [[1, 0], [1, 1]], max: 6 }),
   pick('🏺', 'Kik védték a várat?', '⚔️ lovagok', '🧑‍🏫 tanítók', '🧑‍🎨 festők'),
 
@@ -143,19 +126,16 @@ const BASE = [
   pick('🌍', 'Esik az eső. Mit viszünk magunkkal?', '☂️ esernyő', '🕶️ napszemüveg', '🩴 papucs'),
   pick('🫀', 'Mivel fogjuk meg a kanalat?', '✋ kéz', '🦶 láb', '👃 orr'),
   order('🏺', 'Hogyan változott a közlekedés? Koppints sorrendben!', '🐎 ló', '🚂 vonat', '🚗 autó', '✈️ repülő'),
-  lesson('K', ['🐶 kutya', '👒 kalap'], ['macska', 'alma', 'labda']),
+  letter('K'),
   algo({ w: 4, h: 3, start: [0, 0], goal: [3, 2], prefill: ['right', 'right', 'right', 'down'], max: 6 }),
 
   { type: 'trace', path: 'hullam' },
-  word('🌻', 'napraforgó', 'nap', 'ra', 'for', 'gó'),
-  { ...pick('🔤', 'Melyik állat neve kezdődik S betűvel?', '🦔 sün', '🐝 méh', '🦆 kacsa'), say: 'Melyik állat neve kezdődik ugyanúgy, mint a sapka?' },
   pick('🫀', 'Mivel szagolunk?', '👃 orr', '👂 fül', '👀 szem'),
   order('🌍', 'Hogyan nő a virág? Koppints sorrendben!', '🫘 mag', '🌱 csíra', '🌷 virág'),
   pick('🫀', 'Mivel érezzük az ízeket?', '👅 nyelv', '👀 szem', '✋ kéz'),
-  lesson('T', ['🐮 tehén', '🥚 tojás'], ['kutya', 'alma', 'labda']),
+  letter('T'),
   algo({ w: 6, h: 2, start: [0, 0], goal: [5, 1], loops: true, max: 4, say: 'Új gombok: a kétszer és a háromszor gomb! Így egy nyíllal többet lépsz. Segítsd a robotot a csillaghoz!' }),
 
-  word('🐱', 'macska', 'macs', 'ka'),
   pick('🫀', 'Hány ujjunk van két kezünkön?', '🔟 tíz', '5️⃣ öt', '8️⃣ nyolc'),
   pick('🫀', 'Mit csinálunk, ha álmosak vagyunk?', '😴 alszunk', '🏃 szaladgálunk', '⚽ focizunk'),
   pick('🏺', 'Melyikhez nem kell villany?', '🕯️ gyertya', '💡 villanykörte', '📺 tévé'),

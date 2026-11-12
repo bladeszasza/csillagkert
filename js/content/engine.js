@@ -7,8 +7,9 @@ import { rng } from './rng.js';
 import { SZAMOL } from './szamol.js';
 import { FORMA } from './forma.js';
 import { OKOS } from './okos.js';
+import { HANG } from './hang.js';
 
-export const TEMPLATES = [...SZAMOL, ...FORMA, ...OKOS];
+export const TEMPLATES = [...SZAMOL, ...FORMA, ...OKOS, ...HANG];
 export const GENERATED = [...new Set(TEMPLATES.map(t => t.station))];
 const BY_ID = new Map(TEMPLATES.map(t => [t.id, t]));
 const TARGETS = new Map();

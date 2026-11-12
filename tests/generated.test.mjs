@@ -67,6 +67,15 @@ test('minden feladat megoldható: a független megoldó ugyanazt a választ tal�
       assert.equal(new Set(it.deck.map(c => c.e)).size, it.pairs, `ismétlődő kártya: ${where}`);
       assert.equal(new Set(it.deck.map(c => c.n)).size, it.pairs, `ismétlődő név: ${where}`);
       for (const c of it.deck) spoken(`Pár: két ${c.n}!`, where);
+    } else if (it.type === 'clap') {
+      // a megoldó a szó magánhangzóit számolja (magyarul egy szótag = egy magánhangzó), a feladat a szótagokat tapsoltatja
+      const w = it.word;
+      assert.ok(w && w.t && w.name && Array.isArray(w.parts), `hiányos szó: ${where}`);
+      assert.equal(w.parts.join(''), w.name, `a szótagok nem adják ki a szót: ${where}`);
+      assert.equal(w.parts.length, ans, `a szótagszám nem a magánhangzók száma: ${where}`);
+      for (const p of w.parts) assert.equal((p.match(/[aáeéiíoóöőuúüű]/g) || []).length, 1, `egy szótagban egy magánhangzó kell: ${where}`);
+      assert.ok(w.parts.length <= 6, where);
+      spoken(`${w.parts.join(', ')}. ${w.name}! Két szótag.`, where); spoken(`Tapsold el a szót: ${w.name}!`, where); spoken(`Most te jössz: ${w.name}!`, where);
     } else assert.fail(`ismeretlen feladattípus: ${it.type} (${where})`);
   }
 });

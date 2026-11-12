@@ -22,6 +22,9 @@ export function run(container, { word }) {
       </div>`;
     const tapsEl = container.querySelector('#taps'), btn = container.querySelector('.clap');
     let taps = 0, timer = null, locked = true, fails = 0, finish;
+    // a zárolás a gombon is látszik (data-locked): a böngészős teszt ebből tudja, mikor tapsolhat
+    const lock = v => { locked = v; btn.dataset.locked = v ? '1' : '0'; };
+    lock(true);
     const done = new Promise(r => { finish = r; });
     const reset = () => { taps = 0; tapsEl.innerHTML = ''; };
     const addDot = () => { const d = document.createElement('span'); d.className = 'dot on'; tapsEl.appendChild(d); };
@@ -37,13 +40,13 @@ export function run(container, { word }) {
       await sleep(500); reset();
     }
     async function judge() {
-      locked = true;
+      lock(true);
       if (taps === n) { await say(`${word.parts.join(', ')}. ${word.name}! ${COUNT[n] || n} szótag.`); finish(); return; }
       fails++;
       await say(fails === 1 ? 'Tapsoljuk el együtt, lassan!' : 'Figyeld, így tapsolom!', { remember: false });
       await demo();
       await say(`Most te jössz: ${word.name}!`, { remember: false });
-      locked = false;
+      lock(false);
     }
     btn.addEventListener('click', () => {
       if (locked) return;
@@ -57,7 +60,7 @@ export function run(container, { word }) {
       await demo(); progress.set({ clapShown: true });
       await say(`Most te jössz! Tapsold el: ${word.name}!`);
     } else await say(`Tapsold el a szót: ${word.name}!`);
-    locked = false;
+    lock(false);
     await done;
     return { wrong: fails };
   })();

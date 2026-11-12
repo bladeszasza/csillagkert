@@ -35,6 +35,15 @@ async function solveMemory(d, done) {
   await waitFor(done, 4000);
 }
 
+// tapsolás: a megoldó annyit tapsol, ahány magánhangzó van a szóban (a gomb data-locked jelzi, mikor lehet)
+async function solveClap(d, n, mistake) {
+  const open = () => d.querySelector('.clap[data-locked="0"]');
+  if (!await waitFor(open, 20000)) throw new Error('a tapsoló gomb nem nyílt meg');
+  const tap = async k => { for (let i = 0; i < k; i++) { d.querySelector('.clap').click(); await wait(150); } };
+  if (mistake) { await tap(n + 1); await waitFor(() => d.querySelector('.clap[data-locked="1"]'), 4000); if (!await waitFor(open, 30000)) throw new Error('tévedés után nem nyílt meg újra'); }
+  await tap(n);
+}
+
 export async function testContent(ok) {
   const runs = [], badLines = [];
   for (const t of TEMPLATES) {
@@ -52,7 +61,9 @@ export async function testContent(ok) {
     const p = Promise.resolve(mod.run(d, item)).then(r => { result = r || {}; }, e => { err = e; });
     await wait(180);
     try {
+      const tpl = TEMPLATES.find(t => t.id === item.template);
       if (item.type === 'memory') await solveMemory(d, () => result);
+      else if (item.type === 'clap') { if (mistake) mistakes++; await solveClap(d, tpl.solve(item), mistake); await waitFor(() => result || err, 10000); }
       else {
         if (item.memo) await waitFor(() => d.querySelector('.answer'), item.memo.ms + 4000);     // "Mi tűnt el?": előbb a kép
         if (mistake) { buttonFor(d, item, false).click(); mistakes++; for (let k = 0; k < 40 && d.querySelector('.shake'); k++) await wait(50); await wait(150); }

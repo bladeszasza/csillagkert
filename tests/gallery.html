@@ -34,6 +34,7 @@
       const card = document.createElement('div'); card.className = 'gcard';
       const body = it.type === 'pick' ? markup(it, it.options)
         : it.type === 'memory' ? `<div class="activity"><div class="prompt">memória: ${it.deck.length} pár</div><div class="qbox" style="font-size:60px">${it.deck.map(c => `<span title="${c.n}">${c.e}</span>`).join(' ')}</div><div class="prompt">${it.deck.map(c => c.n).join(', ')}</div></div>`
+        : it.type === 'clap' ? `<div class="activity"><div class="prompt">tapsolás: ${it.word.parts.join('-')}</div><div class="items"><span class="item" style="font-size:150px">${it.word.t}</span></div><div class="prompt">${it.word.name} · ${it.word.parts.length} szótag</div></div>`
         : `<div class="activity"><div class="prompt">${it.type} ${JSON.stringify({ n: it.n, a: it.a, b: it.b, op: it.op })}</div></div>`;
       card.innerHTML = `<div class="gin">${body}</div><p>${x.id} · ${x.level}. szint</p>`;
       if (it.type === 'pick') card.querySelectorAll('.answer').forEach(b => { if (it.options[+b.dataset.i].ok) b.classList.add('ok-mark'); });

@@ -478,6 +478,7 @@ button { touch-action: none; }
 .seq.long svg { width: clamp(30px, 6vmin, 48px) !important; }
 .answer.pic .trio { display: flex; gap: 2px; font-size: .5em; }
 .big1 { font-size: clamp(80px, 16vmin, 130px); line-height: 1; }
+.letter1 { font-size: clamp(90px, 18vmin, 150px); line-height: 1; font-weight: 800; color: #6b3fd4; font-family: "Trebuchet MS", system-ui, sans-serif; }
 .analog { display: inline-flex; align-items: center; gap: 8px; font-size: clamp(40px, 8vmin, 70px); }
 .analog i { font-style: normal; } .analog b { color: var(--purple); font-size: .7em; } .analog s { width: 28px; }
 .analog b.next { border: 4px dashed #c9b3f5; border-radius: 14px; padding: 0 12px; }
