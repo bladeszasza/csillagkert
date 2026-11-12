@@ -17,7 +17,10 @@ export function attachPen(canvas, { onStart, onMove, onEnd, color = '#8e5be8', b
     if (canvas.width > 1 && canvas.height > 1) { snap = document.createElement('canvas'); snap.width = canvas.width; snap.height = canvas.height; snap.getContext('2d').drawImage(canvas, 0, 0); }
     canvas.width = nw; canvas.height = nh;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    if (snap) ctx.drawImage(snap, 0, 0, nw, nh);
+    if (snap) {                              // arányosan, középre igazítva (forgatásnál ne torzuljon a rajz)
+      const k = Math.min(nw / snap.width, nh / snap.height), dw = snap.width * k, dh = snap.height * k;
+      ctx.drawImage(snap, (nw - dw) / 2, (nh - dh) / 2, dw, dh);
+    }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   }
@@ -34,10 +37,13 @@ export function attachPen(canvas, { onStart, onMove, onEnd, color = '#8e5be8', b
     return performance.now() - lastPenAt > 4000;
   }
 
+  let activeType = '';
   canvas.addEventListener('pointerdown', e => {
-    if (active !== null || !allowed(e)) return;
+    // A ceruza mindig elsőbbséget kap: ha előbb a tenyér (ujj) ért le, a Pencil átveszi a rajzolást.
+    const penTakesOver = e.pointerType === 'pen' && active !== null && activeType !== 'pen';
+    if ((active !== null && !penTakesOver) || !allowed(e)) return;
     e.preventDefault();
-    active = e.pointerId;
+    active = e.pointerId; activeType = e.pointerType;
     last = pos(e);
     try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* nem kritikus */ }
     ctx.fillStyle = color; ctx.beginPath(); ctx.arc(last.x, last.y, widthFor(e) / 2, 0, 7); ctx.fill();
@@ -46,6 +52,7 @@ export function attachPen(canvas, { onStart, onMove, onEnd, color = '#8e5be8', b
   canvas.addEventListener('pointermove', e => {
     if (e.pointerId !== active) return;
     e.preventDefault();
+    if (e.pointerType === 'pen') lastPenAt = performance.now();   // hosszú vonás közben is ceruzásnak számít (a tenyér ne rajzoljon)
     const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
     for (const ev of (events.length ? events : [e])) {
       const p = pos(ev);
@@ -57,7 +64,8 @@ export function attachPen(canvas, { onStart, onMove, onEnd, color = '#8e5be8', b
   });
   const end = e => {
     if (e.pointerId !== active) return;
-    active = null; onEnd?.(e);
+    if (e.pointerType === 'pen') lastPenAt = performance.now();
+    active = null; activeType = ''; onEnd?.(e);
   };
   canvas.addEventListener('pointerup', end);
   canvas.addEventListener('pointercancel', end);

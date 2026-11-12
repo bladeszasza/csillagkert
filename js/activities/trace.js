@@ -14,6 +14,7 @@ export const PATHS = {
   },
   hurok: t => ({ x: 0.12 + 0.76 * t + 0.16 * Math.sin(t * Math.PI * 6), y: 0.5 - 0.22 * Math.cos(t * Math.PI * 6) }),
   kor: t => ({ x: 0.5 + 0.26 * Math.sin(t * Math.PI * 2), y: 0.5 - 0.3 * Math.cos(t * Math.PI * 2) }),
+  nyolcas: t => ({ x: 0.5 + 0.32 * Math.sin(t * Math.PI * 2), y: 0.5 - 0.26 * Math.sin(t * Math.PI * 4) }),
   hegyek: t => ({ x: 0.08 + 0.84 * t, y: 0.72 - 0.4 * Math.abs(Math.sin(t * Math.PI * 3)) }),
   spiral: t => { const a = t * Math.PI * 5, r = 0.06 + 0.26 * t; return { x: 0.5 + r * Math.cos(a) * 1.1, y: 0.5 + r * Math.sin(a) }; },
   lejto: t => ({ x: 0.1 + 0.8 * t, y: 0.25 + 0.5 * t * t * (3 - 2 * t) }),
@@ -91,8 +92,13 @@ export function run(container, { path = 'hullam', say: sayText }) {
       gctx.restore();
     }
 
+    const near = (p, q) => (p.x - q.x) ** 2 + (p.y - q.y) ** 2 < TOL * TOL;
     function check(p) {
       let moved = false;
+      // zárt alakzat (kör): ha a gyerek a másik irányba indul, megfordítjuk az útvonalat
+      if (reached <= 1 && !flipped && Math.hypot(points[0].x - points[N].x, points[0].y - points[N].y) < 10) {
+        for (let k = 3; k <= 7; k++) if (near(p, points[N - k]) && !near(p, points[k])) { flipped = true; points.reverse(); draw(); break; }
+      }
       for (let i = Math.min(N, reached + 6); i > reached; i--) {
         const q = points[i];
         if ((p.x - q.x) ** 2 + (p.y - q.y) ** 2 < TOL * TOL) { reached = i; moved = true; break; }
@@ -109,7 +115,7 @@ export function run(container, { path = 'hullam', say: sayText }) {
       }
       check(p);
     }
-    let timer = null;
+    let timer = null, nags = 0;
     function finish() {
       done = true; hint = false; reached = N; draw(); clearInterval(timer);
       setTimeout(resolve, 700);
@@ -123,7 +129,7 @@ export function run(container, { path = 'hullam', say: sayText }) {
     timer = setInterval(() => {
       if (!ink.isConnected) { clearInterval(timer); return; }
       if (done) return;
-      if (reached === lastSeen) { hint = true; draw(); say(instruction, { remember: false }); }
+      if (reached === lastSeen) { hint = true; draw(); if (nags++ % 3 === 0 && nags <= 7) say(instruction, { remember: false }); }   // a pötty mindig felvillan, a mondat csak ritkán ismétlődik
       lastSeen = reached;
     }, 6000);
     say(instruction);

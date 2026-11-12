@@ -3,6 +3,7 @@
 // (Az elemek a lapon belüli elemek, nem vászonra rajzolt emoji, így minden eszközön színesek.)
 import { say } from '../voice.js';
 import { happy, unlockAudio } from '../sounds.js';
+import { ding } from '../audio.js';
 import { createStage } from './stage3d.js';
 import { makeGardenCat, animateCat, CAT_HEIGHT } from './cat3d.js';
 
@@ -19,7 +20,7 @@ export function run(container) {
     </div>`;
   const root = container.querySelector('.fc'), layer = root.querySelector('.fc-layer'), cat = root.querySelector('.fc-cat');
   const fill = root.querySelector('.fc-fill'), msg = root.querySelector('.fc-msg');
-  let w = 0, h = 0, raf = 0, audio = null, catX = 0.5, full = 0, resting = false, acc = 0, last = performance.now();
+  let w = 0, h = 0, raf = 0, catX = 0.5, full = 0, resting = false, acc = 0, last = performance.now(), restTimer = 0;
   const drops = [];
   let st3 = null, cat3 = null, hopUntil = 0, nomUntil = 0;
   try { st3 = createStage(root); cat3 = st3.add(makeGardenCat()); cat.style.opacity = 0; } catch (e) { console.warn('3D cica nem indult el', e); st3 = null; }
@@ -29,12 +30,8 @@ export function run(container) {
   const ro = 'ResizeObserver' in window ? new ResizeObserver(size) : null; ro?.observe(root);
   window.addEventListener('resize', size);
 
-  function unlock() { unlockAudio(); try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); } catch (e) {} }
-  function chime(f = 700) {
-    try { if (!audio) return; const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime;
-      o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.35, t); g.gain.exponentialRampToValueAtTime(.001, t + .3);
-      o.connect(g); g.connect(audio.destination); o.start(t); o.stop(t + .3); } catch (e) {}
-  }
+  const unlock = () => unlockAudio();
+  const chime = (f = 700) => ding(f, { dur: 0.3, vol: 0.7 });
   const move = e => { const r = root.getBoundingClientRect(); catX = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); unlock(); };
   root.addEventListener('pointerdown', move); root.addEventListener('pointermove', move); root.addEventListener('pointerup', unlock);
 
@@ -46,7 +43,7 @@ export function run(container) {
   async function purr() {
     resting = true; hopUntil = performance.now() + 3000; cat.textContent = '😻'; cat.classList.add('purr'); msg.textContent = 'Jóllakott! ❤️';
     say('Jóllakott a cica! Nyam-nyam!', { remember: false });
-    setTimeout(() => { full = 0; fill.style.width = '0%'; cat.textContent = '🐱'; cat.classList.remove('purr'); cat.style.setProperty('--belly', 1); msg.textContent = ''; resting = false; }, 3000);
+    restTimer = setTimeout(() => { full = 0; fill.style.width = '0%'; cat.textContent = '🐱'; cat.classList.remove('purr'); cat.style.setProperty('--belly', 1); msg.textContent = ''; resting = false; }, 3000);
   }
 
   function frame(now) {
@@ -80,5 +77,5 @@ export function run(container) {
     raf = requestAnimationFrame(frame);
   }
   raf = requestAnimationFrame(frame);
-  return () => { cancelAnimationFrame(raf); st3?.dispose(); ro?.disconnect(); window.removeEventListener('resize', size); try { audio && audio.close(); } catch (e) {} };
+  return () => { cancelAnimationFrame(raf); clearTimeout(restTimer); st3?.dispose(); ro?.disconnect(); window.removeEventListener('resize', size); };
 }

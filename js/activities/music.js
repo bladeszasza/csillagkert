@@ -1,137 +1,203 @@
-// Hangok tanítása: Rozi megmutatja és kimondja a hangot, megszólaltatja (1 mp), szünet (1 mp),
-// aztán a gyereknek fel kell ismernie. Módok:
-//   learn   – szolmizáció (dó ré mi fá szó lá szí; a betűneve is: C D E F G A H), majd felismerés
-//   highlow – mély és magas hang, majd "melyik volt a magasabb?"
-//   loud    – halk és hangos hang, majd "melyik volt a hangosabb?"
-import { say } from '../voice.js';
-import { artLetter } from '../hu.js';
+// Zenevár: hallás-fejlesztés a Kodály-úton (viszonyított hallás, nem "melyik hang ez?" vakon).
+// Módok:
+//   learn   – 2–3 harang neve (szó–mi-vel kezdve); a harangok megkoppinthatók; aztán "melyik harang szólt?"
+//   highlow – mély és magas hang; két harang szól egymás után: "melyik volt a magasabb?"
+//   loud    – halk és hangos hang; "melyik volt a hangosabb?"
+//   same    – "egyforma volt a két hang, vagy különböző?"
+//   updown  – "feljebb ment a hang, vagy lejjebb?"
+// Minden hang a közös hangmotoron szól (js/audio.js): kitartott, felhangokban gazdag, jól hallható.
+import { say, setRepeatHandler } from '../voice.js';
+import { playNote, unlock } from '../audio.js';
+import { sleep, every } from '../scope.js';
+import { progress } from '../progress.js';
 
 const NOTES = {
-  do: { f: 261.63, c: '#ff5d5d', name: 'dó', letter: 'C' },
-  re: { f: 293.66, c: '#ff9f43', name: 'ré', letter: 'D' },
-  mi: { f: 329.63, c: '#ffd93d', name: 'mi', letter: 'E' },
-  fa: { f: 349.23, c: '#4cc38a', name: 'fá', letter: 'F' },
-  szo: { f: 392.0, c: '#3bb7c9', name: 'szó', letter: 'G' },
-  la: { f: 440.0, c: '#4a7dff', name: 'lá', letter: 'A' },
-  szi: { f: 493.88, c: '#9b5de5', name: 'tí', letter: 'H' },
+  do: { f: 523.25, c: '#ff5d5d', name: 'dó' },
+  re: { f: 587.33, c: '#ff9f43', name: 'ré' },
+  mi: { f: 659.25, c: '#d99a00', name: 'mi' },
+  fa: { f: 698.46, c: '#3fae7c', name: 'fá' },
+  szo: { f: 783.99, c: '#2fa3b8', name: 'szó' },
+  la: { f: 880.0, c: '#4a7dff', name: 'lá' },
+  ti: { f: 987.77, c: '#9b5de5', name: 'ti' },
 };
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+NOTES.szi = NOTES.ti;                                   // régi kulcs
 const rnd = a => a[Math.floor(Math.random() * a.length)];
-let actx = null;
+let hearingChecked = false;                             // laponként egyszer kérdezzük meg: "Hallod a csengőt?"
 
-function ctx() {
-  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume(); } catch (e) {}
-  return actx;
-}
-// Egy hang megszólaltatása (szinusz + háromszög, puha lecsengés). Visszatér, ha lejárt.
-function tone(freq, { dur = 1.1, vol = 0.3 } = {}) {
-  const c = ctx(); if (!c) return sleep(dur * 1000);
-  const t = c.currentTime;
-  for (const [type, g] of [['sine', 1], ['triangle', 0.35]]) {
-    const o = c.createOscillator(), gain = c.createGain();
-    o.type = type; o.frequency.value = freq;
-    gain.gain.setValueAtTime(0.0001, t); gain.gain.exponentialRampToValueAtTime(vol * g, t + 0.03);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(gain); gain.connect(c.destination); o.start(t); o.stop(t + dur + 0.05);
-  }
-  return sleep(dur * 1000);
-}
-
-export function run(container, { mode = 'learn', notes = ['do', 'mi', 'szo'], say: sayText }) {
-  return new Promise(async resolve => {
-    let alive = true;
-    const html = inner => { container.innerHTML = `<div class="activity"><div class="prompt" id="mprompt"></div>${inner}</div>`; };
+export function run(container, { mode = 'learn', notes = ['szo', 'mi'], say: sayText }) {
+  return (async () => {
+    unlock();
+    const html = inner => { container.innerHTML = `<div class="activity music"><div class="prompt" id="mprompt"></div>${inner}</div>`; };
     const setPrompt = t => { const el = container.querySelector('#mprompt'); if (el) el.textContent = t; };
-    const alivePing = () => alive && container.isConnected && container.querySelector('#mprompt');
+    const $$ = sel => [...container.querySelectorAll(sel)];
+    // hang + látható jelzés: a megszólaló harang lüktet
+    const sound = async (el, f, opts = {}) => { el?.classList.add('playing'); await playNote(f, { dur: 1.0, inst: 'piano', ...opts }); el?.classList.remove('playing'); };
+    const bellHtml = (k, extra = '') => `<button class="answer key bell ${extra}" data-k="${k}" style="background:${NOTES[k].c}"><span>🔔</span><small>${NOTES[k].name}</small></button>`;
 
-    // ---- tanítás ----
-    async function teachNote(key) {
-      const n = NOTES[key];
-      html(`<div class="answers"><div class="answer key big" style="background:${n.c}">${n.name}<small>${n.letter}</small></div></div>`);
-      setPrompt('Hallgasd meg a hangot! 🎵');
-      const k = container.querySelector('.key');
-      await say(`Ez a ${n.name} hang. Más néven ${artLetter(n.letter)} ${n.letter} hang. Hallgasd meg!`);
-      if (!alivePing()) return false;
-      k.classList.add('ring'); await tone(n.f, { dur: 1.2 }); k.classList.remove('ring');
-      await sleep(1000);                                   // 1 másodperc csend, hogy "megülepedjen"
-      return !!alivePing();
-    }
-    async function teachTwo(a, b) { // a, b: [felirat, frekvencia, hangerő, szín, mondat]
-      for (const x of [a, b]) {
-        html(`<div class="answers"><div class="answer key big" style="background:${x.c}">${x.icon}<small>${x.label}</small></div></div>`);
-        setPrompt(x.title);
-        await say(x.say); if (!alivePing()) return false;
-        container.querySelector('.key').classList.add('ring'); await tone(x.f, { dur: 1.2, vol: x.vol }); await sleep(1000);
-        if (!alivePing()) return false;
+    // ---- hallás-próba (egyszer): ha a gyerek nem hallja a csengőt, szólunk a felnőttnek ----
+    async function hearingCheck() {
+      if (hearingChecked) return; hearingChecked = true;
+      html(`<div class="answers"><div class="answer key bell big" id="hb" style="background:#8e5be8"><span>🔔</span></div></div>
+            <div class="answers"><button class="answer pic" data-h="1">👍</button><button class="answer pic" data-h="0">🙉</button></div>
+            <div class="hearhelp" id="hearhelp" hidden>🔊⬆️ &nbsp; 🔕❌<small>Szülőknek: hangosítsd fel az iPadet, és kapcsold ki a néma módot (Vezérlőközpont → harang).</small><button class="answer pic" id="hgo">▶</button></div>`);
+      setPrompt('Hallod a csengőt? 👂');
+      const hb = container.querySelector('#hb');
+      const play = async () => { await sound(hb, 784, { inst: 'bell', dur: 0.9 }); await sleep(150); await sound(hb, 1047, { inst: 'bell', dur: 0.9 }); };
+      setRepeatHandler(play);
+      await say('Hallod a csengőt? Ha hallod, koppints a felfelé mutató hüvelykujjra!', { remember: false });
+      play();
+      const heard = await new Promise(done => $$('[data-h]').forEach(b => b.addEventListener('click', () => done(b.dataset.h === '1'), { once: true })));
+      progress.set({ heardBell: heard });
+      if (!heard) {
+        container.querySelector('#hearhelp').hidden = false;
+        await say('Semmi baj! Kérj meg egy felnőttet, hogy hangosítsa fel. Ha kész, koppints a nyílra!', { remember: false });
+        await new Promise(done => container.querySelector('#hgo').addEventListener('click', done, { once: true }));
       }
-      return true;
     }
 
-    // ---- felismerés: szolmizációs hangok ----
-    async function quizNotes(roundsLeft) {
-      const target = rnd(notes);
-      html(`<div class="answers"><button class="answer key replay" aria-label="Újra">🔊</button>${notes.map(k => `<button class="answer key" data-k="${k}" style="background:${NOTES[k].c}">${NOTES[k].name}<small>${NOTES[k].letter}</small></button>`).join('')}</div>`);
-      setPrompt('Melyik hangot hallod? 👂');
-      const keys = [...container.querySelectorAll('.key[data-k]')];
-      let wrong = 0, locked = true;
-      const play = async () => { locked = true; await tone(NOTES[target].f, { dur: 1.1 }); locked = false; };
-      container.querySelector('.replay').addEventListener('click', () => { if (!locked) play(); });
-      await say('Most te jössz! Figyelj, melyik hangot hallod?'); if (!alivePing()) return;
-      await sleep(400); await play();
-      await new Promise(done => keys.forEach(btn => btn.addEventListener('click', async () => {
-        if (locked) return;
-        const k = btn.dataset.k;
-        if (k === target) { locked = true; btn.classList.add('win'); await tone(NOTES[k].f, { dur: 0.6 }); await say(`Igen! Ez a ${NOTES[k].name} hang!`); done(); }
-        else {
-          locked = true; wrong++; btn.classList.add('shake');
-          await say(`Ezt a ${NOTES[k].name} hangot választottad. Hallgasd meg!`, { remember: false });
-          await tone(NOTES[k].f, { dur: 0.9 }); await sleep(300);
-          await say(`Ezt keressük, a ${NOTES[target].name} hangot. Figyeld!`, { remember: false });
-          await tone(NOTES[target].f, { dur: 1.1 });
-          btn.classList.remove('shake'); if (wrong >= 2) keys.find(x => x.dataset.k === target).classList.add('glow'); locked = false;
-        }
+    // ---- harangok neve + szabad kipróbálás + "melyik harang szólt?" ----
+    async function learn() {
+      html(`<div class="answers bells">${notes.map(k => bellHtml(k)).join('')}</div>`);
+      const bells = $$('.bell'), el = k => bells.find(b => b.dataset.k === k);
+      setPrompt('Ezek a harangok 🔔');
+      setRepeatHandler(null);
+      if (sayText) await say(sayText);
+      for (const k of notes) {
+        await say(`Ennek a harangnak a neve: ${NOTES[k].name}.`, { remember: false });
+        await sound(el(k), NOTES[k].f, { dur: 1.3 }); await sleep(500);
+      }
+      // szabad kipróbálás: minden harangot meg kell szólaltatni egyszer
+      setPrompt('Koppints a harangokra! 👆');
+      const tried = new Set();
+      let busy = false;
+      const explore = new Promise(done => bells.forEach(b => b.addEventListener('click', async () => {
+        if (busy) return; busy = true; b.classList.remove('glow');
+        await sound(b, NOTES[b.dataset.k].f, { dur: 0.8 }); busy = false;
+        tried.add(b.dataset.k); if (tried.size === notes.length) done();
       })));
+      await say('Most te jössz! Koppints minden harangra, és hallgasd meg!');
+      const nudge = every(() => bells.filter(b => !tried.has(b.dataset.k)).forEach(b => b.classList.add('glow')), 7000);
+      await explore; clearInterval(nudge); await sleep(400);
+      let prev = null;
+      for (let round = 0; round < 2; round++) prev = await quizBell(prev);
     }
-
-    // ---- felismerés: két hang összehasonlítása ----
-    async function quizCompare(kind) {
-      const hi = kind === 'highlow';
-      const base = hi ? rnd([262, 294, 330]) : 392;
-      const A = hi ? { f: base, vol: 0.3 } : { f: base, vol: 0.06 };
-      const B = hi ? { f: base * 1.75, vol: 0.3 } : { f: base, vol: 0.38 };
-      const firstIsTarget = Math.random() < 0.5;            // melyik a magasabb / hangosabb?
-      const first = firstIsTarget ? B : A, second = firstIsTarget ? A : B;
-      const word = hi ? 'magasabb' : 'hangosabb';
-      html(`<div class="answers"><button class="answer key replay" aria-label="Újra">🔊</button><button class="answer key" data-i="0" style="background:#ffd1e8">1️⃣<small>az első</small></button><button class="answer key" data-i="1" style="background:#cfe8ff">2️⃣<small>a második</small></button></div>`);
-      setPrompt(`Melyik volt a ${word}? 👂`);
-      const buttons = [...container.querySelectorAll('.key[data-i]')];
+    async function quizBell(prev) {
+      const target = rnd(notes.filter(k => k !== prev || notes.length === 1));
+      html(`<div class="answers"><div class="answer key bell mystery" id="myst"><span>🎁</span></div></div><div class="answers bells">${notes.map(k => bellHtml(k)).join('')}</div>`);
+      setPrompt('Melyik harang szólt? 👂');
+      const myst = container.querySelector('#myst'), bells = $$('.bell[data-k]');
       let locked = true, wrong = 0;
-      const play = async () => { locked = true; await tone(first.f, { dur: 0.9, vol: first.vol }); await sleep(500); await tone(second.f, { dur: 0.9, vol: second.vol }); locked = false; };
-      container.querySelector('.replay').addEventListener('click', () => { if (!locked) play(); });
-      await say(`Hallgasd meg két hangot! Melyik a ${word}, az első vagy a második?`); if (!alivePing()) return;
-      await sleep(300); await play();
-      await new Promise(done => buttons.forEach(btn => btn.addEventListener('click', async () => {
-        if (locked) return;
-        const right = (+btn.dataset.i === 0) === firstIsTarget;
-        if (right) { locked = true; btn.classList.add('win'); await say(`Igen! ${firstIsTarget ? 'Az első' : 'A második'} hang volt a ${word}.`); done(); }
-        else { locked = true; wrong++; btn.classList.add('shake'); await say(`Majdnem! Hallgasd meg újra, figyeld, melyik a ${word}!`, { remember: false }); await sleep(200); await play(); btn.classList.remove('shake'); if (wrong >= 2) buttons[firstIsTarget ? 0 : 1].classList.add('glow'); }
+      const playTarget = async () => { locked = true; await sound(myst, NOTES[target].f, { dur: 1.2 }); locked = false; };
+      setRepeatHandler(() => { if (!locked) playTarget(); });
+      await say('Figyelj! Az ajándék-harang megszólal. Melyik harang szól ugyanígy?');
+      await sleep(300); await playTarget();
+      await new Promise(done => bells.forEach(b => b.addEventListener('click', async () => {
+        if (locked) return; locked = true;
+        const k = b.dataset.k;
+        await sound(b, NOTES[k].f, { dur: 0.8 });
+        if (k === target) { b.classList.add('win'); await say(`Igen! Ez a harang szólt: a ${NOTES[k].name}.`, { remember: false }); done(); return; }
+        wrong++; b.classList.add('shake');
+        await say(`Ez a ${NOTES[k].name} volt. Hallgasd, ez szólt:`, { remember: false });
+        b.classList.remove('shake'); await playTarget();
+        if (wrong >= 2) bells.find(x => x.dataset.k === target).classList.add('glow');
       })));
+      return target;
+    }
+
+    // ---- két hang összehasonlítása: a két harang egymás után szól, a gyerek a harangra koppint ----
+    const TEACH = {
+      highlow: [{ icon: '🐻', label: 'mély', f: 196, vol: 0.9, say: 'Ez mély hang. Olyan, mint a medve hangja.' }, { icon: '🐦', label: 'magas', f: 1568, vol: 0.7, say: 'Ez pedig magas hang. Olyan, mint a kismadáré.' }],
+      loud: [{ icon: '🐭', label: 'halk', f: 784, vol: 0.22, say: 'Ez halk hang. Olyan, mint a kisegér.' }, { icon: '🦁', label: 'hangos', f: 784, vol: 1, say: 'Ez pedig hangos hang. Olyan, mint az oroszlán.' }],
+    };
+    async function teachTwo(kind) {
+      for (const x of TEACH[kind]) {
+        html(`<div class="answers"><div class="answer key bell big" style="background:#8e5be8"><span>${x.icon}</span><small>${x.label}</small></div></div>`);
+        setPrompt(`Ez a ${x.label} hang 🎵`);
+        setRepeatHandler(null);
+        await say(x.say); await sound(container.querySelector('.bell'), x.f, { dur: 1.3, vol: x.vol }); await sleep(600);
+      }
+    }
+    async function quizCompare(kind) {
+      const hi = kind === 'highlow', word = hi ? 'magasabb' : 'hangosabb';
+      const base = hi ? rnd([262, 294, 330, 392]) : rnd([659, 784]);
+      const low = hi ? { f: base, vol: 0.85 } : { f: base, vol: 0.22 }, high = hi ? { f: base * 2, vol: 0.8 } : { f: base, vol: 1 };
+      const targetLeft = Math.random() < 0.5, A = targetLeft ? high : low, B = targetLeft ? low : high;
+      html(`<div class="answers bells"><button class="answer key bell" data-i="0" style="background:#ff7ab8"><span>🔔</span></button><button class="answer key bell" data-i="1" style="background:#4a9dff"><span>🔔</span></button></div>`);
+      setPrompt(`Melyik harang volt a ${word}? 👂`);
+      const bells = $$('.bell');
+      let locked = true, wrong = 0;
+      const play = async () => { locked = true; await sound(bells[0], A.f, { vol: A.vol, dur: 1.0 }); await sleep(350); await sound(bells[1], B.f, { vol: B.vol, dur: 1.0 }); locked = false; };
+      setRepeatHandler(() => { if (!locked) play(); });
+      await say(`Két harang szól egymás után. Koppints arra, amelyik ${hi ? 'magasabban' : 'hangosabban'} szólt!`);
+      await sleep(300); await play();
+      await new Promise(done => bells.forEach(b => b.addEventListener('click', async () => {
+        if (locked) return; locked = true;
+        if ((b.dataset.i === '0') === targetLeft) { b.classList.add('win'); await say(`Igen! Ez a harang szólt ${hi ? 'magasabban' : 'hangosabban'}.`, { remember: false }); done(); return; }
+        wrong++; b.classList.add('shake');
+        await say(`Hallgasd meg újra! Figyeld, melyik a ${word}.`, { remember: false });
+        b.classList.remove('shake'); if (wrong >= 2) bells[targetLeft ? 0 : 1].classList.add('glow');
+        await play();
+      })));
+    }
+
+    // ---- kétválaszos hallás-feladat: előbb bemutatjuk mindkét esetet, aztán kérdezünk ----
+    const TWO = {
+      same: {
+        prompt: 'Egyforma vagy különböző? 👂', ask: 'Egyforma volt a két hang, vagy különböző?',
+        opts: [{ id: 'same', html: '<span class="pair"><i style="background:#ff7ab8"></i><i style="background:#ff7ab8"></i></span>', label: 'egyforma', demo: 'Ez a két hang egyforma.', right: 'Igen! A két hang egyforma volt.' },
+               { id: 'diff', html: '<span class="pair"><i style="background:#ff7ab8"></i><i style="background:#4a9dff"></i></span>', label: 'különböző', demo: 'Ez a két hang különböző.', right: 'Igen! A két hang különböző volt.' }],
+        pair(id) { const a = rnd([523.25, 587.33, 659.25, 783.99]); return [a, id === 'same' ? a : a * rnd([1.5, 2, 0.667])]; },
+      },
+      updown: {
+        prompt: 'Feljebb vagy lejjebb? 👂', ask: 'Feljebb ment a hang, vagy lejjebb?',
+        opts: [{ id: 'up', html: '⬆️', label: 'feljebb', demo: 'Most feljebb megy a hang.', right: 'Igen! A hang feljebb ment.' },
+               { id: 'down', html: '⬇️', label: 'lejjebb', demo: 'Most lejjebb megy a hang.', right: 'Igen! A hang lejjebb ment.' }],
+        pair(id) { const a = rnd([523.25, 587.33, 659.25]); return id === 'up' ? [a, a * 1.5] : [a * 1.5, a]; },
+      },
+    };
+    async function twoChoice(kind) {
+      const T = TWO[kind];
+      const screen = () => {
+        html(`<div class="answers"><div class="answer key bell mystery" id="myst"><span>🎵</span></div></div><div class="answers">${T.opts.map(o => `<button class="answer pic two" data-o="${o.id}">${o.html}<small>${o.label}</small></button>`).join('')}</div>`);
+        setPrompt(T.prompt);
+        return { myst: container.querySelector('#myst'), btns: $$('.two') };
+      };
+      const playPair = async (myst, [a, b]) => { await sound(myst, a, { dur: 0.9 }); await sleep(250); await sound(myst, b, { dur: 0.9 }); };
+      // bemutatás
+      let ui = screen(); setRepeatHandler(null);
+      if (sayText) await say(sayText);
+      for (const o of T.opts) {
+        const b = ui.btns.find(x => x.dataset.o === o.id); b.classList.add('glow');
+        await say(o.demo, { remember: false }); await playPair(ui.myst, T.pair(o.id)); await sleep(400); b.classList.remove('glow');
+      }
+      // kérdések
+      let prev = null;
+      for (let round = 0; round < 3; round++) {
+        const target = round === 0 ? rnd(T.opts).id : (Math.random() < 0.7 ? T.opts.find(o => o.id !== prev).id : prev); prev = target;
+        const pair = T.pair(target), right = T.opts.find(o => o.id === target);
+        ui = screen();
+        let locked = true, wrong = 0;
+        const play = async () => { locked = true; await playPair(ui.myst, pair); locked = false; };
+        setRepeatHandler(() => { if (!locked) play(); });
+        await say(T.ask); await sleep(250); await play();
+        await new Promise(done => ui.btns.forEach(b => b.addEventListener('click', async () => {
+          if (locked) return; locked = true;
+          if (b.dataset.o === target) { b.classList.add('win'); await say(right.right, { remember: false }); done(); return; }
+          wrong++; b.classList.add('shake');
+          await say('Hallgasd meg újra!', { remember: false }); b.classList.remove('shake');
+          if (wrong >= 2) ui.btns.find(x => x.dataset.o === target).classList.add('glow');
+          await play();
+        })));
+      }
     }
 
     // ---- menet ----
-    if (mode === 'learn') {
-      if (sayText) await say(sayText);
-      for (const k of notes) { if (!(await teachNote(k))) return; }
-      await quizNotes(); if (!alivePing()) return;
-      await quizNotes();
-    } else {
-      const hi = mode === 'highlow';
-      if (!(await teachTwo(
-        { icon: hi ? '⬇️' : '🔈', label: hi ? 'mély' : 'halk', c: '#cfe8ff', f: hi ? 196 : 392, vol: hi ? 0.3 : 0.06, title: hi ? 'Ez a mély hang 🎵' : 'Ez a halk hang 🎵', say: (sayText ? sayText + ' ' : '') + (hi ? 'Ez egy mély hang. Hallgasd meg!' : 'Ez egy halk hang. Hallgasd meg!') },
-        { icon: hi ? '⬆️' : '🔊', label: hi ? 'magas' : 'hangos', c: '#ffd1e8', f: hi ? 784 : 392, vol: hi ? 0.3 : 0.38, title: hi ? 'Ez a magas hang 🎵' : 'Ez a hangos hang 🎵', say: hi ? 'Ez pedig egy magas hang. Hallgasd meg!' : 'Ez pedig egy hangos hang. Hallgasd meg!' }))) return;
-      await quizCompare(mode); if (!alivePing()) return;
-      await quizCompare(mode);
-    }
-    if (alivePing()) resolve();
-  });
+    await hearingCheck();
+    if (mode === 'learn') await learn();
+    else if (mode === 'highlow' || mode === 'loud') {
+      if (sayText) { html(''); setPrompt('🎵'); await say(sayText); }
+      await teachTwo(mode); await quizCompare(mode); await quizCompare(mode);
+    } else if (TWO[mode]) await twoChoice(mode);
+    setRepeatHandler(null);
+  })();
 }

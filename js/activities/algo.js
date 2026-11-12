@@ -6,7 +6,7 @@ import { say } from '../voice.js';
 import { happy } from '../sounds.js';
 
 const DIRS = { up: [0, -1, '⬆️', 'fel'], down: [0, 1, '⬇️', 'le'], left: [-1, 0, '⬅️', 'balra'], right: [1, 0, '➡️', 'jobbra'] };
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+import { sleep } from '../scope.js';
 
 // legrövidebb út (BFS) a segítséghez: [irányok]
 export function solve({ w, h, start, goal, walls = [] }) {
@@ -60,7 +60,7 @@ export function run(container, level) {
 
     container.querySelectorAll('.acmd[data-d]').forEach(b => b.addEventListener('click', () => {
       if (running || finished || program.length >= max) return;
-      program.push({ dir: b.dataset.d, times: mult }); render(); say(DIRS[b.dataset.d][3] + (mult > 1 ? ` ${mult}-szor` : ''), { remember: false });
+      program.push({ dir: b.dataset.d, times: mult }); render(); say(DIRS[b.dataset.d][3] + (mult > 1 ? ' ' + ['', '', 'kétszer', 'háromszor'][mult] : ''), { remember: false });
     }));
     container.querySelectorAll('.amul').forEach(b => b.addEventListener('click', () => { mult = +b.dataset.m; container.querySelectorAll('.amul').forEach(x => x.classList.toggle('sel', x === b)); }));
     progEl.addEventListener('click', e => { const t = e.target.closest('.atok'); if (!t || running || finished) return; program.splice(+t.dataset.i, 1); render(); });  // koppintásra kikerül a lépés (javítás)

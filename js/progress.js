@@ -32,9 +32,11 @@ export const progress = {
     if (id) state.seen[id] = Date.now();
     save(); return state.meter;
   },
+  // Megszakított (X) feladat: csillag nem jár érte, de "látott"-nak számít, hogy a Tovább ne ugyanazt adja újra
+  skip(id) { if (id) { state.seen[id] = Date.now(); save(); } },
   completeReward() { state.rewardsDone = (state.rewardsDone || 0) + 1; save(); },
   addGift(id) { if (!state.gifts.includes(id)) { state.gifts.push(id); save(); } },
   resetMeter() { state.meter = 0; save(); },
   set(patch) { Object.assign(state, patch); save(); },
-  reset() { const keep = { name: state.name, nameAsked: state.nameAsked, introDone: state.introDone, rewardMinutes: state.rewardMinutes, perReward: state.perReward, voiceURI: state.voiceURI, v2: true }; state = { ...fresh(), seen: {}, ...keep }; save(); },
+  reset() { const keep = { name: state.name, nameAsked: state.nameAsked, introDone: state.introDone, rewardMinutes: state.rewardMinutes, perReward: state.perReward, voiceURI: state.voiceURI, speechVol: state.speechVol, v2: true }; state = { ...fresh(), seen: {}, ...keep }; save(); },
 };

@@ -3,6 +3,7 @@
 // és ajándékba átadjuk. Nincs büntetés: ha rossz helyre kerül, kedvesen visszajön és elmondjuk, hová való.
 import { say } from '../voice.js';
 import { happy, unlockAudio } from '../sounds.js';
+import { ding as chime } from '../audio.js';
 import * as THREE from '../../vendor/three.module.js';
 import { createStage } from './stage3d.js';
 import { makeGardenCat, animateCat, CAT_HEIGHT } from './cat3d.js';
@@ -38,7 +39,7 @@ export function run(container, opts = {}) {
   const root = container.querySelector('.hd'), tray = root.querySelector('#hd-tray'), bubble = root.querySelector('#hd-bubble');
   const pals = [...root.querySelectorAll('.hd-pal')], box = root.querySelector('#hd-box'), giftEl = root.querySelector('#hd-gift');
   const fedEl = root.querySelector('#hd-fed'), giftsEl = root.querySelector('#hd-gifts'), cntEl = root.querySelector('#hd-cnt');
-  let fed = 0, gifts = 0, inBox = 0, current = null, alive = true, busy = false, audio = null;
+  let fed = 0, gifts = 0, inBox = 0, current = null, alive = true, busy = false;
 
   // 3D szereplők: a kertből ismert cica és három barát (nyuszi, kutya, róka), kedves mosollyal
   let st3 = null, raf = 0;
@@ -70,10 +71,10 @@ export function run(container, opts = {}) {
     raf = requestAnimationFrame(loop);
   } catch (e) { console.warn('3D állatok nem indultak el, emoji marad', e); st3 = null; root.querySelectorAll('.hd-pal .face').forEach(f => { f.style.opacity = 1; }); }
 
-  function unlock() { try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); } catch (e) {} }
-  function ding(f = 660, d = 0.25) { try { if (!audio) return; const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime; o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.3, t); g.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(g); g.connect(audio.destination); o.start(t); o.stop(t + d + .05); } catch (e) {} }
-  root.addEventListener('pointerdown', () => { unlock(); unlockAudio(); });
-  const say2 = (t, speak = true) => { bubble.textContent = t; bubble.classList.add('on'); clearTimeout(say2.t); say2.t = setTimeout(() => bubble.classList.remove('on'), 2200); return speak ? say(t, { remember: false }) : Promise.resolve(); };
+  const ding = (f = 660, d = 0.25) => chime(f, { dur: d, vol: 0.6 });      // a közös hangmotoron szól (nincs külön hang-kontextus)
+  unlockAudio();
+  root.addEventListener('pointerdown', () => unlockAudio());
+  const say2 = (t, speak = true) => { if (!root.isConnected) return Promise.resolve(); bubble.textContent = t; bubble.classList.add('on'); clearTimeout(say2.t); say2.t = setTimeout(() => bubble.classList.remove('on'), 2200); return speak ? say(t, { remember: false }) : Promise.resolve(); };
 
   function dispense() {
     if (!alive || current || !root.isConnected) return;
@@ -149,5 +150,5 @@ export function run(container, opts = {}) {
 
   const intro = rounds ? 'Etesd meg a barátokat! Az édesség a dobozba megy.' : 'Hami-adagoló! Az egészséges az állatoké, az édesség a dobozba megy.';
   say(intro, { remember: false }).then(() => setTimeout(dispense, 500)); setTimeout(dispense, 9000);
-  return () => { alive = false; clearTimeout(say2.t); cancelAnimationFrame(raf); st3?.dispose(); st3 = null; try { audio && audio.close(); } catch (e) {} };
+  return () => { alive = false; clearTimeout(say2.t); cancelAnimationFrame(raf); st3?.dispose(); st3 = null; };
 }

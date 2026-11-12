@@ -2,7 +2,7 @@
 import { say } from '../voice.js';
 
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+import { sleep } from '../scope.js';
 
 // steps: helyes sorrendben [{ t, name }]
 export function run(container, { prompt, say: sayText, steps, icon = '🔢', fact }) {
@@ -27,10 +27,17 @@ export function run(container, { prompt, say: sayText, steps, icon = '🔢', fac
         else say(order[i].name || order[i].t, { remember: false });
       } else {
         locked = true; wrong++; btn.classList.add('shake');
-        say('Majdnem! Gondold végig, mi jön most? ' + (sayText || prompt), { remember: false });
-        await sleep(900); btn.classList.remove('shake'); locked = false; refreshHint();
+        const nm = order[i].name || '';
+        await say(`${nm ? nm[0].toUpperCase() + nm.slice(1) + '. ' : ''}Ez később jön. Mi van előbb?`, { remember: false });
+        btn.classList.remove('shake'); locked = false; refreshHint();
       }
     }));
-    say(sayText || prompt);
+    // bemutatás: a kérdés után sorban megnevezzük a kártyákat (a gyerek nem olvas)
+    (async () => {
+      locked = true;
+      await say(sayText || prompt);
+      for (let i = 0; i < btns.length; i++) { if (!order[i].name) continue; btns[i].classList.add('glow'); await say(order[i].name, { remember: false }); btns[i].classList.remove('glow'); }
+      locked = false;
+    })();
   });
 }

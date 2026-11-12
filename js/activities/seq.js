@@ -1,5 +1,5 @@
 // Több lépéses feladat egyetlen csillagért (pl. betűlecke: átírás + két szókereső).
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+import { sleep } from '../scope.js';
 
 export async function run(container, { steps }) {
   for (const step of steps) {

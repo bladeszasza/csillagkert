@@ -14,3 +14,5 @@ export const ACC_NUM = { 1: 'egyet', 2: 'kettőt', 3: 'hármat', 4: 'négyet', 5
 export const numAttr = word => String(word).replace(/kettő$/, 'két');
 // a barátok tárgyesete (simogasd meg a cicát)
 export const FRIEND_ACC = { cica: 'cicát', nyuszi: 'nyuszit', kutya: 'kutyát', róka: 'rókát', maci: 'macit', panda: 'pandát' };
+// számnév + -ból/-ből ("ötből elveszünk kettőt"): az utolsó magánhangzó dönt
+export const fromNum = w => w + (/[eéiíöőüű][^aáeéiíoóöőuúüű]*$/.test(w) ? 'ből' : 'ból');

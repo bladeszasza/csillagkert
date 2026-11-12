@@ -1,11 +1,13 @@
 // Összeadás és kivonás 20-ig, képekkel. Tévedésnél nem csak "rossz": közösen megszámoljuk
 // (összeadásnál a két csoportot, kivonásnál elvesszük a megadott darabot, és megszámoljuk a maradékot).
 import { say } from '../voice.js';
-import { ACC_NUM } from '../hu.js';
+import { ACC_NUM, fromNum } from '../hu.js';
 
 export const NUMS = ['nulla', 'egy', 'kettő', 'három', 'négy', 'öt', 'hat', 'hét', 'nyolc', 'kilenc', 'tíz', 'tizenegy', 'tizenkettő', 'tizenhárom', 'tizennégy', 'tizenöt', 'tizenhat', 'tizenhét', 'tizennyolc', 'tizenkilenc', 'húsz'];
 const THINGS = ['🍎', '🌸', '🍓', '🎈', '🐥', '⭐', '🦋', '🍪'];
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+import { sleep } from '../scope.js';
+import { dots } from './count.js';
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const rnd = a => a[Math.floor(Math.random() * a.length)];
 
 export function run(container, { a, b, op }) {
@@ -13,9 +15,8 @@ export function run(container, { a, b, op }) {
     const add = op === '+';
     const result = add ? a + b : a - b;
     const thing = rnd(THINGS);
-    const options = new Set([result]);
-    for (const d of [1, -1, 2, -2, 3]) { const v = result + d; if (v >= 0 && v <= 20 && options.size < 3) options.add(v); }
-    const opts = [...options].sort((x, y) => x - y);
+    const cand = shuffle([1, -1, 2, -2, 3, -3].map(d => result + d).filter(v => v >= 0 && v <= 20));
+    const opts = shuffle([result, ...cand.slice(0, 2)]);   // a jó válasz helye véletlen (korábban szinte mindig a középső volt)
     const size = a + (add ? b : 0) > 10 ? 'sm' : '';
     const items = (n, cls = '') => Array.from({ length: n }, () => `<span class="item ${size} ${cls}">${thing}</span>`).join('');
 
@@ -27,7 +28,7 @@ export function run(container, { a, b, op }) {
             ? `<div class="grp" id="g1">${items(a)}</div><div class="sign">+</div><div class="grp" id="g2">${items(b)}</div>`
             : `<div class="grp" id="g1">${items(a)}</div><div class="sign">−&nbsp;${b}</div>`}
         </div>
-        <div class="answers">${opts.map(o => `<button class="answer" data-n="${o}">${o}</button>`).join('')}</div>
+        <div class="answers">${opts.map(o => `<button class="answer" data-n="${o}">${o}<small>${dots(o)}</small></button>`).join('')}</div>
       </div>`;
     const answers = [...container.querySelectorAll('.answer')];
     const all = () => [...container.querySelectorAll('.item')];
@@ -42,7 +43,7 @@ export function run(container, { a, b, op }) {
         await say(`Összesen ${NUMS[result]}.`, { remember: false });
       } else {
         await say(`Nézzük meg együtt! Van ${NUMS[a]}. Elveszünk ${ACC_NUM[b]}.`, { remember: false });
-        for (let i = 0; i < b; i++) { if (!container.isConnected) return; const it = items[a - 1 - i]; it.classList.add('gone'); await say(`elvesz`, { remember: false, rate: 0.9 }); await sleep(100); }
+        for (let i = 0; i < b; i++) { if (!container.isConnected) return; const it = items[a - 1 - i]; it.classList.add('gone'); await say(ACC_NUM[i + 1], { remember: false, rate: 0.9 }); await sleep(100); }
         const left = items.slice(0, result);
         await say('Számoljuk meg, mennyi maradt!', { remember: false });
         for (let i = 0; i < left.length; i++) { if (!container.isConnected) return; left[i].classList.add('pulse'); await say(NUMS[i + 1], { remember: false, rate: 0.8 }); await sleep(120); left[i].classList.remove('pulse'); }
@@ -57,12 +58,12 @@ export function run(container, { a, b, op }) {
       const val = +btn.dataset.n;
       if (val === result) {
         finished = true; btn.classList.add('win');
-        await say(`Igen! ${NUMS[a]} ${add ? 'meg' : 'mínusz'} ${NUMS[b]} egyenlő ${NUMS[result]}!`);
+        await say(add ? `Igen! ${NUMS[a]} meg ${NUMS[b]} az ${NUMS[result]}.` : `Igen! ${fromNum(NUMS[a])} elveszünk ${ACC_NUM[b]}, marad ${NUMS[result]}.`);
         resolve();
       } else {
         locked = true; wrong++; btn.classList.add('shake');
         await sleep(700); btn.classList.remove('shake');
-        await teach();
+        if (wrong !== 2) await teach();                     // 1. és 3. tévedésnél együtt megszámoljuk; a 2.-nál csak szűkítünk
         if (wrong >= 2) { const bad = answers.filter(x => +x.dataset.n !== result && !x.classList.contains('gone')); if (bad.length > 1) bad[0].classList.add('gone'); }
         if (wrong >= 3) answers.find(x => +x.dataset.n === result).classList.add('glow');
         say(question, { remember: false });

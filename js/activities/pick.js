@@ -2,7 +2,7 @@
 // Büntetés nélkül: 1. tévedés → újra; 2. → eltűnik egy rossz válasz; 3. → a jó felragyog.
 import { say } from '../voice.js';
 
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+import { sleep } from '../scope.js';
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
 // options: [{ t: '🍎', name: 'alma', ok: true }, ...]; q: opcionális nagy kérdéssor (pl. minta)
@@ -26,6 +26,10 @@ export function run(container, { prompt, say: sayText, options, q, icon = '🧠'
       </div>`;
     const btns = [...container.querySelectorAll('.answer')];
     const names = opts.map(o => o.name).filter(Boolean);
+    const optionList = names.length ? ' ' + names.join(', ') + '?' : '';
+    const question = (sayText || prompt) + optionList;      // a válaszok neve mindig elhangzik (a gyerek nem olvas)
+    // főnévnél névelővel ("Ez a fül."), ragozott szónál és igénél csak a szó ("Jobbra.")
+    const nameOf = n => !n ? '' : (/\s/.test(n) || /(val|vel|ra|re|ban|ben|nyel|llok|gyek|dok)$/.test(n)) ? n[0].toUpperCase() + n.slice(1) + '.' : `Ez ${withArt(n)}.`;
     let wrong = 0, locked = false, finished = false;
 
     btns.forEach((btn, i) => btn.addEventListener('click', async () => {
@@ -38,8 +42,8 @@ export function run(container, { prompt, say: sayText, options, q, icon = '🧠'
       } else {
         locked = true; wrong++;
         btn.classList.add('shake');
-        say((wrong === 1 ? 'Majdnem! Próbáld újra! ' : 'Semmi baj, gondold végig! ') + (sayText || (prompt + (names.length ? ' ' + names.join(', ') + '?' : ''))), { remember: false });
-        await sleep(900);
+        // tanít: megmondja, mi az, amit választott, aztán röviden visszakérdez
+        await say(`${nameOf(o.name)} ${wrong === 1 ? 'Nézzük még egyszer! ' + (sayText || prompt) : wrong === 2 ? 'Segítek, egyet elveszek.' : 'Nézd, melyik ragyog!'}`.trim(), { remember: false });
         btn.classList.remove('shake');
         if (wrong >= 2) {
           const bad = btns.filter((b, k) => !opts[k].ok && !b.classList.contains('gone'));
@@ -49,6 +53,6 @@ export function run(container, { prompt, say: sayText, options, q, icon = '🧠'
         locked = false;
       }
     }));
-    say(sayText || (prompt + (names.length ? ' ' + names.join(', ') + '?' : '')));
+    say(question);
   });
 }

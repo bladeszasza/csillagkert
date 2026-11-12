@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#bfefff">
+<meta name="apple-mobile-web-app-title" content="Csillagkert">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
 <title>Csillagkert</title>
 <link rel="stylesheet" href="style.css">
 </head>
@@ -104,6 +109,12 @@
     <label>Hány csillag kell kezdetben a jutalomjátékhoz? (minden kör után +2)
       <select id="p-per"><option value="5">5 csillag</option><option value="7">7 csillag</option><option value="10">10 csillag</option><option value="15">15 csillag</option></select>
     </label>
+    <label>Játékhangok és zene hangereje
+      <select id="p-volume"><option value="0">halk</option><option value="1">közepes</option><option value="2">hangos</option></select>
+    </label>
+    <label>Rozi beszédének hangereje
+      <select id="p-speech"><option value="0">halk</option><option value="1">közepes</option><option value="2">hangos</option></select>
+    </label>
     <label hidden>Felolvasó hang
       <select id="p-voicesel"></select>
     </label>
@@ -115,6 +126,9 @@
       <button id="p-close" class="small ok">Kész</button>
     </div>
     <p class="hint">Ha nincs magyar hang: Beállítások → Kisegítő lehetőségek → Felolvasott tartalom → Hangok → Magyar.</p>
+    <p class="hint">Ha a zene és a játékhangok nem szólnak, de Rozi beszél: kapcsold ki a néma módot (Vezérlőközpont → harang ikon), és hangosítsd fel az iPadet.</p>
+    <p class="hint">Tipp: a Megosztás menü „Főképernyőhöz adás" pontjával a játék teljes képernyőn indul, és a mentés biztonságosabb.</p>
+    <div id="p-errors" class="hint"></div>
   </div>
 </div>
 <div id="fly-layer"></div>

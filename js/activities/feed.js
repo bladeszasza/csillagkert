@@ -4,7 +4,7 @@ import { say } from '../voice.js';
 import { happy } from '../sounds.js';
 import { withArt } from '../hu.js';
 
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+import { sleep, later, onAbort } from '../scope.js';
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
 export function run(container, { animal, name, food }) {
@@ -36,10 +36,11 @@ export function run(container, { animal, name, food }) {
       await toAnimal(btn);
       if (f.ok) {
         finished = true; btn.style.opacity = 0; animalEl.classList.add('munch'); bubble.textContent = '😋 nyam-nyam!';
-        happy(animal); setTimeout(() => happy(animal), 700);
+        happy(animal); later(() => happy(animal), 700);
         await sleep(1400);                                    // jóllakás: csak az állat hangja szól, a robot hallgat
         const { run: runHealthy } = await import('../rewards/healthy.js');   // utána a barátok etetése / ajándékozás
         let stopH = null;
+        onAbort(() => stopH?.());                           // X-re a 3D jelenet és az időzítők is megszűnnek
         await new Promise(done => { stopH = runHealthy(container, { rounds: true, onDone: done }); });
         try { stopH?.(); } catch (e) {}                       // a 3D jelenet és a ciklus megszűnik
         resolve();

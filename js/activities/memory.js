@@ -3,7 +3,7 @@ import { say } from '../voice.js';
 
 const POOL = ['🍎', '🐱', '🌸', '🚗', '🐟', '🎈', '🦋', '🍓', '🐥', '⭐', '🌈', '🍄'];
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+import { sleep } from '../scope.js';
 
 export function run(container, { pairs = 3 }) {
   return new Promise(resolve => {

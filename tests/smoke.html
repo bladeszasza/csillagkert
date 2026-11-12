@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Csillagkert – füstteszt</title>
+<link rel="stylesheet" href="../style.css">
+<style>body{overflow:auto;touch-action:auto;font-family:system-ui;padding:16px;background:#fff}li.ok{color:#197a3b}li.bad{color:#b00020;font-weight:700}small{color:#555}</style>
+</head>
+<body>
+<h1>Csillagkert – füstteszt</h1>
+<p id="sum">Fut…</p>
+<ul id="list"></ul>
+<script>
+// Ál-felolvasó: nem ad hangot, de rögzíti, mit mondana Rozi (window.__spoken), és gyorsan "befejezi" a mondatot.
+window.__spoken = [];
+const fake = {
+  speaking: false, pending: false,
+  getVoices: () => [{ lang: 'hu-HU', name: 'Teszt hang', voiceURI: 'teszt', localService: true }],
+  addEventListener() {}, removeEventListener() {},
+  cancel() { this.speaking = false; const u = this._u; this._u = null; if (u) { clearTimeout(u._t); setTimeout(() => u.onend && u.onend({}), 0); } },
+  speak(u) { window.__spoken.push(u.text); this.speaking = true; this._u = u; setTimeout(() => u.onstart && u.onstart({}), 0); u._t = setTimeout(() => { this.speaking = false; this._u = null; u.onend && u.onend({}); }, 120); },
+};
+Object.defineProperty(window, 'speechSynthesis', { value: fake, configurable: true });
+</script>
+<script type="module">
+import { runAll } from './smoke.js';
+const res = await runAll();
+const bad = res.filter(r => !r.pass);
+document.getElementById('sum').textContent = bad.length ? `${bad.length} hiba / ${res.length} ellenőrzés` : `Minden rendben: ${res.length} ellenőrzés`;
+document.getElementById('list').innerHTML = res.map(r => `<li class="${r.pass ? 'ok' : 'bad'}">${r.pass ? '✔' : '✖'} ${r.name} <small>${r.info}</small></li>`).join('');
+</script>
+</body>
+</html>

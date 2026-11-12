@@ -3,11 +3,13 @@
 import { attachPen } from '../pen.js';
 import { progress } from '../progress.js';
 import { say } from '../voice.js';
+import { later } from '../scope.js';
 
 export function run(container, { text = 'A', useName = false, say: sayText }) {
   return new Promise(resolve => {
     let word = (useName && progress.get().name) ? progress.get().name.toUpperCase() : text;
     word = word.slice(0, 10);
+    if (useName && !progress.get().name) sayText = 'Írd át a betűt!';   // nincs megadott név: semleges utasítás
     container.innerHTML = `
       <div class="activity">
         <div class="prompt">Írd át a betűket! ✏️</div>
@@ -42,7 +44,7 @@ export function run(container, { text = 'A', useName = false, say: sayText }) {
     function mark(p) {
       const R2 = 30 * 30;
       for (const s of samples) if (!s.hit && (s.x - p.x) ** 2 + (s.y - p.y) ** 2 < R2) { s.hit = true; covered++; }
-      if (!done && samples.length && covered / samples.length >= 0.72) { done = true; setTimeout(async () => { await say('Szép betűk!'); resolve(); }, 500); }
+      if (!done && samples.length && covered / samples.length >= 0.72) { done = true; later(async () => { await say('Szép betűk!'); resolve(); }, 500); }
     }
     attachPen(ink, { color: '#ff5d8f', baseWidth: 26, onStart: mark, onMove: mark });
     layout(); new ResizeObserver(layout).observe(guide);
