@@ -5,8 +5,9 @@ Ez a leírás azt mutatja meg, mire épül a feladatok sorrendje és nehezedése
 feladatok nehézségét jelölik, nem a gyerek fejlettségét.
 
 Minden forrásnál jelölöm, hogyan ellenőriztem (2026. november 12-én):
-**[teljes szöveg]** = az eredeti szöveget olvastam; **[kivonat]** = a kiadói vagy adatbázis-kivonatot és a
-bibliográfiai adatokat ellenőriztem; **[másodlagos]** = csak más szerzők összefoglalóiból ismerem, az eredetit nem
+**[teljes szöveg]** = az eredeti szöveget olvastam (letöltve, vagy a nyílt hozzáférésű teljes szöveget);
+**[kivonat]** = a tanulmány kivonatát olvastam (Europe PMC vagy egyetemi adattár), a teljes szöveget nem;
+**[másodlagos]** = csak a bibliográfiai adatokat és más szerzők összefoglalóit ismerem, az eredetit és a kivonatot nem
 olvastam. A **saját beállítás** jelzésű számok az én döntéseim az elvek alapján, nem kutatásból átvett értékek: a
 tapasztalat szerint hangolandók.
 
@@ -22,11 +23,12 @@ kapnak az M6-ban.
 A DIFER (Diagnosztikus fejlődésvizsgáló rendszer) 4–8 éves gyerekek iskolakezdéshez kritikus alapkészségeit írja le.
 Az Oktatási Hivatal leírása szerint ez a hét készség: *írásmozgás-koordináció, beszédhallgatás, relációszókincs,
 elemi számolás, tapasztalati következtetés, tapasztalati összefüggés-megértés, szocialitás*
-([oktatas.hu](https://www.oktatas.hu/kozneveles/meresek/difer/difer_leiras), [teljes szöveg]). A rendszer Nagy József
-vezetésével készült (munkatársai között Józsa, Vidákovich és Fazekasné), és minden
-készségre öt fejlettségi szintet határoz meg: *előkészítő, kezdő, haladó, befejező, optimális*
-([Szegedi Tudományegyetem, DIFER-összefoglaló](https://www.staff.u-szeged.hu/~mlesz/difer), [teljes szöveg], a
-dokumentum szövege részben sérült).
+([oktatas.hu](https://www.oktatas.hu/kozneveles/meresek/difer/difer_leiras), [teljes szöveg]). A második készséget
+az Oktatási Hivatal oldala *beszédhallgatás* néven írja, a DIFER-rel dolgozó kutatók tanulmánya (Józsa és Fazekasné
+Fenyvesi, 2006) és a játék terve *beszédhanghallás* néven: „a beszédhangok differenciálásának készsége". A tesztek a
+készség fejlettségi szintjét mutatják; ugyanez a tanulmány a szinteket így nevezi: *előkészítő, kezdő, haladó,
+befejező, optimális* [teljes szöveg]. (Egy egyetemi oktatói oldal szerint a rendszer Nagy József vezetésével készült;
+ezt csak egy részben olvasható összefoglalóból láttam, [másodlagos].)
 
 **Hogyan használja a játék**: területenként (állomásonként) öt nehézségi szintet használ, mert a DIFER is
 készségenként, nem összesítve nézi a fejlődést. A játék szintjei *nem* a DIFER mérőskálái (azok százalékos
@@ -53,11 +55,11 @@ A szabályok a `js/scheduler-core.js` fájlban vannak, Node-tesztekkel (`tests/s
 | Elv | Forrás | Mit jelent a játékban |
 |---|---|---|
 | **Magas sikerarány** | Rosenshine (2012): a gyakorlás közbeni optimális sikerarány „about 80 percent" [teljes szöveg] | A gyerek a feladatok nagy részét elsőre megoldja. Ha a sikerarány leesik, több könnyebb feladat és több ismétlés jön; ha nagyon magas, több kihívás. |
-| A „85%-os szabály" csak tájékozódási pont | Wilson, Shenhav, Straccia, Cohen (2019): gradiens-alapú tanuló algoritmusoknál és állattanulást leíró modelleknél kb. 85% pontosság mellett a leggyorsabb a tanulás [kivonat]; a szerző maga óvott attól, hogy ebből iskolai célszámot csináljanak (sajtóbeszámoló alapján) | Nem törvény: csak azt erősíti meg, hogy a túl könnyű és a túl nehéz feladat is lassítja a tanulást. |
-| **Elosztott ismétlés** | Cepeda, Pashler, Vul, Wixted, Rohrer (2006) metaanalízise: az elosztott gyakorlás jobb a tömbösítettnél, és minél később kell emlékezni, annál nagyobb a legjobb ismétlési köz [kivonat] | A sikerült feladat napokkal később visszatér, egyre nagyobb közökkel. |
-| **Kevert gyakorlás** | Rohrer és Taylor (2007): a vegyesen kevert matematikai feladatok egy hét múlva jobb eredményt hoztak, mint a típusonként tömbösítettek [kivonat] | Egy állomáson belül a készségek váltakoznak, és az állomások is váltakoznak (nincs öt számolás egymás után). |
-| **Állványozás (segítség-létra)** | Wood, Bruner, Ross (1976): a felnőtt annyi segítséget ad, amennyivel a gyerek egyedül még el nem érhető feladatot is meg tud oldani [kivonat] | Első tévedés: újra a kérdés, kedvesen. Második tévedésnél tanító mondat, és egy rossz válasz eltűnik. A segítséggel megoldott feladat nem büntet, csak a következő feladatot hangolja. |
-| **Tanulási pályák** | Clements és Sarama (2004): a tanulási pálya egy matematikai cél, egy fejlődési út és a lépcsőfokokhoz illő feladatok együttese [kivonat] | Minden készségnek van egy belső sorrendje (lásd 3. rész); a szint a lépcsőfokot jelöli. |
+| A „85%-os szabály" csak tájékozódási pont | Wilson, Shenhav, Straccia, Cohen (2019): gradiens-alapú tanuló algoritmusoknál kb. 85% pontosság mellett a leggyorsabb a tanulás; mesterséges neurális hálókon és egy majmok észlelési tanulását leíró modellen mutatták meg [teljes szöveg]. A szerzők maguk írják, hogy az oktatásban az optimális nehézséget tapasztalati úton határozzák meg, és sok tényezőtől függ | Nem törvény: csak azt erősíti meg, hogy a túl könnyű és a túl nehéz feladat is lassítja a tanulást. |
+| **Elosztott ismétlés** | Cepeda, Pashler, Vul, Wixted, Rohrer (2006): 317 kísérlet metaanalízise az elosztott gyakorlásról; minél később kell emlékezni, annál nagyobb ismétlési köz adja a legjobb megtartást [kivonat] | A sikerült feladat napokkal később visszatér, egyre nagyobb közökkel. |
+| **Kevert gyakorlás** | Rohrer és Taylor (2007): egy hét múlva a vegyesen kevert matematikai gyakorlás után sokkal jobb volt az eredmény, mint a típusonként tömbösített után [kivonat] | Egy állomáson belül a készségek váltakoznak, és az állomások is váltakoznak (nincs öt számolás egymás után). |
+| **Állványozás (segítség-létra)** | Wood, Bruner, Ross (1976): a felnőtt annyi segítséget ad, amennyivel a gyerek egyedül még el nem érhető feladatot is meg tud oldani [másodlagos] | Első tévedés: megnevezi, amit a gyerek választott, és kedvesen újra kérdez. Második tévedésnél egy tanító mondat jön, és egy rossz válasz eltűnik. A segítséggel megoldott feladat nem büntet, csak a következő feladatot hangolja. |
+| **Tanulási pályák** | Clements és Sarama (2004): a tanulási pálya egy matematikai cél, egy fejlődési út és a lépcsőfokokhoz illő feladatok együttese [másodlagos] | Minden készségnek van egy belső sorrendje (lásd 3. rész); a szint a lépcsőfokot jelöli. A konkrét sorrendek a 3. részben az én összeállításaim. |
 
 ### 2.2 A szabályok és a számok (mind saját beállítás)
 
@@ -97,7 +99,7 @@ valódi feladatot is megoldja (`tests/smoke.html`).
 
 **Mire épül**: a számlálás öt alapelve (egy-egy megfeleltetés, állandó sorrend, a tőszám elve, absztrakció, a
 sorrend közömbössége; Gelman és Gallistel, 1978 [másodlagos]); a korai matematika tanulási pályái (Clements és
-Sarama, 2004 [kivonat]); a számegyenes-szerű lineáris számjátékok hatása a számbecslésre (Siegler és Ramani, 2008:
+Sarama, 2004 [másodlagos]); a számegyenes-szerű lineáris számjátékok hatása a számbecslésre (Siegler és Ramani, 2008:
 négy 15 perces játék eltüntette a különbséget, a színes, szám nélküli változat nem [kivonat]); a konkrét → képi →
 jelképes út (Bruner nyomán; ezt a forrást nem ellenőriztem).
 
@@ -119,10 +121,10 @@ vannak, a számjegy csak mellettük jelenik meg.
 
 ### 3.2 Formák és színek (16 sablon, 11 készség)
 
-**Mire épül**: a DIFER relációszókincs-területe (téri viszonyok, méret- és mennyiségviszonyok
-[teljes szöveg: a készség neve]); a geometriai alakzatok felismerésének tanulási pályája (Clements és Sarama, 2004
-[kivonat]: előbb a jellegzetes, „tipikus" alak, aztán a hasonló alakok megkülönböztetése és a tulajdonságok, például a
-sarkok). A formák saját rajzolt képek, nem emojik, mert az emoji eszközönként másképp néz ki.
+**Mire épül**: a DIFER relációszókincs-területe (téri viszonyok, méret- és mennyiségviszonyok; a forrásból csak a
+készség nevét ellenőriztem). A formák sorrendje (előbb a jellegzetes alak, aztán a hasonló alakok megkülönböztetése és
+a tulajdonságok, például a sarkok) **az én összeállításom**, ehhez forrást nem ellenőriztem. A formák saját rajzolt
+képek, nem emojik, mert az emoji eszközönként másképp néz ki.
 
 | Készség | Szintek | Mi nehezedik |
 |---|---|---|
@@ -140,8 +142,8 @@ sarkok). A formák saját rajzolt képek, nem emojik, mert az emoji eszközönk�
 
 ### 3.3 Okoskodó (8 sablon, 8 készség)
 
-**Mire épül**: a DIFER tapasztalati következtetés és összefüggés-megértés területe [teljes szöveg: a készségek
-neve]; a Piaget-féle osztályozási és sorba rendezési feladatok hagyománya és a végrehajtó funkciók (munkamemória)
+**Mire épül**: a DIFER tapasztalati következtetés és összefüggés-megértés területe (a forrásból csak a készségek
+nevét ellenőriztem); a Piaget-féle osztályozási és sorba rendezési feladatok hagyománya és a végrehajtó funkciók (munkamemória)
 gyakorlása [másodlagos, általános szakirodalmi háttér, forrást ehhez nem ellenőriztem].
 
 | Készség | Szintek | Mi nehezedik |
@@ -163,9 +165,10 @@ A mondatok a `js/lines.js` fájlban vannak; szándékonként legalább hat vált
 
 - **Jó válasz**: egy rövid dicséret és **egy teljes, igaz állítás** (nem a kérdés ismétlése). A dicséret az
   igyekezetet is elismeri, nem csak az eredményt (Carol Dweck munkássága nyomán; ezt a forrást nem ellenőriztem).
-- **Első tévedés**: kedves, rövid újrakérdezés, büntetés nélkül.
-- **Második tévedés**: megnevezi, amit a gyerek választott („Ez a négyzet."), egy tanító mondat, és egy rossz válasz
-  eltűnik.
+- **Első tévedés**: megnevezi, amit a gyerek választott („A méz édes."), és kedvesen, röviden újra kérdez, büntetés
+  nélkül.
+- **Második tévedés**: újra megnevezi a választását, egy tanító mondat következik („A meleg ellentéte a hideg."), és egy
+  rossz válasz eltűnik.
 - **Hangnem**: kevesebb szó a csillaggyűjtésről, több közös felfedezés („nézzük meg együtt, fedezzük fel a számok
   világát"). A gyerek nevét néha kimondja, ha a szülő megadta (a név csak az eszközön tárolódik).
 - A generált feladatokban egy kimondott mondat legfeljebb 12 szó, a kézzel írt tények legfeljebb kb. 70 betűsek,
@@ -187,7 +190,33 @@ A mondatok a `js/lines.js` fájlban vannak; szándékonként legalább hat vált
 - **A számok hangolandók**: a 2.2 táblázat minden értéke saját kiinduló beállítás. A szülő tapasztalata (túl könnyű?
   túl nehéz? unalmas?) alapján változhatnak.
 - **Amit asztali gépről nem lehet ellenőrizni**: az iPad felolvasójának kiejtése és ritmusa, az érintés
-  pontossága, és az, hogy egy adott gyereknek mi az érdekes.
+  pontossága, és az, hogy egy adott gyereknek mi az érdekes. Néhány újabb emoji (🫘 mag, 🫧 hab, 🪥 fogkefe, 🫁 tüdő)
+  csak frissebb iPadOS-en látszik; ha valamelyik helyén üres négyzet van, azt jelezni kell.
+
+---
+
+## 6. Az 1.0 feladatainak átnézése: mi lett a 61 javítandóval?
+
+A tervezéskor mind a 136 régi feladatot átnéztük; 61-et jelöltünk javítandónak. Állapotuk az M4 első része után:
+
+| Állomás | Javítandó | Mi lett velük |
+|---|---:|---|
+| Számoló rét | 7 | kivéve, a generált feladatok váltják ki (a tízes átlépés csak az 5. szinten, a számok alatt pöttyök, mindig legalább három válasz) |
+| Formák és színek | 7 | kivéve, a generált feladatok váltják ki (saját rajzolt formák, jelenet-rács, egyértelmű színek) |
+| Okoskodó | 3 | kivéve, a generált feladatok váltják ki (a sorminta rossz válaszai a mintából jönnek, a memória kimondja a kártyák nevét) |
+| Állatetetés | 4 | javítva az M2a-ban (kutya, egér, maci, mókus) |
+| Világunk | 5 | 4 javítva; **1 nyitott**: a „Melyik nap jön péntek után?" képei (lufi, táska, könyvek) önkényesek, az M6 ténytáblájában naptárcsíkkal |
+| Egészség | 5 | 5 javítva (3 áthelyezés az M1-ben; a kézmosás képei és a fogkefe-kérdés rossz válaszai most) |
+| Testünk csodái | 5 | 5 javítva (az „erek" helyett most „Mivel hallunk?", így a fül is lehet helyes válasz) |
+| Időutazás | 5 | 4 javítva; 1 kivéve: a piramis (az emoji a háromszög jele), az M6-ban rajzolt képpel térhet vissza |
+| Robotpálya | 5 | 5 javítva (áthelyezések és a „kétszer, háromszor" kiejtése korábban; a nyelvtan és a taps-tény most) |
+| Ceruzavár | 3 | 2 javítva korábban (a kör azonosítója, a név nélküli betű); **1 nyitott**: kilenc feladat ugyanazt az utasítást mondja → M4/3 |
+| Hangok háza | 8 | **nyitott** → M4/2, az állomás generált lesz |
+| Zenevár | 4 | **nyitott** → M4/2, az állomás generált lesz |
+| Rajzasztal | 0 | – |
+
+Összesen: 17 kiváltva generált feladattal, 29 javítva, 1 kivéve, **14 nyitott** (ebből 12 a következő M4-részekben,
+1 az M6-ban, 1 a Ceruzavárral az M4/3-ban).
 
 ---
 
@@ -195,21 +224,26 @@ A mondatok a `js/lines.js` fájlban vannak; szándékonként legalább hat vált
 
 - Oktatási Hivatal: *A DIFER programcsomag leírása.* https://www.oktatas.hu/kozneveles/meresek/difer/difer_leiras
   [teljes szöveg]
-- Szegedi Tudományegyetem: *DIFER = Diagnosztikus Fejlődésvizsgáló Rendszer* (összefoglaló).
-  https://www.staff.u-szeged.hu/~mlesz/difer [teljes szöveg, részben sérült]
+- Józsa Krisztián és Fazekasné Fenyvesi Margit (2006): A DIFER Programcsomag alkalmazási lehetősége tanulásban
+  akadályozott gyermekeknél, II. rész. *Gyógypedagógiai Szemle*, 2006/3, 161–176.
+  https://epa.oszk.hu/03000/03047/00034/pdf/EPA03047_gyosze_2006_3_161-176.pdf [teljes szöveg]
+- Szegedi Tudományegyetem, oktatói oldal: *DIFER = Diagnosztikus Fejlődésvizsgáló Rendszer.*
+  https://www.staff.u-szeged.hu/~mlesz/difer [másodlagos: a szöveg csak részben volt olvasható]
 - Rosenshine, B. (2012). Principles of Instruction: Research-Based Strategies That All Teachers Should Know.
   *American Educator*, 2012. tavasz, 12–19. és 39. o. https://www.aft.org/ae/spring2012/rosenshine [teljes szöveg]
 - Wilson, R. C., Shenhav, A., Straccia, M., & Cohen, J. D. (2019). The Eighty Five Percent Rule for optimal
-  learning. *Nature Communications*, 10, 4646. https://doi.org/10.1038/s41467-019-12552-4 [kivonat]
+  learning. *Nature Communications*, 10, 4646. https://doi.org/10.1038/s41467-019-12552-4 (nyílt teljes szöveg:
+  https://pmc.ncbi.nlm.nih.gov/articles/PMC6831579/) [teljes szöveg]
 - Cepeda, N. J., Pashler, H., Vul, E., Wixted, J. T., & Rohrer, D. (2006). Distributed practice in verbal recall
   tasks: A review and quantitative synthesis. *Psychological Bulletin*, 132(3), 354–380.
   https://doi.org/10.1037/0033-2909.132.3.354 [kivonat]
 - Rohrer, D., & Taylor, K. (2007). The shuffling of mathematics problems improves learning. *Instructional
-  Science*, 35, 481–498. [kivonat]
+  Science*, 35, 481–498. Kivonat: https://digitalcommons.usf.edu/psy_facpub/1767/ [kivonat]
 - Wood, D., Bruner, J. S., & Ross, G. (1976). The role of tutoring in problem solving. *Journal of Child Psychology
-  and Psychiatry*, 17(2), 89–100. https://doi.org/10.1111/j.1469-7610.1976.tb00381.x [kivonat]
+  and Psychiatry*, 17(2), 89–100. https://doi.org/10.1111/j.1469-7610.1976.tb00381.x [másodlagos: az adatbázisban
+  nincs kivonata]
 - Clements, D. H., & Sarama, J. (2004). Learning trajectories in mathematics education. *Mathematical Thinking and
-  Learning*, 6(2), 81–89. https://doi.org/10.1207/s15327833mtl0602_1 [kivonat]
+  Learning*, 6(2), 81–89. https://doi.org/10.1207/s15327833mtl0602_1 [másodlagos]
 - Siegler, R. S., & Ramani, G. B. (2008). Playing linear numerical board games promotes low-income children's
   numerical development. *Developmental Science*, 11(5), 655–661. https://doi.org/10.1111/j.1467-7687.2008.00714.x
   [kivonat]

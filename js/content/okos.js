@@ -88,7 +88,7 @@ const ANALOG = {
   lakik: { lv: 5, items: [[{ e: '🐟', n: 'hal' }, { e: '🌊', n: 'tenger', loc: 'a tengerben' }], [{ e: '🐪', n: 'teve' }, { e: '🏜️', n: 'sivatag', loc: 'a sivatagban' }], [{ e: '🐧', n: 'pingvin' }, { e: '🧊', n: 'jég', loc: 'a jégen' }], [{ e: '🐿️', n: 'mókus' }, { e: '🌲🌳', n: 'erdő', loc: 'az erdőben' }]],
     model: (a, b) => `${cap(withArt(a.n))} ${b.loc} él.`, ask: c => `Hol él ${withArt(c.n)}?`, tell: (c, d) => `${cap(withArt(c.n))} ${d.loc} él.` },
   kell: { lv: 4, items: [[{ e: '🌧️', n: 'eső', when: 'Esőben' }, { e: '☂️', n: 'esernyő' }], [{ e: '☀️', n: 'napsütés', when: 'Napsütésben' }, { e: '🕶️', n: 'napszemüveg' }], [{ e: '🌨️', n: 'hóesés', when: 'Hóesésben' }, { e: '🧣', n: 'sál' }]],
-    model: (a, b) => `${a.when} ${b.n} kell.`, ask: c => `Mi kell ${c.when.toLowerCase()}?`, tell: (c, d) => `${c.when} ${d.n} kell.` },
+    model: (a, b) => `${a.when} ${b.n} kell.`, ask: c => `Mi kell ${c.when.toLowerCase()}?`, tell: (c, d) => `${c.when} ${d.n} kell.`, and: c => `És ${c.when.toLowerCase()}?` },
 };
 
 // --- memória és "Mi tűnt el?": jól megnevezhető képek
@@ -186,7 +186,7 @@ export const OKOS = [
         qHtml: `<span class="analog"><i>${A.e}</i><b>➜</b><i>${B.e}</i><s></s><i>${C.e}</i><b>➜</b><b class="next">?</b></span>`,
         // ha az első pár párját választja, nem mondjuk el újra a mintamondatot (a kérdés úgyis megismétli)
         options: r.shuffle([D, ...wrongs].map(d => ({ key: d.n, t: d.e, name: d.n, ok: d === D, said: d === B ? `Ez ${withArt(d.n)}, ${withArt(A.n)} párja.` : `Ez ${withArt(d.n)}. ${g.tell(owner(d), d)}` }))),
-        fact: g.tell(C, D), hint: `Nézd az első párt! ${g.model(A, B)} És ${withArt(C.n)}?` };
+        fact: g.tell(C, D), hint: `Nézd az első párt! ${g.model(A, B)} ${g.and ? g.and(C) : `És ${withArt(C.n)}?`}` };
     },
     solve: item => { const g = ANALOG[item.ask.rel], d = g.items.find(([c]) => c.n === item.ask.c)[1]; return item.options.find(o => o.t === d.e).name; } },
 

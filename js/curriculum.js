@@ -36,7 +36,7 @@ const FACTS = {
   'Melyik állat élt nagyon régen, és ma már nem él?|dinoszaurusz': 'A dinoszauruszok nagyon régen éltek, ma már nincsenek.',
   'Piros a lámpa. Mit csinálsz?|megállok': 'Piros lámpánál megállunk, és megvárjuk a zöldet.',
   'Mi jön ezután? Találd ki a szabályt!|kék': 'Utána a kék jön: két piros és egy kék ismétlődik.',
-  'Hány taps lesz összesen?|három': 'Háromszor tapsolunk, tehát három taps lesz.',
+  'Hány taps lesz összesen?|három': 'Háromszor tapsolunk: az három taps.',
   'Ha sötét van a szobában, mit kapcsolunk fel?|lámpát': 'Ha sötét van a szobában, felkapcsoljuk a lámpát.',
 };
 const ORDER_FACTS = {

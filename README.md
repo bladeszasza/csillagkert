@@ -46,9 +46,10 @@ Az M4 mérföldkő első harmada kész: **3 állomás generált** (a 8 generálh
 - **Rozi mondatai** (`js/lines.js`): melegebb, kevesebb csillag-emlegetés, több közös felfedezés; a gyerek nevét néha
   kimondja, ha meg van adva (a név csak az eszközön tárolódik).
 - **A régi feladatok**: a generált állomások régi, kézzel írt feladatai kikerültek; aki azokból sokat megoldott, az új
-  feladatoknál egy szinttel feljebb kezd. A tény-állomások hibás feladatait az átnézés szerint javítottam (például
-  „Mivel hallunk?" került a félreérthető „Mi folyik az ereinkben?" helyére); ezek az állomások az M6-ban kapnak
-  szülő által átnézett ténytáblát.
+  feladatoknál egy szinttel feljebb kezd. A tény-állomások javítandó feladatainak nagy részét az átnézés szerint
+  javítottam (például „Mivel hallunk?" került a félreérthető „Mi folyik az ereinkben?" helyére); ezek az állomások az
+  M6-ban kapnak szülő által átnézett ténytáblát. Hogy a 61 javítandó régi feladatból mi lett (javítva, kivéve, nyitott),
+  az a [`docs/pedagogia.md`](docs/pedagogia.md) 6. részében áll.
 
 ## Hang
 

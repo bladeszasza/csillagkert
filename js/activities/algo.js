@@ -102,6 +102,6 @@ export function run(container, level) {
         for (const t of compress(solution, loops).slice(0, max)) { await sleep(700); program.push({ ...t }); render(); }
       }
     });
-    say(sayText || (prefill.length ? 'Hiba van a programban! A robot nem ér el a csillaghoz. Javítsd ki, aztán nyomd meg az indítást!' : 'Rakd össze a nyilakból a programot, ami elvezeti a robotot a csillaghoz! Aztán nyomd meg az indítást.'));
+    say(sayText || (prefill.length ? 'Hiba van a programban! A robot nem jut el a csillagig. Javítsd ki, aztán nyomd meg az indítást!' : 'Rakd össze a nyilakból a programot, ami elvezeti a robotot a csillaghoz! Aztán nyomd meg az indítást.'));
   });
 }
