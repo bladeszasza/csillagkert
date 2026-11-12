@@ -7,6 +7,7 @@ const fresh = () => ({
   done: {},          // kész feladatok állomásonként (szülői áttekintéshez)
   seen: undefined,   // megoldott feladatok {azonosító: időbélyeg} – ebből kerüljük az ismétlést
   gifts: [],         // megszerzett ajándékok (öltöztető elemei)
+  friends: [],       // akit már megetettek: a csillagoktól függetlenül is a kertben lakik
   rewardsDone: 0,    // hány jutalomjátékot játszott már: minden kör után több csillag kell
   name: '', nameAsked: false, rewardMinutes: 4, perReward: 10, voiceURI: '', feedGap: 2, sinceFeed: 0,
 });
@@ -15,6 +16,7 @@ let state = fresh();
 try { const raw = localStorage.getItem(KEY); hadSave = !!raw; state = { ...fresh(), ...(JSON.parse(raw || '{}')) }; } catch (e) {}
 if (typeof state.done !== 'object' || !state.done) state.done = {};
 if (!Array.isArray(state.gifts)) state.gifts = [];
+if (!Array.isArray(state.friends)) state.friends = [];
 
 // Régi mentésben nem volt "seen": üresről indul (a feladatsor azóta átrendeződött, a régi számlálók félrevezetőek lennének)
 if (!state.seen || typeof state.seen !== 'object') state.seen = {};
@@ -36,6 +38,7 @@ export const progress = {
   skip(id) { if (id) { state.seen[id] = Date.now(); save(); } },
   completeReward() { state.rewardsDone = (state.rewardsDone || 0) + 1; save(); },
   addGift(id) { if (!state.gifts.includes(id)) { state.gifts.push(id); save(); } },
+  addFriend(id) { if (id && !state.friends.includes(id)) { state.friends.push(id); save(); } },
   resetMeter() { state.meter = 0; save(); },
   set(patch) { Object.assign(state, patch); save(); },
   reset() { const keep = { name: state.name, nameAsked: state.nameAsked, introDone: state.introDone, rewardMinutes: state.rewardMinutes, perReward: state.perReward, voiceURI: state.voiceURI, speechVol: state.speechVol, v2: true }; state = { ...fresh(), seen: {}, ...keep }; save(); },

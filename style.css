@@ -361,3 +361,31 @@ button { touch-action: none; }
 .clap.pulse { transform: scale(1.12); }
 
 .activity.music { justify-content: center; }
+
+/* --- M2a: a kert és a barátok látszanak a főképernyőn (a csempék alul, kis sorban); etetés a kertben --- */
+#home { pointer-events: none; gap: 10px; bottom: max(12px, env(safe-area-inset-bottom)); }
+#home > * { pointer-events: auto; }
+#stations { pointer-events: none; gap: 8px; }          /* a csempék közti résen át a kert állatai is megkoppinthatók */
+#stations > * { pointer-events: auto; }
+@media (orientation: landscape) {
+  #stations { max-width: 96vw; }
+  .station { width: clamp(52px, calc((96vw - 100px) / 13), 84px); aspect-ratio: 1; padding: 4px; border-radius: 18px; justify-content: center; }
+  .station span { font-size: clamp(28px, 4vw, 44px); }
+  .station small { display: none; }
+  #next { font-size: clamp(24px, 4.2vw, 44px); }
+}
+@media (orientation: portrait) {
+  #stations { max-width: min(94vw, 780px); }
+  .station { width: calc((min(94vw, 780px) - 52px) / 7); }
+}
+#stage.see-garden { background: transparent; }         /* etetésnél a kert valódi állata látszik a feladat mögött */
+.feedpad.live { min-height: 100%; }
+.feedpad.live .animal { display: none; }
+.feedpad.live .animal-wrap { flex: 1; width: 100%; min-height: 170px; }
+.feed-table { background: linear-gradient(#e6bb82, #c98f4e); border-radius: 30px; padding: 14px 22px 18px; box-shadow: 0 8px 0 #9a6a35, 0 16px 28px rgba(60,20,120,.25); }
+.feed-table .answers { gap: clamp(10px, 3vmin, 24px); }
+.feed-table .answer.pic { font-size: clamp(44px, min(9.5vw, 11vh), 88px); min-width: clamp(96px, 19vmin, 150px); padding: 10px 18px 12px; }
+.food svg { display: block; }
+.food.fly, .food.eaten { background: transparent; box-shadow: none !important; animation: none; }
+.food.fly small, .food.eaten small { visibility: hidden; }
+#stage { overflow-x: hidden; } .activity { max-width: 100%; }   /* álló képernyőn a feladat 1 képponttal kilógott (vízszintes görgetősáv) */

@@ -3,6 +3,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CURRICULUM, STATIONS, stationOf, idOf, BASE_ITEMS, FEED_ITEMS } from '../js/curriculum.js';
 import { art, withArt, artLetter, ACC_NUM, numAttr, fromNum } from '../js/hu.js';
+import { FRIENDS, FOODS, MEALS, friendById, friendsFor, flowerSpot, MAX_FLOWERS, FEED_SPOT } from '../js/friends.js';
+import { progress } from '../js/progress.js';
 
 const flat = CURRICULUM.flatMap(i => (i.type === 'seq' ? [i, ...i.steps] : [i]));
 const picks = flat.filter(i => i.type === 'pick'), orders = flat.filter(i => i.type === 'order');
@@ -61,4 +63,53 @@ test('magyar nyelvtani segédek', () => {
   assert.equal(ACC_NUM[3], 'hármat'); assert.equal(numAttr('tizenkettő'), 'tizenkét');
   const from = { öt: 'ötből', hat: 'hatból', három: 'háromból', tíz: 'tízből', nyolc: 'nyolcból', kilenc: 'kilencből', kettő: 'kettőből', húsz: 'húszból', tizenhét: 'tizenhétből', egy: 'egyből' };
   for (const [w, exp] of Object.entries(from)) assert.equal(fromNum(w), exp);
+});
+
+test('etetés: csak a kert 3D lakóit etetjük, a jó étel igaz, a rossz étel biztosan téves', () => {
+  const keys = new Set();
+  MEALS.forEach(([kind, good, ...wrong], i) => {
+    const f = friendById(kind);
+    assert.ok(f, `ismeretlen állat: ${kind}`);
+    assert.ok(f.eats.includes(good), `${f.name} nem eszik ilyet: ${good}`);
+    assert.ok(wrong.length >= 2, `legalább három válasz kell: ${kind} ${good}`);
+    for (const w of wrong) assert.ok(!f.eats.includes(w) && !f.maybe.includes(w), `védhető "rossz" válasz: ${f.name} – ${w}`);
+    for (const x of [good, ...wrong]) { assert.ok(FOODS[x]?.acc, `hiányzó tárgyeset: ${x}`); assert.ok(FOODS[x].t || FOODS[x].svg, `hiányzó kép: ${x}`); }
+    assert.equal(new Set([good, ...wrong]).size, wrong.length + 1, `ismétlődő étel: ${kind} ${good}`);
+    if (i > 0) assert.notEqual(MEALS[i - 1][0], kind, 'egymás után ugyanaz az állat éhes');
+    const key = `${kind}|${good}`; assert.ok(!keys.has(key), `ismétlődő tény: ${key}`); keys.add(key);
+  });
+  // minden rossz válaszként használt étel legalább egyszer jó válasz is (ne lehessen kizárással megtanulni)
+  const goods = new Set(MEALS.map(m => m[1]));
+  for (const w of new Set(MEALS.flatMap(m => m.slice(2)))) assert.ok(goods.has(w), `soha nem helyes étel: ${w}`);
+  // a feladatsorban az etetésnek saját kulcsa van (állat + jó étel), és minden barátot lehet etetni
+  assert.deepEqual(FEED_ITEMS.map(idOf), MEALS.map(m => `feed-${m[0]}-${m[1]}`));
+  for (const f of FRIENDS) assert.ok(MEALS.some(m => m[0] === f.id), `nincs etetős feladata: ${f.name}`);
+});
+
+test('kert: a barátok a csillagokkal érkeznek, etetéssel hamarabb is', () => {
+  assert.deepEqual(friendsFor(0), ['cat']);
+  assert.deepEqual(friendsFor(3), ['cat', 'bunny']);
+  assert.deepEqual(friendsFor(10), ['cat', 'bunny', 'dog']);
+  assert.deepEqual(friendsFor(29), ['cat', 'bunny', 'dog', 'fox']);
+  assert.deepEqual(friendsFor(60), ['cat', 'bunny', 'dog', 'fox', 'bear', 'panda']);
+  assert.deepEqual(friendsFor(0, ['panda']), ['cat', 'panda']);
+});
+
+test('kert: a virágok nem ülnek egymásra, a barátok zugában és az etetőhely előtt nincs virág', () => {
+  const pts = Array.from({ length: MAX_FLOWERS }, (_, i) => flowerSpot(i));
+  assert.equal(new Set(pts.map(p => `${p.x.toFixed(3)},${p.z.toFixed(3)}`)).size, MAX_FLOWERS);
+  for (let i = 0; i < 200; i++) for (let j = 0; j < i; j++) assert.ok(Math.hypot(pts[i].x - pts[j].x, pts[i].z - pts[j].z) > 0.6, `túl közeli virágok: ${i}, ${j}`);
+  for (const p of pts) {
+    for (const f of FRIENDS) assert.ok(Math.hypot(p.x - f.home[0], p.z - f.home[1]) > 1.3, `virág ${f.name} zugában`);
+    assert.ok(!(Math.abs(p.x - FEED_SPOT[0]) < 1.7 && p.z > 2.3), 'virág az etetőhely előtt');
+    assert.ok(Math.hypot(p.x, p.z) < 13, 'virág a kerten kívül');
+  }
+});
+
+test('mentés: régi mentésben nincs "friends" mező – üresről indul, bővíthető, újrakezdéskor törlődik', () => {
+  assert.deepEqual(progress.get().friends, []);
+  progress.addFriend('panda'); progress.addFriend('panda'); progress.addFriend('fox');
+  assert.deepEqual(progress.get().friends, ['panda', 'fox']);
+  progress.reset();
+  assert.deepEqual(progress.get().friends, []);
 });

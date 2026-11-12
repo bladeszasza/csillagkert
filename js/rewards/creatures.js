@@ -70,11 +70,12 @@ export const SPECIES_LIST = Object.keys(SPECIES);
 export function makeFriend(kind = 'bunny') {
   const sp = SPECIES[kind] || SPECIES.bunny;
   const g = new THREE.Group(), inner = new THREE.Group(); g.add(inner);
-  inner.add(at(ball(0.42, sp.body, 0.9, 0.8, 1.2), 0, 0.7, 0));
+  const body = at(ball(0.42, sp.body, 0.9, 0.8, 1.2), 0, 0.7, 0); inner.add(body);
   const head = new THREE.Group(); head.position.set(0, 1.15, -0.5); inner.add(head);
   head.add(ball(0.3, sp.body));
+  const eyes = [];
   for (const sx of [-1, 1]) {
-    const eye = ball(0.05, 0x3b2a63); eye.position.set(sx * 0.12, 0.06, -0.26); head.add(eye);
+    const eye = ball(0.05, 0x3b2a63); eye.position.set(sx * 0.12, 0.06, -0.26); head.add(eye); eyes.push(eye);
     const cheek = ball(0.06, 0xffb3d6, 1, 1, 0.4); cheek.position.set(sx * 0.2, -0.07, -0.24); head.add(cheek);
     let ear;
     if (sp.ear === 'long') { ear = ball(0.09, sp.body, 0.7, 2.6, 0.5); ear.position.set(sx * 0.12, 0.5, 0); ear.rotation.z = -sx * 0.15; }
@@ -85,13 +86,14 @@ export function makeFriend(kind = 'bunny') {
   }
   const nose = ball(0.045, 0xff6f9f); nose.position.set(0, -0.02, -0.3); head.add(nose);
   const smile = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.015, 6, 12, Math.PI), mat(0x3b2a63)); smile.position.set(0, -0.1, -0.27); smile.rotation.z = Math.PI; head.add(smile);
+  const mouth = ball(0.06, 0x7a2340, 1.1, 1, 0.5); mouth.position.set(0, -0.12, -0.27); mouth.visible = false; head.add(mouth);   // evéskor nyílik
   const tail = ball(sp.tail === 'puff' ? 0.15 : 0.1, sp.tail === 'puff' ? sp.accent : sp.body, 1, 1, sp.tail === 'puff' ? 1 : 2.4); tail.position.set(0, 0.8, 0.62); inner.add(tail);
   const arm = new THREE.Group(); arm.position.set(0.38, 0.85, -0.2); inner.add(arm);
   const armM = ball(0.08, sp.body, 0.8, 2.2, 0.8); armM.position.y = 0.12; arm.add(armM);
   const legs = legPair(inner, sp.body, sp.accent, [[-0.18, -0.3], [0.18, -0.3], [-0.18, 0.3], [0.18, 0.3]], 0.38);
   const heart = ball(0.08, 0xff4f8f, 1, 1, 0.5); heart.position.set(0, 2, 0); heart.visible = false; g.add(heart);
   g.scale.setScalar(1.0);
-  g.userData = { legs, inner, head, arm, heart, tail, kind };
+  g.userData = { legs, inner, head, arm, heart, tail, kind, body, eyes, smile, mouth };
   return g;
 }
 export function animateFriend(g, t, speed, waving) {

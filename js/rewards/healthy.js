@@ -17,10 +17,8 @@ const BOX_CAP = 5;                           // szabad játékban ennyi édessé
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const rnd = a => a[(Math.random() * a.length) | 0];
 
-// opts.rounds: rövid kör egy feladat végén (3 egészséges + 2 édesség); kész, ha mind elfogyott (onDone).
-export function run(container, opts = {}) {
-  const rounds = !!opts.rounds, cap = rounds ? 2 : BOX_CAP;
-  const queue = rounds ? [true, true, true, false, false].sort(() => Math.random() - 0.5) : null;
+export function run(container) {
+  const cap = BOX_CAP;
   container.innerHTML = `
     <div class="hd">
       <div class="hd-top">
@@ -78,8 +76,7 @@ export function run(container, opts = {}) {
 
   function dispense() {
     if (!alive || current || !root.isConnected) return;
-    if (queue && !queue.length) { if (!busy) { alive = false; setTimeout(() => opts.onDone?.(), 600); } return; }
-    const healthy = queue ? queue.shift() : Math.random() < 0.6, [emoji, name] = rnd(healthy ? HEALTHY : SWEETS);
+    const healthy = Math.random() < 0.6, [emoji, name] = rnd(healthy ? HEALTHY : SWEETS);
     const el = document.createElement('div'); el.className = 'hd-item drop'; el.textContent = emoji; tray.appendChild(el);
     current = { el, healthy, name, emoji }; ding(520); setTimeout(() => ding(780), 120);
     wire(current);
@@ -148,7 +145,7 @@ export function run(container, opts = {}) {
     await sleep(900);
   }
 
-  const intro = rounds ? 'Etesd meg a barátokat! Az édesség a dobozba megy.' : 'Hami-adagoló! Az egészséges az állatoké, az édesség a dobozba megy.';
+  const intro = 'Hami-adagoló! Az egészséges az állatoké, az édesség a dobozba megy.';
   say(intro, { remember: false }).then(() => setTimeout(dispense, 500)); setTimeout(dispense, 9000);
   return () => { alive = false; clearTimeout(say2.t); cancelAnimationFrame(raf); st3?.dispose(); st3 = null; };
 }

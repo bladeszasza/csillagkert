@@ -13,20 +13,22 @@ export function makeGardenCat() {
   const body = new THREE.Mesh(new THREE.SphereGeometry(0.9, 24, 18), fur); body.scale.set(1, 0.95, 1.1); body.position.y = 0.9; cat.add(body);
   const head = new THREE.Group(); head.position.set(0, 2.1, 0.2);
   head.add(new THREE.Mesh(new THREE.SphereGeometry(0.75, 24, 18), fur));
+  const eyes = [];
   for (const sx of [-1, 1]) {
     const ear = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.5, 4), fur); ear.position.set(sx * 0.48, 0.7, 0); ear.rotation.z = -sx * 0.25; head.add(ear);
     const inner = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.3, 4), pink); inner.position.set(sx * 0.48, 0.68, 0.1); inner.rotation.z = -sx * 0.25; head.add(inner);
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 10), dark); eye.position.set(sx * 0.27, 0.1, 0.68); head.add(eye);
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 10), dark); eye.position.set(sx * 0.27, 0.1, 0.68); head.add(eye); eyes.push(eye);
     const shine = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), white); shine.position.set(sx * 0.3, 0.14, 0.77); head.add(shine);
     const cheek = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 8), pink); cheek.position.set(sx * 0.46, -0.12, 0.6); cheek.scale.z = 0.4; head.add(cheek);
   }
   const nose = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), pink); nose.position.set(0, -0.02, 0.73); head.add(nose);
   const smile = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.025, 6, 14, Math.PI), dark); smile.position.set(0, -0.2, 0.68); smile.rotation.z = Math.PI; head.add(smile);
+  const mouth = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 10), new THREE.MeshBasicMaterial({ color: 0x7a2340 })); mouth.scale.set(1.1, 1, 0.5); mouth.position.set(0, -0.24, 0.68); mouth.visible = false; head.add(mouth);   // evéskor nyílik
   cat.add(head);
   const tail = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.12, 10, 20, Math.PI * 1.2), fur); tail.position.set(-0.9, 0.8, -0.3); tail.rotation.y = 1.2; cat.add(tail);
   for (const sx of [-1, 1]) { const paw = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 10), white); paw.position.set(sx * 0.4, 0.2, 0.7); cat.add(paw); }
   const root = new THREE.Group(); root.add(cat);
-  root.userData = { cat, head, tail, height: CAT_HEIGHT };
+  root.userData = { cat, head, tail, height: CAT_HEIGHT, body, eyes, smile, mouth };
   return root;
 }
 

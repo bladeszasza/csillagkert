@@ -39,6 +39,21 @@ const SOUNDS = {
   purr() { const c = actx, t = c.currentTime, d = r(1.0, 1.5), o = c.createOscillator(), g = c.createGain(), lp = c.createBiquadFilter(), l = c.createOscillator(), lg = c.createGain(); o.type = 'sawtooth'; o.frequency.value = r(62, 74); lp.type = 'lowpass'; lp.frequency.value = 380; g.gain.value = 0.0001; l.frequency.value = r(21, 27); lg.gain.value = 0.22; l.connect(lg); lg.connect(g.gain); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.3, t + 0.15); g.gain.linearRampToValueAtTime(0.0001, t + d); o.connect(lp); lp.connect(g); g.connect(bus('animal')); o.start(t); l.start(t); o.stop(t + d + 0.05); l.stop(t + d + 0.05); },
   // vakkantás (kutya / róka): két rövid "vau"
   yip() { const t = actx.currentTime; for (let i = 0; i < 2; i++) voice(t + i * 0.22, { f0: 520, f1: 760, dur: 0.12, vol: 0.2, form: 1100, q: 3 }); },
+  // --- az állatok saját hangja (a kertben és etetésnél): mindig ugyanaz a hang tartozik az állathoz ---
+  // nyávogás (cica): felcsúszik, aztán hosszan le
+  meow() { const t = actx.currentTime, a = r(520, 600); voice(t, { f0: a, f1: a * 1.5, dur: 0.16, vol: 0.2, form: 1500, q: 4 }); voice(t + 0.15, { f0: a * 1.5, f1: a * 0.85, dur: 0.34, vol: 0.2, form: 1300, q: 4, vib: 6 }); },
+  // ugatás (kutya): két mély "vau"
+  woof() { const t = actx.currentTime; for (let i = 0; i < 2; i++) voice(t + i * 0.26, { f0: r(300, 330), f1: 190, dur: 0.15, vol: 0.26, form: 750, q: 2.5 }); },
+  // csaholás (róka): három rövid, magas vakkantás
+  foxyip() { const t = actx.currentTime; for (let i = 0; i < 3; i++) voice(t + i * 0.15, { f0: 720 + i * 40, f1: 1050, dur: 0.09, vol: 0.18, form: 1700, q: 4 }); },
+  // nyüszögés (nyuszi): két halk, magas "nyiff"
+  squeak() { const t = actx.currentTime; for (let i = 0; i < 2; i++) voice(t + i * 0.16, { f0: 1250, f1: 1900, dur: 0.09, vol: 0.13, form: 2600, q: 7, type: 'triangle' }); },
+  // brummogás (maci): mély, lassú "brumm-brumm"
+  brumm() { const t = actx.currentTime; for (let i = 0; i < 2; i++) voice(t + i * 0.42, { f0: r(118, 128), f1: 88, dur: 0.36, vol: 0.3, form: 430, q: 2, vib: 5 }); },
+  // mekegés (panda): remegő, bárányszerű hang
+  bleat() { const t = actx.currentTime, a = r(400, 440); voice(t, { f0: a, f1: a * 0.9, dur: 0.5, vol: 0.2, form: 1150, q: 3, vib: 15 }); },
+  // rágcsálás: két rövid roppanás
+  munch() { const c = actx, t = c.currentTime; for (let i = 0; i < 2; i++) { const d = 0.06, n = c.createBufferSource(), b = c.createBuffer(1, Math.ceil(c.sampleRate * d), c.sampleRate), ch = b.getChannelData(0); for (let k = 0; k < ch.length; k++) ch[k] = (Math.random() * 2 - 1) * (1 - k / ch.length); n.buffer = b; const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = r(1100, 1700); bp.Q.value = 1.5; const g = c.createGain(); g.gain.value = 0.5; n.connect(bp); bp.connect(g); g.connect(bus('animal')); n.start(t + i * 0.11); } },
   // ujjongás: emelkedő hármashangzat (tapsoló csengés)
   yay() { const t = actx.currentTime; [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => voice(t + i * 0.09, { f0: f, f1: f, dur: 0.28, vol: 0.14, form: f * 2, q: 1.2, type: 'triangle' })); },
 };
@@ -56,5 +71,19 @@ export function happy(animal) {
   try { SOUNDS[kind](); } catch (e) {}
   return kind;
 }
-export function play(kind) { if (!unlockAudio()) return; try { SOUNDS[kind]?.(); } catch (e) {} }
+export function play(kind) { note(kind); if (!unlockAudio()) return; try { SOUNDS[kind]?.(); } catch (e) {} }
+
+// Az állat saját hangja (a kert lakóinak azonosítójával): a cica nyávog, a kutya ugat, a róka csahol,
+// a nyuszi nyüszög, a maci brummog, a panda mekeg. happy: a cica utána dorombol is.
+export const VOICE = { cat: 'meow', bunny: 'squeak', dog: 'woof', fox: 'foxyip', bear: 'brumm', panda: 'bleat' };
+export function animalVoice(id, { happy: glad = false } = {}) {
+  const kind = VOICE[id] || 'yay';
+  play(kind);
+  if (glad && id === 'cat') setTimeout(() => play('purr'), 520);
+  return kind;
+}
+export const munch = () => play('munch');
+// Napló a tesztekhez: mi szólalt meg utoljára (hang nélkül is rögzül)
+export const soundLog = [];
+function note(kind) { soundLog.push({ kind, at: typeof performance !== 'undefined' ? performance.now() : 0 }); if (soundLog.length > 40) soundLog.shift(); }
 export const SOUND_KINDS = Object.keys(SOUNDS);

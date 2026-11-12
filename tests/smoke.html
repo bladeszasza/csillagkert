@@ -21,6 +21,9 @@ const fake = {
   speak(u) { window.__spoken.push(u.text); this.speaking = true; this._u = u; setTimeout(() => u.onstart && u.onstart({}), 0); u._t = setTimeout(() => { this.speaking = false; this._u = null; u.onend && u.onend({}); }, 120); },
 };
 Object.defineProperty(window, 'speechSynthesis', { value: fake, configurable: true });
+// Az igazi SpeechSynthesisUtterance nem fogad el ál-hangot (kivételt dob), ezért azt is helyettesítjük:
+// enélkül a napló üres maradna, és a "megszakítás után csend" ellenőrzés semmit nem mérne.
+window.SpeechSynthesisUtterance = class { constructor(text) { this.text = text; } };
 </script>
 <script type="module">
 import { runAll } from './smoke.js';

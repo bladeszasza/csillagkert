@@ -59,7 +59,7 @@ const name = () => progress.get().name;
 const perReward = () => Math.min(30, (progress.get().perReward || 10) + 2 * (progress.get().rewardsDone || 0));
 
 let garden = null;
-try { garden = createGarden($('garden')); garden.setStars(progress.get().total); }
+try { garden = createGarden($('garden')); garden.setStars(progress.get().total, progress.get().friends); window.__garden = garden; }
 catch (e) { console.warn('3D nem indult el', e); } // a feladatok 3D nélkül is működnek
 
 setupParent(() => location.reload());
@@ -122,7 +122,9 @@ let currentAbort = null, running = false;
 async function runItem(item, station, via) {
   if (running) return;                                       // dupla koppintás ne indítson két feladatot
   running = true;
-  setMuted(false); garden?.pause(true);
+  const inGarden = item.type === 'feed';                     // az etetés a kertben zajlik: ott a kert nem áll meg
+  setMuted(false); garden?.pause(!inGarden);
+  if (inGarden) progress.addFriend(item.kind);               // akit etetünk, az mostantól a kertben lakik
   $('home').hidden = true;
   const ac = new AbortController(); setScope(ac.signal);     // a feladat minden várakozása ehhez a jelhez kötött
   let res = 'error';
@@ -130,12 +132,13 @@ async function runItem(item, station, via) {
     const mod = await activities[item.type]();
     $('stage').hidden = false; $('stage-x').hidden = false;
     const aborted = new Promise(r => { currentAbort = () => r('abort'); });
-    res = await Promise.race([Promise.resolve(mod.run($('stage'), item, { signal: ac.signal })).then(() => 'done'), aborted]);
+    res = await Promise.race([Promise.resolve(mod.run($('stage'), item, { signal: ac.signal, garden })).then(() => 'done'), aborted]);
   } catch (e) { console.error('Feladat-hiba', e); logError(e, item.type); res = 'error'; }
   currentAbort = null; setRepeatHandler(null);
   if (res !== 'done') { ac.abort(); stopSpeaking(); }        // megszakítás vagy hiba: a feladat azonnal és teljesen megáll
   setScope(null);
-  $('stage-x').hidden = true; $('stage').hidden = true; $('stage').innerHTML = ''; garden?.pause(false);
+  $('stage-x').hidden = true; $('stage').hidden = true; $('stage').innerHTML = ''; $('stage').classList.remove('see-garden');
+  garden?.endFeed(); garden?.pause(false);                   // kész, megszakítás, hiba: a kamera mindig visszatér a kertre
   running = false;
   if (res !== 'done') {
     progress.skip(idOf(item)); if (via === 'next') noteRound(item);     // legközelebb más feladat jön
@@ -145,9 +148,10 @@ async function runItem(item, station, via) {
   }
   const meter = progress.addStar(station, idOf(item));
   if (via === 'next') noteRound(item);
-  garden?.setStars(progress.get().total);
+  garden?.setStars(progress.get().total, progress.get().friends);
   garden?.cheer();
-  say(PRAISE[progress.get().total % PRAISE.length] + (name() && meter >= perReward() ? ' ' + name() + '!' : ''), { remember: false });
+  // etetés után Rozi hallgat: ott az állat a saját hangján köszöni meg
+  if (!inGarden) say(PRAISE[progress.get().total % PRAISE.length] + (name() && meter >= perReward() ? ' ' + name() + '!' : ''), { remember: false });
   await flyStar(Math.min(meter, perReward()) - 1, Math.min(meter, perReward()));
   await sleep(900);
   if (meter >= perReward()) openReward(); else $('home').hidden = false;

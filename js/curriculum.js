@@ -3,6 +3,7 @@
 // (futáskor összekeveredik), formátum: 'emoji név'. A kiválasztás (js/queue.js) a megoldottakat kerüli.
 
 import { withArt, artLetter } from './hu.js';
+import { MEALS, friendById } from './friends.js';
 
 // Kijelentések a helyes válaszhoz: kulcs = kérdés|helyes válasz neve. Elhangzik: "Igen! <kijelentés>"
 const FACTS = {
@@ -78,8 +79,8 @@ const math = (a, b, op) => ({ type: 'math', a, b, op });
 const algo = o => ({ type: 'algo', ...o });
 const num = n => `${n} ${NUMS[n - 1]}`;
 const NUMS = ['egy', 'kettő', 'három', 'négy', 'öt', 'hat', 'hét', 'nyolc', 'kilenc', 'tíz', 'tizenegy', 'tizenkettő', 'tizenhárom', 'tizennégy', 'tizenöt', 'tizenhat', 'tizenhét', 'tizennyolc', 'tizenkilenc', 'húsz'];
-// Állatetetés: melyik ételt eszi az állat? food: [helyes, ...rosszak] 'emoji név'
-const feed = (animal, name, ...food) => ({ type: 'feed', animal, name, food: food.map((f, i) => opt(f, i === 0)) });
+// Állatetetés: a kert valódi lakóját etetjük (js/friends.js: ki mit eszik). A kulcs az állat és a jó étel párja.
+const feed = ([kind, good, ...wrong]) => ({ type: 'feed', key: `feed-${kind}-${good}`, kind, animal: friendById(kind).emoji, name: friendById(kind).name, good, wrong });
 
 // Betűlecke: 1) betű átírása, 2–3) melyik szó kezdődik ezzel a hanggal? — egyetlen csillagért.
 // A kérdésben mindig a MÁSIK helyes szó a példa, hogy ne áruljuk el a választ. Csak egyszerű hangokkal kezdődő szavak.
@@ -236,18 +237,7 @@ const BASE = [
   pick('🤖', 'Ha sötét van a szobában, mit kapcsolunk fel?', '💡 lámpát', '📺 tévét', '🔊 hangszórót'),
 ];
 
-const FEED = [
-  feed('🐰', 'nyuszi', '🥕 répa', '🍖 hús', '🧀 sajt'),
-  feed('🐱', 'cica', '🐟 hal', '🥕 répa', '🍌 banán'),
-  feed('🐶', 'kutya', '🦴 csont', '🥕 répa', '🍌 banán'),
-  feed('🐵', 'majom', '🍌 banán', '🦴 csont', '🧀 sajt'),
-  feed('🐭', 'egér', '🧀 sajt', '🍖 hús', '🍌 banán'),
-  feed('🐻', 'maci', '🍯 méz', '🥕 répa', '🍌 banán'),
-  feed('🐴', 'ló', '🍎 alma', '🐟 hal', '🍖 hús'),
-  feed('🐔', 'tyúk', '🌽 kukorica', '🐟 hal', '🍖 hús'),
-  feed('🐿️', 'mókus', '🥜 mogyoró', '🐟 hal', '🍖 hús'),
-  feed('🐮', 'tehén', '🌿 fű', '🍖 hús', '🐟 hal'),
-];
+const FEED = MEALS.map(feed);
 
 // A feladatsor: alap feladatok + állatetetés. A "minden 2., majd 3. feladat etetés" szabályt a js/queue.js tartja be.
 export const CURRICULUM = [...BASE, ...FEED];

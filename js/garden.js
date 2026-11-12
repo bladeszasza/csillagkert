@@ -1,14 +1,45 @@
-// A kert: háttérben forgó, lágy 3D jelenet. A gyűjtött csillagok virágként kinőnek.
+// A kert: élő 3D jelenet a játék mögött. A gyűjtött csillagok virágként kinőnek, a barátok (cica, nyuszi,
+// kutya, róka, maci, panda) itt laknak: pislognak, sétálnak a zugukban, koppintásra megszólalnak.
+// Etetésnél az éhes barát az etetőhelyre sétál, a kamera ráközelít, és őt magát etetjük (js/activities/feed.js).
 import * as THREE from '../vendor/three.module.js';
+import { makeGardenCat, animateCat } from './rewards/cat3d.js';
+import { makeFriend, animateFriend } from './rewards/creatures.js';
+import { friendById, friendsFor, flowerSpot, MAX_FLOWERS, FEED_SPOT } from './friends.js';
+import { animalVoice } from './sounds.js';
+
+const FOV = 50, TAN = Math.tan(FOV * Math.PI / 360);
+const SCALE = 1.35;                                  // a barátok mérete a kertben
+const SKY = 0xbfefff;
+const rnd = (a, b) => a + Math.random() * (b - a);
+const clamp01 = v => Math.max(0, Math.min(1, v));
+const ease = k => k * k * (3 - 2 * k);
+const angDiff = (to, from) => { let d = (to - from) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d; };
+
+// Több test egyetlen geometriává (pozíció + normál + csúcsszín), hogy egy virág egy rajzolási hívás legyen
+function merge(parts) {
+  const pos = [], nor = [], col = [];
+  for (const { geo, matrix, color } of parts) {
+    const g = geo.index ? geo.toNonIndexed() : geo.clone();
+    if (matrix) g.applyMatrix4(matrix);
+    const p = g.attributes.position, n = g.attributes.normal, c = new THREE.Color(color ?? 0xffffff);
+    for (let i = 0; i < p.count; i++) { pos.push(p.getX(i), p.getY(i), p.getZ(i)); nor.push(n.getX(i), n.getY(i), n.getZ(i)); col.push(c.r, c.g, c.b); }
+    g.dispose(); geo.dispose();
+  }
+  const out = new THREE.BufferGeometry();
+  out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  out.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  out.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  return out;
+}
 
 export function createGarden(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xbfefff);
-  scene.fog = new THREE.Fog(0xbfefff, 14, 34);
-  const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
-  camera.position.set(0, 4.2, 9); camera.lookAt(0, 1.2, 0);
+  scene.background = new THREE.Color(SKY);
+  scene.fog = new THREE.Fog(SKY, 14, 34);
+  const fogHome = [14, 34];
+  const camera = new THREE.PerspectiveCamera(FOV, 1, 0.1, 100);
 
   scene.add(new THREE.HemisphereLight(0xffffff, 0xcfe8b8, 1.5));
   const sun = new THREE.DirectionalLight(0xfff2d0, 1.6); sun.position.set(4, 8, 5); scene.add(sun);
@@ -16,100 +47,285 @@ export function createGarden(canvas) {
   const ground = new THREE.Mesh(new THREE.CylinderGeometry(14, 14, 0.6, 48), new THREE.MeshLambertMaterial({ color: 0xa8e6a0 }));
   ground.position.y = -0.3; scene.add(ground);
 
-  // felhők
-  const clouds = new THREE.Group();
+  const m4 = new THREE.Matrix4(), v3 = new THREE.Vector3(), q4 = new THREE.Quaternion(), s3 = new THREE.Vector3();
+
+  // --- felhők: 18 gömb egyetlen példányosított hálóban ---
+  const puffs = [], cloudX = [], cloudY = [], cloudZ = [];
   for (let i = 0; i < 6; i++) {
-    const c = new THREE.Group();
-    for (let j = 0; j < 3; j++) {
-      const s = new THREE.Mesh(new THREE.SphereGeometry(0.7 + Math.random() * 0.4, 12, 10), new THREE.MeshLambertMaterial({ color: 0xffffff }));
-      s.position.set(j * 0.8 - 0.8, Math.random() * 0.3, 0); c.add(s);
-    }
-    c.position.set(-12 + i * 5, 5 + Math.random() * 2, -8 - Math.random() * 4); clouds.add(c);
+    cloudX.push(-12 + i * 5); cloudY.push(5 + Math.random() * 2); cloudZ.push(-8 - Math.random() * 4);
+    for (let j = 0; j < 3; j++) puffs.push({ c: i, ox: j * 0.8 - 0.8, oy: Math.random() * 0.3, r: 0.7 + Math.random() * 0.4 });
   }
-  scene.add(clouds);
-
-  // kiscica-kabala (saját tervezés)
-  const cat = new THREE.Group();
-  const fur = new THREE.MeshLambertMaterial({ color: 0xffb870 });
-  const white = new THREE.MeshLambertMaterial({ color: 0xffffff });
-  const dark = new THREE.MeshBasicMaterial({ color: 0x3b2a63 });
-  const pink = new THREE.MeshLambertMaterial({ color: 0xff8fc8 });
-  const body = new THREE.Mesh(new THREE.SphereGeometry(0.9, 24, 18), fur); body.scale.set(1, 0.95, 1.1); body.position.y = 0.9; cat.add(body);
-  const head = new THREE.Group(); head.position.set(0, 2.1, 0.2);
-  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.75, 24, 18), fur); head.add(skull);
-  for (const sx of [-1, 1]) {
-    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.5, 4), fur); ear.position.set(sx * 0.48, 0.7, 0); ear.rotation.z = -sx * 0.25; head.add(ear);
-    const inner = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.3, 4), pink); inner.position.set(sx * 0.48, 0.68, 0.1); inner.rotation.z = -sx * 0.25; head.add(inner);
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 10), dark); eye.position.set(sx * 0.27, 0.1, 0.68); head.add(eye);
-    const shine = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), white); shine.position.set(sx * 0.3, 0.14, 0.77); head.add(shine);
-    const cheek = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 8), pink); cheek.position.set(sx * 0.46, -0.12, 0.6); cheek.scale.z = 0.4; head.add(cheek);
+  const clouds = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 12, 10), new THREE.MeshLambertMaterial({ color: 0xffffff }), puffs.length);
+  clouds.frustumCulled = false; scene.add(clouds);
+  function placeClouds() {
+    puffs.forEach((p, k) => { m4.makeScale(p.r, p.r, p.r).setPosition(cloudX[p.c] + p.ox, cloudY[p.c] + p.oy, cloudZ[p.c]); clouds.setMatrixAt(k, m4); });
+    clouds.instanceMatrix.needsUpdate = true;
   }
-  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), pink); nose.position.set(0, -0.02, 0.73); head.add(nose);
-  cat.add(head);
-  const tail = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.12, 10, 20, Math.PI * 1.2), fur); tail.position.set(-0.9, 0.8, -0.3); tail.rotation.y = 1.2; cat.add(tail);
-  for (const sx of [-1, 1]) { const paw = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 10), white); paw.position.set(sx * 0.4, 0.2, 0.7); cat.add(paw); }
-  cat.position.set(0, 0, 1);
-  scene.add(cat);
+  placeClouds();
 
-  // virágok = összes gyűjtött csillag
-  const flowers = new THREE.Group(); scene.add(flowers);
-  const colors = [0xff8fc8, 0xffcf3f, 0x8e5be8, 0x7fe0c0, 0xff9f6b];
+  // --- virágok = az összes gyűjtött csillag; két példányosított háló (szár + közép, szirmok) ---
+  const tilt = new THREE.Matrix4().makeRotationX(0.55).setPosition(0, 0.95, 0);     // a virág arca a néző felé dől
+  const at = (x, y, z) => new THREE.Matrix4().makeTranslation(x, y, z);
+  const stemGeo = merge([
+    { geo: new THREE.CylinderGeometry(0.04, 0.05, 0.9, 5, 1, true), matrix: at(0, 0.45, 0), color: 0x4caf50 },
+    { geo: new THREE.SphereGeometry(0.17, 7, 5), matrix: tilt, color: 0xffe066 },
+  ]);
+  const petalGeo = merge(Array.from({ length: 6 }, (_, k) => ({
+    geo: new THREE.SphereGeometry(0.2, 6, 4), matrix: tilt.clone().multiply(at(Math.cos(k * 1.047) * 0.26, 0, Math.sin(k * 1.047) * 0.26)),
+  })));
+  const sway = { value: 0 };
+  const swaying = mat => {                              // a hajladozást a videokártya számolja, nem képkockánként mi
+    mat.onBeforeCompile = sh => {
+      sh.uniforms.uSway = sway;
+      sh.vertexShader = 'uniform float uSway;\n' + sh.vertexShader.replace('#include <begin_vertex>',
+        '#include <begin_vertex>\n#ifdef USE_INSTANCING\n  transformed.x += sin(uSway * 1.2 + instanceMatrix[3][0] * 1.7 + instanceMatrix[3][2]) * 0.05 * transformed.y;\n#endif');
+    };
+    return mat;
+  };
+  const stems = new THREE.InstancedMesh(stemGeo, swaying(new THREE.MeshLambertMaterial({ vertexColors: true })), MAX_FLOWERS);
+  const petals = new THREE.InstancedMesh(petalGeo, swaying(new THREE.MeshLambertMaterial({ color: 0xffffff })), MAX_FLOWERS);
+  stems.count = petals.count = 0; stems.frustumCulled = petals.frustumCulled = false; scene.add(stems, petals);
+  const colors = [0xff8fc8, 0xffcf3f, 0x8e5be8, 0x7fe0c0, 0xff9f6b].map(c => new THREE.Color(c));
+  const growing = [];
   let flowerCount = 0;
-  function spot(i) { // determinisztikus, lazán szétszórt elhelyezés a macska körül
-    const a = i * 2.399, r = 2.6 + (i % 7) * 0.9;
-    return { x: Math.cos(a) * r, z: Math.sin(a) * r * 0.55 - 1.2 };
+  function setFlower(i, k) {
+    const p = flowerSpot(i), size = (0.85 + ((i * 37) % 10) * 0.03) * k;
+    m4.makeScale(size, size, size).setPosition(p.x, 0, p.z);
+    stems.setMatrixAt(i, m4); petals.setMatrixAt(i, m4);
+    stems.instanceMatrix.needsUpdate = petals.instanceMatrix.needsUpdate = true;
   }
   function addFlower(i, animate) {
-    const g = new THREE.Group(); const p = spot(i);
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.9, 6), new THREE.MeshLambertMaterial({ color: 0x4caf50 })); stem.position.y = 0.45; g.add(stem);
-    const bloom = new THREE.Group(); bloom.position.y = 0.95;
-    const col = colors[i % colors.length];
-    for (let k = 0; k < 6; k++) {
-      const petal = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), new THREE.MeshLambertMaterial({ color: col }));
-      petal.position.set(Math.cos(k * 1.047) * 0.26, 0, Math.sin(k * 1.047) * 0.26); bloom.add(petal);
+    petals.setColorAt(i, colors[i % colors.length]); petals.instanceColor.needsUpdate = true;
+    setFlower(i, animate ? 0.01 : 1);
+    if (animate) growing.push({ i, born: performance.now() });
+    stems.count = petals.count = i + 1;
+  }
+
+  // --- szívek (koppintásra és evés után): rajzolt szív, nem emoji ---
+  const heartTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
+    x.fillStyle = '#ff4f8f'; x.beginPath(); x.moveTo(32, 57); x.bezierCurveTo(2, 36, 8, 8, 32, 22); x.bezierCurveTo(56, 8, 62, 36, 32, 57); x.fill();
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  })();
+  const hearts = Array.from({ length: 8 }, () => {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: heartTex, transparent: true, depthWrite: false, fog: false })); s.visible = false; scene.add(s);
+    return { s, t0: -1e9, x: 0, y: 0, z: 0 };
+  });
+  function heartsAt(a, n = 3) {
+    const top = a.def.height * a.size;
+    for (let k = 0; k < n; k++) {
+      const h = hearts.reduce((best, x) => (x.t0 < best.t0 ? x : best));
+      h.t0 = performance.now() + k * 160; h.x = a.x + rnd(-0.5, 0.5) * a.size; h.y = top * rnd(0.8, 1.0); h.z = a.z + 0.3;
     }
-    const mid = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8), new THREE.MeshLambertMaterial({ color: 0xffe066 })); bloom.add(mid);
-    bloom.rotation.x = -0.5; g.add(bloom);
-    g.position.set(p.x, 0, p.z); g.userData.born = animate ? performance.now() : -1e9;
-    g.scale.setScalar(animate ? 0.01 : 1);
-    flowers.add(g);
-  }
-  function setStars(total) {
-    const target = Math.min(total, 70);
-    while (flowerCount < target) { addFlower(flowerCount, flowerCount >= target - 1 && total > 0 && flowerCount > 0); flowerCount++; }
   }
 
-  let cheerUntil = 0, paused = false;
-  function cheer() { cheerUntil = performance.now() + 1400; }
+  // --- a kert lakói ---
+  const actors = new Map();
+  function spawn(id, enter) {
+    if (actors.has(id)) return actors.get(id);
+    const def = friendById(id); if (!def) return null;
+    const isCat = id === 'cat', g = isCat ? makeGardenCat() : makeFriend(id), size = isCat ? 1 : SCALE;
+    g.scale.setScalar(size);
+    const u = g.userData, now = performance.now();
+    const a = { id, def, g, isCat, size, face0: isCat ? 0 : Math.PI, x: def.home[0], z: def.home[1], heading: isCat ? 0 : Math.PI, want: isCat ? 0 : Math.PI,
+      state: 'idle', move: null, until: now + rnd(1500, 5000), seed: rnd(0, 9), last: now, hop: 0, chew: 0, nod: 0, turn: 0, turnSide: 1, wave: 0,
+      blink: now + rnd(800, 4000), blinkEnd: 0, belly: 0, bodyBase: u.body.scale.clone() };
+    if (enter) { a.x = def.home[0] < 0 ? -10 : 10; a.z = 3.2; walk(a, def.home[0], def.home[1], 2600, 'idle', true); }
+    a.heading = a.want;
+    scene.add(g); actors.set(id, a);
+    return a;
+  }
+  // Egyenes vonalú séta az óra szerint (nem képkockánként), így lassú megjelenítés mellett is időre odaér
+  function walk(a, x, z, dur, then, run) {
+    a.move = { x0: a.x, z0: a.z, x1: x, z1: z, t0: performance.now(), dur: Math.max(1, dur), then, run: !!run };
+    if (!a.isCat && (x !== a.x || z !== a.z)) a.want = a.face0 + Math.atan2(x - a.x, z - a.z);
+    a.state = 'walk';
+  }
+  function stepActor(a, now, t) {
+    let speed = 0;
+    if (a.move) {
+      const m = a.move, k = clamp01((now - m.t0) / m.dur);
+      a.x = m.x0 + (m.x1 - m.x0) * k; a.z = m.z0 + (m.z1 - m.z0) * k; speed = m.run ? 0.85 : 0.25;
+      if (k >= 1) { a.move = null; a.state = m.then; a.until = now + rnd(2500, 6500); speed = 0; }
+    }
+    if (!a.move) {
+      if (a.state === 'feeding') a.want = a.face0 + Math.atan2(camera.position.x - a.x, camera.position.z - a.z);
+      else {
+        a.want = a.face0;
+        if (!a.isCat && now > a.until) {                                         // kis séta a saját zugában
+          const ang = rnd(0, 6.28), r = rnd(0.15, 0.4), x = a.def.home[0] + Math.cos(ang) * r, z = a.def.home[1] + Math.sin(ang) * r;
+          walk(a, x, z, Math.hypot(x - a.x, z - a.z) / 0.55 * 1000, 'idle', false);
+          if (Math.random() < 0.3) a.wave = now + 1600;
+        }
+      }
+    }
+    const dt = Math.min(0.5, (now - a.last) / 1000); a.last = now;
+    a.heading += angDiff(a.want, a.heading) * (1 - Math.exp(-dt * 9));
 
+    const hopK = a.hop > now ? 1 - (a.hop - now) / 900 : 0;
+    const skip = a.isCat && a.move ? Math.abs(Math.sin((now - a.move.t0) / 170)) * 0.3 : 0;      // a cicának nincs lába: apró ugrásokkal halad
+    a.g.position.set(a.x, hopK > 0 ? Math.abs(Math.sin(hopK * Math.PI * 2)) * 0.55 * a.size : skip, a.z);
+    a.g.rotation.y = a.heading;
+    if (a.isCat) animateCat(a.g, t, { cheer: hopK > 0 });
+    else animateFriend(a.g, t + a.seed, speed, a.wave > now || hopK > 0);
+
+    const u = a.g.userData, sign = a.isCat ? 1 : -1;                              // a cica +z, a többiek -z felé néznek
+    const chewing = a.chew > now, nodK = a.nod > now ? 1 - (a.nod - now) / 800 : 0, turnK = a.turn > now ? 1 - (a.turn - now) / 1000 : 0;
+    u.head.rotation.x = sign * (chewing ? 0.14 + Math.sin(t * 17) * 0.07 : nodK > 0 ? Math.sin(nodK * Math.PI * 2) ** 2 * 0.4 : 0);
+    u.head.rotation.y = turnK > 0 ? Math.sin(turnK * Math.PI) * 0.8 * a.turnSide : 0;   // udvariasan elfordítja a fejét
+    u.mouth.visible = chewing; u.smile.visible = !chewing;
+    if (chewing) u.mouth.scale.y = 0.35 + Math.abs(Math.sin(t * 9)) * 0.75;
+    const shut = now < a.blinkEnd; u.eyes.forEach(e => { e.scale.y = shut ? 0.12 : 1; });
+    if (now > a.blink) { a.blinkEnd = now + 130; a.blink = now + rnd(2200, 6000); }
+    const b = a.belly, bb = a.bodyBase; u.body.scale.set(bb.x * (1 + 0.16 * b), bb.y * (1 + 0.07 * b), bb.z * (1 + 0.12 * b));
+  }
+
+  // --- kamera: alaphelyzet (az egész kert) és etetés (közeli az éhes barátról); a kettő között simán vált ---
+  let W = 1, H = 1;
+  const home = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() }, close = { pos: new THREE.Vector3(), quat: new THREE.Quaternion(), d: 8 };
+  const zoom = { from: 0, to: 0, t0: 0, dur: 1 };
+  let feeding = null;
+  const zoomAt = now => zoom.from + (zoom.to - zoom.from) * ease(clamp01((now - zoom.t0) / zoom.dur));
+  function computeHome() {
+    const portrait = H > W, small = H < 640 && W > H;
+    // álló képernyőn a kamera messzebbről és magasabbról néz, hogy minden barát elférjen egymás mellett
+    home.pos.set(0, portrait ? 7.2 : 4.2, portrait ? 15.5 : 9);
+    fogHome[0] = home.pos.length() + 4; fogHome[1] = home.pos.length() + 24;
+    // Alul a csempék és a Tovább gomb vannak: a kert közepe ezért a képernyő közepénél feljebb kerül
+    const ny = 1 - 2 * (portrait ? 0.37 : small ? 0.34 : 0.43);
+    const dy = 1.3 - home.pos.y, dz = -home.pos.z, pitch = Math.atan2(-dy, -dz) + Math.atan(ny * TAN);
+    home.quat.setFromEuler(new THREE.Euler(-pitch, 0, 0));
+  }
+  function computeClose() {
+    if (!feeding) return;
+    const a = feeding.a, hA = a.def.height * a.size, r = canvas.getBoundingClientRect();
+    let fr = null; try { fr = feeding.frame?.(); } catch (e) {}
+    const f = fr && fr.width > 40 && fr.height > 40
+      ? { cx: fr.left + fr.width / 2 - r.left, cy: fr.top + fr.height / 2 - r.top, w: fr.width, h: fr.height }
+      : { cx: W / 2, cy: H * 0.42, w: W * 0.8, h: H * 0.45 };
+    const pxH = Math.max(60, Math.min(f.h * 0.86, f.w * 0.9)), d = hA * H / (pxH * 2 * TAN), p = 0.14;
+    const xc = (f.cx - W / 2) / (W / 2) * d * TAN * (W / H), yc = (H / 2 - f.cy) / (H / 2) * d * TAN;
+    close.pos.set(feeding.x - xc, hA / 2 - yc * Math.cos(p) + d * Math.sin(p), feeding.z + yc * Math.sin(p) + d * Math.cos(p));
+    close.quat.setFromEuler(new THREE.Euler(-p, 0, 0)); close.d = d;
+  }
+  function applyCamera(now) {
+    const k = zoomAt(now);
+    if (k > 0) computeClose();
+    camera.position.lerpVectors(home.pos, close.pos, k); camera.quaternion.slerpQuaternions(home.quat, close.quat, k);
+    // etetésnél a háttér (a többi barát) elhalványul, hogy az éhes állat legyen a főszereplő
+    scene.fog.near = fogHome[0] + (close.d + 0.6 - fogHome[0]) * k; scene.fog.far = fogHome[1] + (close.d + 9 - fogHome[1]) * k;
+    camera.updateMatrixWorld();
+  }
   function resize() {
-    const w = canvas.clientWidth || window.innerWidth, h = canvas.clientHeight || window.innerHeight;
-    renderer.setSize(w, h, false); camera.aspect = w / h;
-    camera.position.set(0, h > w ? 5.4 : 4.2, h > w ? 12 : 9); camera.lookAt(0, (h < 640 && w > h) ? -0.3 : 1.2, 0);
-    camera.updateProjectionMatrix();
+    W = canvas.clientWidth || window.innerWidth; H = canvas.clientHeight || window.innerHeight;
+    renderer.setSize(W, H, false); camera.aspect = W / H; camera.updateProjectionMatrix();
+    computeHome();
+    if (paused) draw(performance.now());                // szünetben is igazodjon a kép az új mérethez
   }
+
+  // --- egy lépés: minden az óra szerint mozog, így a lassan frissülő képernyőn is jó helyen áll ---
+  const t0 = performance.now();
+  let lastCloud = t0;
+  function step(now) {
+    const t = (now - t0) / 1000;
+    applyCamera(now);
+    actors.forEach(a => stepActor(a, now, t));
+    return t;
+  }
+  function draw(now) {
+    const t = step(now), dt = Math.min(0.1, (now - lastCloud) / 1000); lastCloud = now;
+    sway.value = t;
+    for (let i = 0; i < 6; i++) { cloudX[i] += 0.24 * (1 + i * 0.1) * dt; if (cloudX[i] > 16) cloudX[i] = -16; }
+    placeClouds();
+    for (let k = growing.length - 1; k >= 0; k--) {
+      const g = growing[k], age = (now - g.born) / 700;
+      if (age >= 1) { setFlower(g.i, 1); growing.splice(k, 1); }
+      else setFlower(g.i, Math.max(0.01, 1 - Math.pow(1 - age, 3)) * (1 + Math.sin(age * 3.14) * 0.3));
+    }
+    for (const h of hearts) {
+      const k = (now - h.t0) / 1300;
+      if (k < 0 || k > 1) { h.s.visible = false; continue; }
+      h.s.visible = true; h.s.position.set(h.x, h.y + k * 1.5, h.z); h.s.scale.setScalar(0.35 + Math.sin(k * 3.14) * 0.35); h.s.material.opacity = 1 - k * k;
+    }
+    renderer.render(scene, camera);
+  }
+  let paused = false, raf = 0;
+  function loop(now) { raf = 0; if (paused) return; draw(now); raf = requestAnimationFrame(loop); }
+
   window.addEventListener('resize', resize); window.addEventListener('orientationchange', () => setTimeout(resize, 250));
   if ('ResizeObserver' in window) new ResizeObserver(resize).observe(canvas);
   window.visualViewport?.addEventListener('resize', resize);
   resize();
+  raf = requestAnimationFrame(loop);
 
-  function frame(now) {
-    if (paused) { requestAnimationFrame(frame); return; }
-    const t = now / 1000;
-    const cheering = now < cheerUntil;
-    cat.position.y = cheering ? Math.abs(Math.sin(t * 9)) * 0.7 : Math.sin(t * 2) * 0.04;
-    head.rotation.z = Math.sin(t * 1.3) * 0.08;
-    tail.rotation.z = Math.sin(t * (cheering ? 9 : 2.4)) * 0.3;
-    clouds.children.forEach((c, i) => { c.position.x += 0.004 * (1 + i * 0.1); if (c.position.x > 16) c.position.x = -16; });
-    flowers.children.forEach(f => {
-      const age = (now - f.userData.born) / 700;
-      if (age < 1) f.scale.setScalar(Math.max(0.01, 1 - Math.pow(1 - age, 3)) * (1 + Math.sin(age * 3.14) * 0.3));
-      else f.scale.setScalar(1);
-      f.rotation.z = Math.sin(t * 1.2 + f.position.x) * 0.04;
-    });
-    renderer.render(scene, camera);
-    requestAnimationFrame(frame);
+  // --- képernyő-vetítés: hol van a barát (és a szája) a képernyőn ---
+  function screenOf(a, now = performance.now()) {
+    step(now); a.g.updateMatrixWorld(true);
+    const r = canvas.getBoundingClientRect(), hA = a.def.height * a.size;
+    const px = p => { v3.copy(p).project(camera); return { x: r.left + (v3.x + 1) / 2 * r.width, y: r.top + (1 - v3.y) / 2 * r.height }; };
+    const depth = v3.set(a.x, hA / 2, a.z).sub(camera.position).dot(s3.set(0, 0, -1).applyQuaternion(camera.quaternion));
+    const ppu = r.height / (2 * TAN * Math.max(0.5, depth));                       // képpont / egység ebben a mélységben
+    const c = px(new THREE.Vector3(a.x, a.g.position.y + hA / 2, a.z)), mouth = px(a.g.userData.mouth.getWorldPosition(new THREE.Vector3()));
+    const hw = hA * 0.36 * ppu, hh = hA * 0.52 * ppu;
+    return { left: c.x - hw, right: c.x + hw, top: c.y - hh, bottom: c.y + hh, cx: c.x, cy: c.y, mouth, visible: depth > 0.5 };
   }
-  requestAnimationFrame(frame);
-  return { setStars, cheer, pause: p => { paused = !!p; } };
+
+  // koppintás a kertben: a barát ugrik egyet, megszólal a saját hangján, szívek szállnak
+  function poke(a) { const now = performance.now(); a.hop = now + 900; heartsAt(a, 2); animalVoice(a.id); }
+  canvas.addEventListener('pointerdown', e => {
+    if (paused || feeding) return;
+    let hit = null, best = Infinity;
+    actors.forEach(a => { const s = screenOf(a); if (s.visible && e.clientX > s.left && e.clientX < s.right && e.clientY > s.top && e.clientY < s.bottom) { const d = Math.hypot(e.clientX - s.cx, e.clientY - s.cy); if (d < best) { best = d; hit = a; } } });
+    if (hit) poke(hit);
+  });
+
+  function setStars(total, fed = [], animate = true) {
+    const first = flowerCount === 0, target = Math.min(total, MAX_FLOWERS);
+    while (flowerCount < target) { addFlower(flowerCount, !first && flowerCount >= target - 1); flowerCount++; }
+    const had = actors.size > 0;
+    for (const id of friendsFor(total, fed)) if (!actors.has(id)) spawn(id, had && animate);   // új barát: besétál az ösvényen
+  }
+
+  // Etetés: az éhes barát az etetőhelyre megy, a kamera ráközelít. frame(): a képernyő-téglalap, ahová az állat kerüljön.
+  function beginFeed(id, frame) {
+    endFeed();
+    const fresh = !actors.has(id), a = spawn(id, false); if (!a) return null;
+    const now = performance.now(), sx = FEED_SPOT[0], sz = FEED_SPOT[1];
+    if (fresh) { a.x = 10; a.z = sz + 0.6; }                                              // új barát: oldalról sétál be
+    const dur = Math.max(500, Math.min(2400, Math.hypot(sx - a.x, sz - a.z) / 3.6 * 1000));
+    walk(a, sx, sz, dur, 'feeding', true);
+    a.belly = 0;
+    feeding = { a, frame, x: sx, z: sz };
+    zoom.from = zoomAt(now); zoom.to = 1; zoom.t0 = now; zoom.dur = 1100;
+    computeClose();
+    return {
+      fresh, arriveMs: Math.max(dur, 900),
+      rect: () => screenOf(a),
+      eat(ms = 1200) { const n = performance.now(); a.chew = n + ms; a.turn = 0; },
+      refuse() { a.turn = performance.now() + 1000; a.turnSide = Math.random() < 0.5 ? -1 : 1; },
+      thank() { const n = performance.now(); a.chew = 0; a.belly = 1; a.nod = n + 800; a.hop = n + 1700; heartsAt(a, 4); },
+    };
+  }
+  function endFeed() {
+    if (!feeding || feeding.done) return;
+    const a = feeding.a, now = performance.now();
+    feeding = { ...feeding, done: true };
+    zoom.from = zoomAt(now); zoom.to = 0; zoom.t0 = now; zoom.dur = 900;
+    a.chew = 0;
+    walk(a, a.def.home[0], a.def.home[1], Math.max(600, Math.hypot(a.def.home[0] - a.x, a.def.home[1] - a.z) / 3 * 1000), 'idle', true);
+    setTimeout(() => { if (feeding?.done && feeding.a === a) feeding = null; }, 950);
+    setTimeout(() => { a.belly = 0; }, 6000);
+  }
+
+  return {
+    setStars, beginFeed, endFeed,
+    cheer() { const now = performance.now(); let k = 0; actors.forEach(a => { a.hop = now + 900 + (k++ % 3) * 70; }); },   // új csillag: mindenki ugrik egyet
+    pause(p) { paused = !!p; if (!paused && !raf) raf = requestAnimationFrame(loop); },
+    // tesztekhez és hibakereséshez: rajzolási hívások, lakók, virágok, a barátok helye a képernyőn
+    debug() {
+      draw(performance.now());
+      return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, flowers: flowerCount, friends: [...actors.keys()], zoom: zoomAt(performance.now()), feeding: feeding && !feeding.done ? feeding.a.id : null,
+        screen: Object.fromEntries([...actors.values()].map(a => [a.id, screenOf(a)])) };
+    },
+  };
 }
