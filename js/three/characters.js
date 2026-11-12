@@ -380,23 +380,39 @@ export function createCharacterBatch(scene) {
     m.instanceMatrix.array.set(old.instanceMatrix.array); m.instanceColor.array.set(old.instanceColor.array);
     scene.remove(old); old.dispose(); meshes[i] = m;
   }
-  const chars = [];
+  const chars = [], owners = geos.map(() => []);      // owners[forma][hely] = az a rész, amelyik azt a példányt rajzolja
   function add(g) {
     const parts = g.userData.parts, need = meshes.map(() => 0);
     for (const p of parts) need[p.prim]++;
     need.forEach((n, i) => { if (n) ensure(i, meshes[i].count + n); });
-    for (const p of parts) { const m = meshes[p.prim]; p.slot = m.count++; m.setColorAt(p.slot, p.color); }
+    for (const p of parts) { const m = meshes[p.prim]; p.slot = m.count++; owners[p.prim][p.slot] = p; m.setColorAt(p.slot, p.color); }
     meshes.forEach(m => { m.instanceColor.needsUpdate = true; });
     chars.push(g);
+  }
+  // Barát eltávolítása (a végtelen világban jönnek-mennek): a helyére a háló utolsó példánya költözik, így nincs lyuk
+  // és a példányszám nem nő a végtelenségig.
+  function remove(g) {
+    const i = chars.indexOf(g); if (i < 0) return false;
+    chars.splice(i, 1);
+    for (const p of g.userData.parts) {
+      const m = meshes[p.prim], own = owners[p.prim], last = --m.count;
+      if (p.slot !== last) { const q = own[last]; q.slot = p.slot; own[p.slot] = q; m.setColorAt(p.slot, q.color); }
+      own.length = last; p.slot = -1;
+    }
+    meshes.forEach(m => { m.instanceColor.needsUpdate = true; });
+    return true;
   }
   const M = new THREE.Matrix4(), ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
   const shown = (n, root) => { for (let o = n; o; o = o.parent) { if (!o.visible) return false; if (o === root) return true; } return true; };
   function update() {
     for (const g of chars) {
+      const parts = g.userData.parts;
+      if (!g.visible) { for (const p of parts) meshes[p.prim].setMatrixAt(p.slot, ZERO); continue; }   // rejtett barát: nincs csont-számolás
       g.updateMatrixWorld(true);
-      for (const p of g.userData.parts) meshes[p.prim].setMatrixAt(p.slot, g.visible && shown(p.node, g) ? M.multiplyMatrices(p.node.matrixWorld, p.m) : ZERO);
+      for (const p of parts) meshes[p.prim].setMatrixAt(p.slot, shown(p.node, g) ? M.multiplyMatrices(p.node.matrixWorld, p.m) : ZERO);
     }
     for (const m of meshes) m.instanceMatrix.needsUpdate = true;
   }
-  return { add, update, get meshes() { return meshes; } };
+  function dispose() { for (const m of meshes) { scene.remove(m); m.dispose(); } geos.forEach(g => g.dispose()); mat.dispose(); chars.length = 0; }
+  return { add, remove, update, dispose, get meshes() { return meshes; }, get size() { return chars.length; } };
 }

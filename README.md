@@ -31,6 +31,21 @@ Feladatok → csillagok → jutalomjáték. Hibázásért nincs büntetés: szel
 - Ha a zene nem szól, de Rozi beszél: kapcsold ki az iPad néma módját, és hangosítsd fel.
 - Ha nincs magyar hang: Beállítások → Kisegítő lehetőségek → Felolvasott tartalom → Hangok → Magyar.
 
+## Szabad futás és a többi jutalomjáték
+
+- **Irányítás:** egy rövid koppintás oda küldi az unikornist, és addig fut, amíg oda nem ér (ha valami útját állja,
+  egy idő után megáll). A lent tartott ujjat követi; ha az ujj felemelkedik, megáll. Két ujj vagy a tenyér nem zavarja
+  össze: mindig a legutóbb letett ujj irányít, Apple Pencil mellett a tenyér nem számít.
+- **Ugrás:** a kis köveket és rönköket magától átugorja, a tetejükre is fel tud ugrani. A fák kerülhetők, nem lehet
+  beléjük ragadni; ha egy lomb a kamera elé kerül, összemegy, hogy az unikornis látsszon.
+- **Barátok:** akinek köszönsz (odafutsz hozzá), veled jön; egyszerre legfeljebb négyen, sorban, egymást kikerülve.
+  A követő barát nem tűnik el, akármilyen messzire futsz.
+- **Hangok:** patadobogás, ugrás, érkezés, koccanás; a versenyben visszaszámlálás, rajt és ujjongás. A verseny végén a két
+  unikornis egymás felé fordul és együtt ugrál, akárki nyert; aki másodiknak ér be, az is dicséretet kap.
+- **A jutalomidő vége szelíd:** egy perccel előtte 🌅 jelzés és egy mondat („Még egy kicsit játszunk…"). Ha épp fut egy
+  verseny, megvárja a végét (legfeljebb 45 mp-ig), aztán egy búcsúkártya jön, és a kert magától visszatér.
+- **Unikornis-futás (Sparkhorn):** amíg tölt, „Töltődik…" kártya látszik; ha nincs internet, Rozi szól, és van „Újra" gomb.
+
 ## Etetés
 
 Az éhes barát az etetőhelyre sétál, a kamera ráközelít, és az asztalról neki kell adni az ételt (húzással vagy koppintással).
@@ -110,6 +125,13 @@ ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba ment
 - Böngészős füstteszt: `http://localhost:8080/tests/smoke.html` (hangerő-mérés, a jó válasz helye, megszakítás utáni csend,
   minden feladattípus elindul, a kert lakói és rajzolási terhe, a tópart és a tanya, koppintás minden barátra,
   etetés a 3D állattal minden úton, a tanyáról is). A füstteszt memóriában élő tárolóval fut, a valódi mentéshez nem nyúl.
+  Csak egy részét is lehet futtatni: `?only=games` (szabad futás és jutalomjátékok), vagy `?only=` és egy tesztnév-részlet.
+- Szabad futás (a füstteszt része): egy futó-robot három különböző világban 2000 egységet tesz meg; nem ragadhat be,
+  nem futhat bele fába, a követő barátok nem tűnhetnek el, és a világ széle nem látszhat. Ellenőrzi a koppintást,
+  a tartott ujjat, a két ujjat, a tenyeret, az ugrást, a rajzolási terhet és a 3D-jelenet felszabadítását is.
+- Jutalomjátékok (a füstteszt része): mindegyik elindul és kilép; kilépés után nem marad 3D-jelenet, hang-kontextus,
+  időzítő és beszéd; a hangjaik a közös hangmotoron szólnak.
+- A jutalomidő vége: `node --test tests/reward-timer.test.mjs` (figyelmeztetés, a futó verseny kivárása, türelmi idő).
 - Állatgaléria: `http://localhost:8080/tests/characters.html` (`?kind=cow`, `?page=2`, `?wave=1`, `?side=1`) – minden faj
   egyenként, a mért és a táblázatban álló magassággal.
 - A barátok egyetlen közös, példányosított hálócsomagból rajzolódnak (`js/three/characters.js`): a teljes kert

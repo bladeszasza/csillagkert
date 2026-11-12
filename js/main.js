@@ -10,6 +10,8 @@ import { renderMeter, flyStar } from './stars.js';
 import { setupParent } from './parent.js';
 import { friendsFor, friendById, AREAS } from './friends.js';
 import { withArt } from './hu.js';
+import { createRewardTimer } from './reward-timer.js';
+import { play } from './sounds.js';
 
 const $ = id => document.getElementById(id);
 
@@ -253,30 +255,45 @@ $('reward-x').addEventListener('click', () => {      // ha nem akar játszani: a
   $('reward').hidden = true; $('home').hidden = false;
   stopSpeaking(); say('Semmi baj! A csillagaid megvannak, játszhatsz később is.', { remember: false });
 });
-let stopGame = null, gameTimer = null;
+let stopGame = null, rewardTimer = null, byeTimer = 0;
+// a játék törzséből minden teszt-kapaszkodót (__ow, __race, __busy…) leveszünk, hogy a lezárt jelenet ne maradjon a memóriában
+const clearGameBody = () => { const b = $('game-body'); b.innerHTML = ''; for (const k of Object.keys(b)) if (k.startsWith('__')) delete b[k]; };
 document.querySelectorAll('.choice').forEach(btn => btn.addEventListener('click', async () => {
   if (!$('game').hidden) return;                             // már fut egy játék
   setMuted(false); garden?.pause(true); unlockAudio();
-  $('reward').hidden = true; $('game').hidden = false;
+  $('reward').hidden = true; $('game').hidden = false; $('game-soon').hidden = true; $('game-bye').hidden = true;
   try {
     const mod = await rewards[btn.dataset.game]();
     stopGame = mod.run($('game-body'), { onGift: id => progress.addGift(id) });
-    gameTimer = setTimeout(endReward, progress.get().rewardMinutes * 60 * 1000);
+    // szelíd vége: egy perccel előtte szól, a kör közepén nem vág bele (legfeljebb 45 mp-et vár), utána búcsúkártya
+    rewardTimer = createRewardTimer({
+      minutes: progress.get().rewardMinutes,
+      isBusy: () => !!$('game-body').__busy?.(),
+      onWarn: () => { $('game-soon').hidden = false; say('Még egy kicsit játszunk, aztán hazamegyünk!', { remember: false }); },
+      onEnd: goodbye,
+    });
   } catch (e) {
     console.error('Játék-hiba', e); logError(e, btn.dataset.game);
-    $('game-body').innerHTML = ''; $('game').hidden = true; $('reward').hidden = false; garden?.pause(false);
+    clearGameBody(); $('game').hidden = true; $('reward').hidden = false; garden?.pause(false);
     say('Semmi baj! Válasszunk másik játékot!', { remember: false });
   }
 }));
-$('game-back').addEventListener('click', endReward);
+$('game-back').addEventListener('click', () => endReward());
+function goodbye() {
+  $('game-bye').hidden = false; play('yay');
+  say('Ez nagyon jó volt! Most hazamegyünk a kertbe.', { remember: false });
+  byeTimer = setTimeout(() => endReward(true), 7000);
+}
+$('game-bye-home').addEventListener('click', () => endReward(true));
 
-async function endReward() {
-  clearTimeout(gameTimer);
+function endReward(fromBye = false) {
+  if ($('game').hidden) return;
+  rewardTimer?.stop(); rewardTimer = null; clearTimeout(byeTimer);
   try { stopGame?.(); } catch (e) {}
   stopGame = null;
-  $('game-body').innerHTML = ''; $('game').hidden = true; garden?.pause(false);
+  clearGameBody(); $('game').hidden = true; $('game-soon').hidden = true; $('game-bye').hidden = true; garden?.pause(false);
   progress.completeReward();                       // a következő jutalomhoz több csillag kell
   progress.resetMeter(); renderMeter(0, perReward());
   $('home').hidden = false;
-  say('Ez nagyon jó volt! Gyűjtsünk még csillagokat!');
+  say(fromBye ? 'Gyűjtsünk még csillagokat!' : 'Ez nagyon jó volt! Gyűjtsünk még csillagokat!');
 }

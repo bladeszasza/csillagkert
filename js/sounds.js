@@ -90,7 +90,43 @@ const SOUNDS = {
   munch() { const c = actx, t = c.currentTime; for (let i = 0; i < 2; i++) { const d = 0.06, n = c.createBufferSource(), b = c.createBuffer(1, Math.ceil(c.sampleRate * d), c.sampleRate), ch = b.getChannelData(0); for (let k = 0; k < ch.length; k++) ch[k] = (Math.random() * 2 - 1) * (1 - k / ch.length); n.buffer = b; const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = r(1100, 1700); bp.Q.value = 1.5; const g = c.createGain(); g.gain.value = 0.5; n.connect(bp); bp.connect(g); g.connect(bus('animal')); n.start(t + i * 0.11); } },
   // ujjongás: emelkedő hármashangzat (tapsoló csengés)
   yay() { const t = actx.currentTime; [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => voice(t + i * 0.09, { f0: f, f1: f, dur: 0.28, vol: 0.14, form: f * 2, q: 1.2, type: 'triangle' })); },
+
+  // --- játékhangok (szabad futás, verseny): az "sfx" buszon, halkabbak az állathangoknál ---
+  // lépés / patakopogás: tompa koppanás, lépésenként kicsit más
+  step() { const t = actx.currentTime; thump(t, r(150, 190), 0.07, 0.16); hit(t, 0.03, r(700, 1000), 'lowpass', 0.12); },
+  // ugrás: puha, felfelé csúszó "hopp"
+  boing() { const t = actx.currentTime; tone(t, { f0: 260, f1: 720, dur: 0.22, vol: 0.32, type: 'sine' }); tone(t + 0.03, { f0: 520, f1: 1200, dur: 0.16, vol: 0.08, type: 'triangle' }); },
+  // földet érés: mély, puha puffanás
+  thud() { const t = actx.currentTime; thump(t, 120, 0.13, 0.32); hit(t, 0.06, 500, 'lowpass', 0.16); },
+  // nekiment valaminek: kedves "bupp" (nem baj, csak jelzi)
+  bump() { const t = actx.currentTime; tone(t, { f0: 440, f1: 300, dur: 0.13, vol: 0.26, type: 'sine' }); tone(t + 0.1, { f0: 330, f1: 360, dur: 0.1, vol: 0.14, type: 'sine' }); },
+  // visszaszámlálás: rövid csippanás, a végén magas "rajt" hang
+  beep() { const t = actx.currentTime; tone(t, { f0: 660, f1: 660, dur: 0.16, vol: 0.3, type: 'triangle' }); },
+  go() { const t = actx.currentTime; for (const f of [784, 988, 1175]) tone(t, { f0: f, f1: f, dur: 0.42, vol: 0.16, type: 'triangle' }); },
+  // ünneplés: kis fanfár és tapsvihar
+  cheer() {
+    const t = actx.currentTime;
+    [523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5].forEach((f, i) => tone(t + i * 0.12, { f0: f, f1: f, dur: i > 3 ? 0.4 : 0.16, vol: 0.18, type: 'triangle' }));
+    for (let i = 0; i < 14; i++) hit(t + 0.1 + i * r(0.06, 0.11), 0.05, r(1200, 1900), 'bandpass', 0.22);
+  },
 };
+// egyszerű hang az sfx buszon (csúszó magassággal)
+function tone(t, { f0, f1 = f0, dur = 0.15, vol = 0.2, type = 'sine' }) {
+  const c = actx; if (!c) return;
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(40, f1), t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(bus('sfx')); o.start(t); o.stop(t + dur + 0.05);
+}
+function thump(t, f, dur, vol) { tone(t, { f0: f, f1: f * 0.5, dur, vol, type: 'sine' }); }
+// szűrt zajlöket (koppanás, taps)
+function hit(t, dur, freq, type, vol) {
+  const c = actx; if (!c) return;
+  const n = c.createBufferSource(), b = c.createBuffer(1, Math.ceil(c.sampleRate * dur), c.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2);
+  const f = c.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = 0.9;
+  const g = c.createGain(); g.gain.value = vol; n.buffer = b; n.connect(f); f.connect(g); g.connect(bus('sfx')); n.start(t);
+}
 export const HAPPY = ['giggle', 'laugh', 'squeal', 'chirp', 'yay'];
 const BY_ANIMAL = {
   '🐱': ['purr', 'squeal', 'giggle'], '🐰': ['chirp', 'giggle', 'squeal'], '🐶': ['yip', 'laugh', 'yay'], '🦊': ['yip', 'giggle', 'laugh'],

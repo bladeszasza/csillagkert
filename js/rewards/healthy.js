@@ -44,7 +44,7 @@ export function run(container) {
   const ps = PALS.map(() => ({ happy: 0, nom: 0, shake: 0 }));
   const models = [];
   try {
-    st3 = createStage(root);
+    st3 = createStage(root, { maxDpr: 1.5 });              // négy kis állathoz elég a kisebb felbontás
     PALS.forEach((p, i) => {
       const m = i === 0 ? makeGardenCat() : makeFriend(['bunny', 'dog', 'fox'][i - 1]);
       if (i > 0) m.rotation.y = Math.PI;                       // a barátok -z felé néznek: fordítsuk a kamera felé
@@ -72,7 +72,15 @@ export function run(container) {
   const ding = (f = 660, d = 0.25) => chime(f, { dur: d, vol: 0.6 });      // a közös hangmotoron szól (nincs külön hang-kontextus)
   unlockAudio();
   root.addEventListener('pointerdown', () => unlockAudio());
-  const say2 = (t, speak = true) => { if (!root.isConnected) return Promise.resolve(); bubble.textContent = t; bubble.classList.add('on'); clearTimeout(say2.t); say2.t = setTimeout(() => bubble.classList.remove('on'), 2200); return speak ? say(t, { remember: false }) : Promise.resolve(); };
+  // A buborék mindig mutatja a szöveget, de Rozi szabad játékban ritkán szól (alapból legfeljebb 15 mp-enként);
+  // ha a gyerek maga kérdez (rákoppint egy ételre), hamarabb is válaszol.
+  let lastTalk = -1e9;
+  const say2 = (t, gap = 15000) => {
+    if (!root.isConnected) return Promise.resolve();
+    bubble.textContent = t; bubble.classList.add('on'); clearTimeout(say2.t); say2.t = setTimeout(() => bubble.classList.remove('on'), 2200);
+    const now = performance.now(); if (gap === Infinity || now - lastTalk < gap) return Promise.resolve();
+    lastTalk = now; return say(t, { remember: false });
+  };
 
   function dispense() {
     if (!alive || current || !root.isConnected) return;
@@ -94,7 +102,7 @@ export function run(container) {
     el.addEventListener('pointercancel', () => { start = null; back(item); });
     el.addEventListener('pointerup', async e => {
       if (!start) return; const s = start; start = null;
-      if (!s.moved) { back(item); say2(item.healthy ? `${item.name}. Egészséges! Etesd meg a cicát!` : `${item.name}. Édesség! Ez a dobozba megy.`); return; }
+      if (!s.moved) { back(item); say2(item.healthy ? `${item.name}. Egészséges! Etesd meg a cicát!` : `${item.name}. Édesség! Ez a dobozba megy.`, 4000); return; }
       const palIdx = pals.findIndex(p => over(e, p)), onBox = over(e, box);
       if (palIdx >= 0) return feedPal(item, palIdx);
       if (onBox) return boxIt(item);
@@ -111,7 +119,7 @@ export function run(container) {
       await sleep(320); item.el.remove(); current = null;
       fed++; fedEl.textContent = fed; ding(700 + (fed % 5) * 90);
       face.classList.add('happy'); ps[i].happy = performance.now() + 1300; ps[i].nom = performance.now() + 500; pal.querySelector('.hearts').textContent = '❤️❤️'; happy(PALS[i]);
-      say2('❤️', false);                       // etetés után csak az állat hangja szól
+      say2('❤️', Infinity);                    // etetés után csak az állat hangja szól
       await sleep(1100); face.classList.remove('happy'); pal.querySelector('.hearts').textContent = '';
     } else {
       back(item); face.classList.add('shake'); ps[i].shake = performance.now() + 700; say2('Ez édesség, a dobozba megy!');
@@ -127,7 +135,7 @@ export function run(container) {
       item.el.style.transform = `translate(${a.left + a.width / 2 - (b.left + b.width / 2)}px, ${a.top + a.height / 2 - (b.top + b.height / 2)}px) scale(.3)`; item.el.style.opacity = 0;
       await sleep(320); item.el.remove(); current = null; inBox++; cntEl.textContent = inBox; box.classList.add('pop'); ding(500, 0.2); await sleep(250); box.classList.remove('pop');
       if (inBox >= cap) await wrap();
-      else say2('📦', false);
+      else say2('📦', Infinity);
     } else {
       back(item); box.classList.add('shake'); say2('Ezt együk meg! Etesd meg a cicát!'); await sleep(900); box.classList.remove('shake');
     }
@@ -141,11 +149,12 @@ export function run(container) {
     giftEl.innerHTML = `<div class="who">${emoji}</div><div class="pk">🎁</div>`; giftEl.classList.add('go');
     await sleep(2600); giftEl.classList.remove('go'); giftEl.innerHTML = '';
     gifts++; giftsEl.textContent = gifts; inBox = 0; cntEl.textContent = 0; box.classList.remove('closed'); box.querySelector('.lid').textContent = '📦';
-    say2('🎁', false);
+    say2('🎁', Infinity);
     await sleep(900);
   }
 
   const intro = 'Hami-adagoló! Az egészséges az állatoké, az édesség a dobozba megy.';
-  say(intro, { remember: false }).then(() => setTimeout(dispense, 500)); setTimeout(dispense, 9000);
+  lastTalk = performance.now(); say(intro, { remember: false }).then(() => setTimeout(dispense, 500)); setTimeout(dispense, 9000);
+  container.__hd = { dispense, current: () => current, feed: i => current && (current.healthy ? feedPal(current, i) : boxIt(current)), stats: () => ({ fed, gifts, inBox }) };
   return () => { alive = false; clearTimeout(say2.t); cancelAnimationFrame(raf); st3?.dispose(); st3 = null; };
 }

@@ -9,35 +9,44 @@ import { makeFriend, animateFriend } from './creatures.js';
 const KIND = { cica: 'cat', nyuszi: 'bunny', kutya: 'dog', róka: 'fox', maci: 'bear', panda: 'panda' };
 
 const FRIENDS = [['🐱', 'cica'], ['🐰', 'nyuszi'], ['🐶', 'kutya'], ['🦊', 'róka'], ['🐻', 'maci'], ['🐼', 'panda']];
-const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 export function run(container) {
   let alive = true, raf = 0, cleanup = () => {};
   const root = document.createElement('div'); root.className = 'pet'; container.innerHTML = ''; container.appendChild(root);
+  const view = document.createElement('div'); view.style.cssText = 'position:absolute;inset:0'; root.appendChild(view);
+  // EGY 3D színpad az egész játékra (a választó ↔ gondozás váltás nem nyit új WebGL-kontextust)
+  let st3 = null;
+  try { st3 = createStage(root); st3.canvas.style.display = 'none'; } catch (e) { console.warn('3D színpad nem indult', e); st3 = null; }
+  // Rozi szabad játékban ritkán szól (legfeljebb 15 mp-enként egyszer); a hang és a kép viszi a többit
+  let lastTalk = -1e9;
+  const talk = (text, force = false) => { const now = performance.now(); if (!force && now - lastTalk < 15000) return; lastTalk = now; say(text, { remember: false }); };
 
   function chooser() {
     cleanup(); cleanup = () => {};
-    root.innerHTML = `<div class="pet-pick"><h2>Válaszd ki a barátodat! 🐾</h2><div class="pet-grid">${FRIENDS.map(([e, n]) => `<button class="pet-friend" data-e="${e}" data-n="${n}"><span>${e}</span><small>${n}</small></button>`).join('')}</div></div>`;
-    root.querySelectorAll('.pet-friend').forEach(b => b.addEventListener('click', () => { unlockAudio(); happy(b.dataset.e); care(b.dataset.e, b.dataset.n); }));
-    say('Válaszd ki a barátodat! Kit szeretnél megsimogatni, megfésülni, vagy vele játszani?', { remember: false });
+    if (st3) st3.canvas.style.display = 'none';
+    view.innerHTML = `<div class="pet-pick"><h2>Válaszd ki a barátodat! 🐾</h2><div class="pet-grid">${FRIENDS.map(([e, n]) => `<button class="pet-friend" data-e="${e}" data-n="${n}"><span>${e}</span><small>${n}</small></button>`).join('')}</div></div>`;
+    view.querySelectorAll('.pet-friend').forEach(b => b.addEventListener('click', () => { unlockAudio(); happy(b.dataset.e); care(b.dataset.e, b.dataset.n); }));
+    talk('Válaszd ki a barátodat!', true);
   }
 
   function care(emoji, name) {
-    root.innerHTML = `<div class="pet-stage" id="pet-stage">
+    view.innerHTML = `<div class="pet-stage" id="pet-stage">
         <button class="round pet-back" aria-label="Másik barát">🔙</button>
         <div class="pet-meter"><span class="fill"></span><span class="heart">❤️</span></div>
         <div class="pet-animal" id="pet-animal">${emoji}</div>
         <div class="pet-fx" id="pet-fx"></div>
         <div class="pet-tools"><button class="pet-tool sel" data-m="brush">🖌️<small>fésülés</small></button><button class="pet-tool" data-m="pet">✋<small>simogatás</small></button><button class="pet-tool" data-m="ball">⚽<small>labdázás</small></button></div>
       </div>`;
-    const stage = root.querySelector('#pet-stage'), animal = root.querySelector('#pet-animal'), fx = root.querySelector('#pet-fx'), fill = root.querySelector('.pet-meter .fill');
+    const stage = view.querySelector('#pet-stage'), animal = view.querySelector('#pet-animal'), fx = view.querySelector('#pet-fx'), fill = view.querySelector('.pet-meter .fill');
     // a 3D állat az emoji helyén jelenik meg (az emoji csak a hely és az érintés célpontja)
-    let st3 = null, model = null; const kind = KIND[name] || 'cat';
-    try { st3 = createStage(stage); model = kind === 'cat' ? makeGardenCat() : makeFriend(kind); model.userData.facing = kind === 'cat' ? 0 : Math.PI; st3.add(model); animal.style.opacity = 0; } catch (e) { console.warn('3D állat nem indult', e); st3 = null; }
-    let mode = 'brush', joy = 0, ball = null, ballEl = null, animalPos = { x: 0, y: 0 }, home = { x: 0, y: 0 }, chasing = false;
+    let model = null; const kind = KIND[name] || 'cat';
+    if (st3) { try { model = kind === 'cat' ? makeGardenCat() : makeFriend(kind); model.userData.facing = kind === 'cat' ? 0 : Math.PI; st3.add(model); st3.canvas.style.display = ''; animal.style.opacity = 0; } catch (e) { console.warn('3D állat nem indult', e); model = null; } }
+    let mode = 'brush', joy = 0, ball = null, ballEl = null, animalPos = { x: 0, y: 0 }, home = { x: 0, y: 0 }, chasing = false, hopUntil = 0;
     const rect = () => stage.getBoundingClientRect();
     const setJoy = d => { joy = Math.min(100, Math.max(0, joy + d)); fill.style.width = joy + '%'; if (joy >= 100) { joy = 0; fill.style.width = '0%'; celebrate(); } };
-    async function celebrate() { happy(emoji); setTimeout(() => happy(emoji), 500); animal.classList.add('joy'); spawn('🎉', 6); say(`Nagyon boldog a ${name}! Szeretlek, mondja!`, { remember: false }); await sleep(1500); animal.classList.remove('joy'); }
+    // ünneplés: csak a 3D állat ugrál a helyén (a régi CSS-animáció felülírta a helyét, és a sarokba rántotta)
+    const timers = new Set(), later = (fn, ms) => { const id = setTimeout(() => { timers.delete(id); fn(); }, ms); timers.add(id); };
+    function celebrate() { happy(emoji); later(() => happy(emoji), 500); hopUntil = performance.now() + 1500; spawn('🎉', 6); talk(`A ${name} nagyon boldog!`); }
     function spawn(e, n = 1, x, y) {
       const R = rect();
       for (let i = 0; i < n; i++) {
@@ -97,8 +106,8 @@ export function run(container) {
         place();
       } else if (mode !== 'ball') { animalPos.x += (home.x - animalPos.x) * Math.min(1, dt * 4); animalPos.y += (home.y - animalPos.y) * Math.min(1, dt * 4); }
       placeAnimal();
-      if (st3) {
-        const rr = st3.hostRect(), r = animal.getBoundingClientRect(), t = now / 1000, hop = animal.classList.contains('joy'), wig = animal.classList.contains('wiggle');
+      if (st3 && model) {
+        const rr = st3.hostRect(), r = animal.getBoundingClientRect(), t = now / 1000, hop = now < hopUntil, wig = animal.classList.contains('wiggle');
         st3.place(model, r.left - rr.left + r.width / 2, r.bottom - rr.top - (hop ? Math.abs(Math.sin(t * 9)) * 30 : 0), r.height * (kind === 'cat' ? 1.35 : 1.45), kind === 'cat' ? CAT_HEIGHT : 1.9);
         const dxb = ball && chasing ? (ball.x - (animalPos.x + r.width / 2)) / 220 : 0;
         model.rotation.y = model.userData.facing + Math.max(-0.9, Math.min(0.9, dxb)) + Math.sin(t) * 0.12;
@@ -109,16 +118,22 @@ export function run(container) {
     }
     raf = requestAnimationFrame(frame);
 
-    root.querySelectorAll('.pet-tool').forEach(b => b.addEventListener('click', () => {
-      mode = b.dataset.m; root.querySelectorAll('.pet-tool').forEach(x => x.classList.toggle('sel', x === b)); down = false;
-      if (mode === 'ball') { ensureBall(); ballEl.style.display = ''; say(`Dobd el a labdát! A ${name} elhozza neked!`, { remember: false }); }
-      else { if (ballEl) ballEl.style.display = 'none'; chasing = false; if (ball) ball.carried = false; say(mode === 'brush' ? `Húzd az ujjadat a ${name} szőrén, így fésülöd meg!` : `Simogasd meg a ${FRIEND_ACC[name] || name}!`, { remember: false }); }
+    // eszközváltás: minden eszköz rövid magyarázata egyszer hangzik el (és ritkán: lásd talk)
+    const told = new Set();
+    view.querySelectorAll('.pet-tool').forEach(b => b.addEventListener('click', () => {
+      mode = b.dataset.m; view.querySelectorAll('.pet-tool').forEach(x => x.classList.toggle('sel', x === b)); down = false;
+      const tip = { ball: 'Dobd el a labdát!', brush: 'Fésüld meg az ujjaddal!', pet: `Simogasd meg a ${FRIEND_ACC[name] || name}!` }[mode];
+      if (!told.has(mode)) { told.add(mode); talk(tip); }
+      if (mode === 'ball') { ensureBall(); ballEl.style.display = ''; play('boing'); }
+      else { if (ballEl) ballEl.style.display = 'none'; chasing = false; if (ball) ball.carried = false; }
     }));
-    root.querySelector('.pet-back').addEventListener('click', chooser);
-    say(`Szia! Én vagyok a ${name}! Fésülj meg, simogass meg, vagy játsszunk labdázni!`, { remember: false });
-    cleanup = () => { cancelAnimationFrame(raf); st3?.dispose(); st3 = null; };
+    view.querySelector('.pet-back').addEventListener('click', chooser);
+    told.add('brush'); talk(`Szia! Fésülj meg, simogass meg, vagy dobj labdát!`, true);
+    container.__pet = Object.assign(container.__pet || {}, { celebrate, animalRect: () => animal.getBoundingClientRect(), tool: m => view.querySelector('.pet-tool[data-m=' + m + ']')?.click(), back: () => view.querySelector('.pet-back')?.click() });
+    cleanup = () => { cancelAnimationFrame(raf); timers.forEach(clearTimeout); timers.clear(); if (st3 && model) st3.remove(model); model = null; };
   }
 
   chooser();
-  return () => { alive = false; cleanup(); };
+  container.__pet = Object.assign(container.__pet || {}, { choose: i => view.querySelectorAll('.pet-friend')[i]?.click(), stage: () => st3, view });
+  return () => { alive = false; cleanup(); st3?.dispose(); st3 = null; };
 }

@@ -139,26 +139,29 @@ export function createGarden(canvas) {
   }
   // Egyenes vonalú séta az óra szerint (nem képkockánként), így lassú megjelenítés mellett is időre odaér
   // via: közbülső pontok (pl. a tereptárgyak közti rés), hogy a barát ne a tárgyakon sétáljon át
+  // chainAt: ha egy séta végén a következő séta indul (pl. tanyára menet), az óra szerint akkor indult volna,
+  // amikor az előző véget ért – így akkor is jó helyen jár, ha közben sokáig nem volt képkocka (szünet, háttérben futás)
+  let chainAt = 0;
   function walk(a, x, z, dur, then, run, via = []) {
     const pts = [[a.x, a.z], ...via, [x, z]], lens = [0];
     for (let i = 1; i < pts.length; i++) lens.push(lens[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
-    a.move = { pts, lens, t0: performance.now(), dur: Math.max(1, dur), then, run: !!run };
+    a.move = { pts, lens, t0: chainAt || performance.now(), dur: Math.max(1, dur), then, run: !!run };
     a.state = 'walk';
   }
   const pathLen = (a, x, z, via = []) => { let l = 0, p = [a.x, a.z]; for (const q of [...via, [x, z]]) { l += Math.hypot(q[0] - p[0], q[1] - p[1]); p = q; } return l; };
   function stepActor(a, now, t) {
     let speed = 0;
-    if (a.move) {
+    for (let guard = 0; a.move && guard < 4; guard++) {                           // egymás utáni séták: egy lépésben akár többön is túljut
       const m = a.move, k = clamp01((now - m.t0) / m.dur), d = k * m.lens[m.lens.length - 1];
       let i = 1; while (i < m.pts.length - 1 && m.lens[i] < d) i++;
       const p0 = m.pts[i - 1], p1 = m.pts[i], u = clamp01((d - m.lens[i - 1]) / ((m.lens[i] - m.lens[i - 1]) || 1));
       a.x = p0[0] + (p1[0] - p0[0]) * u; a.z = p0[1] + (p1[1] - p0[1]) * u; speed = m.run ? 0.85 : 0.25;
       if (!a.isCat && (p1[0] !== p0[0] || p1[1] !== p0[1])) a.want = a.face0 + Math.atan2(p1[0] - p0[0], p1[1] - p0[1]);
-      if (k >= 1) {                                                               // megérkezett: ugrik, megszólal, szívek
-        a.move = null; a.until = now + rnd(2500, 6500); speed = 0;
-        if (typeof m.then === 'function') { a.state = 'idle'; m.then(a); } else a.state = m.then;
-        if (a.greet) { a.greet = false; poke(a); }
-      }
+      if (k < 1) break;
+      // megérkezett: ugrik, megszólal, szívek
+      a.move = null; a.until = now + rnd(2500, 6500); speed = 0;
+      if (typeof m.then === 'function') { a.state = 'idle'; chainAt = m.t0 + m.dur; try { m.then(a); } finally { chainAt = 0; } } else a.state = m.then;
+      if (a.greet) { a.greet = false; poke(a); }
     }
     if (!a.move) {
       if (a.state === 'feeding') a.want = a.face0 + Math.atan2(camera.position.x - a.x, camera.position.z - a.z);
@@ -377,8 +380,7 @@ export function createGarden(canvas) {
     setStars, beginFeed, endFeed, places, setDay, goTo, areas,
     area: () => pan.area,
     cheer() { const now = performance.now(); let k = 0; actors.forEach(a => { a.hop = now + 900 + (k++ % 3) * 70; }); },   // új csillag: mindenki ugrik egyet
-    pause(p) { paused = !!p; if (!paused && !raf) raf = requestAnimationFrame(loop); },
-    // tesztekhez és hibakereséshez: rajzolási hívások, lakók, virágok, a barátok helye a képernyőn
+    pause(p) { paused = !!p; if (!paused && !raf) raf = requestAnimationFrame(loop); },    // tesztekhez és hibakereséshez: rajzolási hívások, lakók, virágok, a barátok helye a képernyőn
     debug() {
       draw(performance.now());
       return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, flowers: flowerCount, friends: [...actors.keys()], zoom: zoomAt(performance.now()), pan: panAt(performance.now()), feeding: feeding && !feeding.done ? feeding.a.id : null,

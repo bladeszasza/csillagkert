@@ -7,6 +7,7 @@ import { CURRICULUM } from '../js/curriculum.js';
 import { createGarden } from '../js/garden.js';
 import { soundLog, soundMark, VOICE } from '../js/sounds.js';
 import { MEALS, ANY, friendById, FRIENDS, AREAS, MAX_FLOWERS } from '../js/friends.js';
+import { testOpenWorld, testMinigames } from './smoke-games.js';
 
 const results = [];
 const ok = (name, pass, info = '') => { results.push({ name, pass: !!pass, info: String(info) }); };
@@ -245,7 +246,7 @@ async function testGarden() {
   {
     const ms = garden.goTo('tanya'); await wait(ms + 250);
     const g = garden.debug(), off = ['hen', 'cow'].filter(k => { const r = g.screen[k]; return !r.visible || r.left < 0 || r.right > 900 || r.bottom > 650; });
-    ok('etetés után a tyúk és a tehén hazament a tanyára', off.length === 0, off.length ? `nincs otthon: ${off.join(', ')}` : 'mindkettő otthon');
+    ok('etetés után a tyúk és a tehén hazament a tanyára', off.length === 0, off.length ? `nincs otthon: ${off.map(k => k + ' ' + JSON.stringify(g.screen[k], (key, v) => typeof v === 'number' ? Math.round(v) : v)).join(', ')}` : 'mindkettő otthon');
     garden.goTo(null); await wait(1600);
   }
   // d) 3D kert nélkül is megoldható (az állat képével)
@@ -259,16 +260,26 @@ async function testGarden() {
   garden.pause(true); canvas.remove();
 }
 
-// --- 7. minden állathang valóban lejátszódik (a játékban a play() elnyeli a hibát, itt nem) ---
+// --- 7. minden hang valóban lejátszódik (a játékban a play() elnyeli a hibát, itt nem) ---
 async function testVoices() {
-  const { playStrict } = await import('../js/sounds.js'), bad = [];
+  const { playStrict, SOUND_KINDS } = await import('../js/sounds.js'), bad = [];
   let state = '';
   for (const f of FRIENDS) { try { state = playStrict(VOICE[f.id]); } catch (e) { bad.push(`${f.id} (${VOICE[f.id]}): ${e.message}`); } await wait(40); }
   ok('állathangok: mind a 19 saját hang hiba nélkül lejátszódik', bad.length === 0, bad.join(' · ') || `hangmotor: ${state}; ${FRIENDS.map(f => VOICE[f.id]).join(', ')}`);
+  const bad2 = [];
+  for (const k of SOUND_KINDS) { try { playStrict(k); } catch (e) { bad2.push(`${k}: ${e.message}`); } await wait(30); }
+  const need = ['step', 'boing', 'thud', 'bump', 'beep', 'go', 'cheer'];
+  ok('minden hang (játékhangokkal együtt) hiba nélkül lejátszódik', bad2.length === 0 && need.every(k => SOUND_KINDS.includes(k)), bad2.join(' · ') || `${SOUND_KINDS.length} hang`);
 }
 
+async function testOpenWorldGame() { await testOpenWorld(ok); }
+async function testMinigameList() { await testMinigames(ok); }
+
 export async function runAll() {
-  for (const t of [testHarness, testLoudness, testPositions, testClap, testStart, testAbort, testVoices, testGarden]) { try { await t(); } catch (e) { ok(t.name, false, e.stack || e.message); } }
+  const only = new URLSearchParams(location.search).get('only');      // pl. smoke.html?only=games – csak a játékok tesztje
+  const all = [testHarness, testLoudness, testPositions, testClap, testStart, testAbort, testVoices, testGarden, testOpenWorldGame, testMinigameList];
+  const list = only === 'games' ? [testOpenWorldGame, testMinigameList] : only ? all.filter(t => t.name.toLowerCase().includes(only)) : all;   // pl. ?only=garden
+  for (const t of list) { try { await t(); } catch (e) { ok(t.name, false, e.stack || e.message); } }
   window.__results = results;
   return results;
 }

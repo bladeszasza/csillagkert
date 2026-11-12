@@ -20,12 +20,13 @@ export function run(container) {
     </div>`;
   const root = container.querySelector('.fc'), layer = root.querySelector('.fc-layer'), cat = root.querySelector('.fc-cat');
   const fill = root.querySelector('.fc-fill'), msg = root.querySelector('.fc-msg');
-  let w = 0, h = 0, raf = 0, catX = 0.5, full = 0, resting = false, acc = 0, last = performance.now(), restTimer = 0;
+  let w = 0, h = 0, raf = 0, catX = 0.5, full = 0, resting = false, acc = 0, last = performance.now(), restTimer = 0, catSize = 130, lastTalk = -1e9;
   const drops = [];
   let st3 = null, cat3 = null, hopUntil = 0, nomUntil = 0;
   try { st3 = createStage(root); cat3 = st3.add(makeGardenCat()); cat.style.opacity = 0; } catch (e) { console.warn('3D cica nem indult el', e); st3 = null; }
 
-  function size() { w = root.clientWidth; h = root.clientHeight; }
+  // a méreteket csak átméretezéskor olvassuk ki (nem minden képkockában)
+  function size() { w = root.clientWidth; h = root.clientHeight; catSize = cat.offsetWidth || 130; }
   size();
   const ro = 'ResizeObserver' in window ? new ResizeObserver(size) : null; ro?.observe(root);
   window.addEventListener('resize', size);
@@ -42,14 +43,14 @@ export function run(container) {
   }
   async function purr() {
     resting = true; hopUntil = performance.now() + 3000; cat.textContent = '😻'; cat.classList.add('purr'); msg.textContent = 'Jóllakott! ❤️';
-    say('Jóllakott a cica! Nyam-nyam!', { remember: false });
+    if (performance.now() - lastTalk > 15000) { lastTalk = performance.now(); say('Jóllakott a cica! Nyam-nyam!', { remember: false }); }   // szabad játékban ritkán beszél
     restTimer = setTimeout(() => { full = 0; fill.style.width = '0%'; cat.textContent = '🐱'; cat.classList.remove('purr'); cat.style.setProperty('--belly', 1); msg.textContent = ''; resting = false; }, 3000);
   }
 
   function frame(now) {
     const dt = Math.min(0.05, (now - last) / 1000); last = now; acc += dt;
     if (!resting && acc > 0.75 && drops.length < 6) { spawn(); acc = 0; }
-    const cx = catX * w, catSize = cat.offsetWidth || 130;
+    const cx = catX * w;
     cat.style.transform = `translate(${cx - catSize / 2}px, 0) scale(var(--belly, 1))`;
     const catTop = h - catSize - 14;
     for (let i = drops.length - 1; i >= 0; i--) {
@@ -67,9 +68,9 @@ export function run(container) {
       if (d.y > h + 40) { d.el.remove(); drops.splice(i, 1); }
     }
     if (st3) {
-      const rr = st3.hostRect(), cr = cat.getBoundingClientRect(), t = now / 1000;
+      const t = now / 1000;
       const hopT = Math.max(0, (hopUntil - now) / 3000), nomT = Math.max(0, (nomUntil - now) / 500), belly = 1 + full * 0.05;
-      st3.place(cat3, cr.left - rr.left + cr.width / 2, h - 14, catSize * 1.25 * belly, CAT_HEIGHT);
+      st3.place(cat3, cx, h - 14, catSize * 1.25 * belly, CAT_HEIGHT);   // a színpad a játék saját területe: a cica közepe cx
       cat3.rotation.y = Math.sin(t) * 0.15;
       animateCat(cat3, t, { hop: hopT > 0 ? 1 - hopT : 0, nom: nomT > 0 ? 1 - nomT : 0, cheer: resting });
       st3.render();
@@ -77,5 +78,6 @@ export function run(container) {
     raf = requestAnimationFrame(frame);
   }
   raf = requestAnimationFrame(frame);
+  container.__fc = { stats: () => ({ full, resting, drops: drops.length }) };
   return () => { cancelAnimationFrame(raf); clearTimeout(restTimer); st3?.dispose(); ro?.disconnect(); window.removeEventListener('resize', size); };
 }

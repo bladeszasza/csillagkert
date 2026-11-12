@@ -1,9 +1,12 @@
 // Felhővár-verseny: két unikornis fut egymás mellett egy égi felhőpályán, felhővárak között.
 // Koppints bárhová: az unikornis átugorja az akadályt. Ha belefutsz, lelassulsz (nincs büntetés, csak lassabb vagy).
-// Aki előbb ér a célba, nyer; a nyertes gyönyörű ajándékot kap (az öltöztető egy új eleme).
+// A másik unikornis a barátod: a célban mindketten megállnak, egymás felé fordulnak és együtt ünnepelnek.
+// Ha te érsz be előbb, ajándékot kapsz (az öltöztető egy új eleme).
+// A díszlet példányosított (közös geometria és anyag), így kevés rajzolási hívással fut.
 import * as THREE from '../../vendor/three.module.js';
 import { makeUnicorn, animateRunner } from './creatures.js';
 import { say } from '../voice.js';
+import { play } from '../sounds.js';
 import { nextGift } from '../gifts.js';
 
 const LEN = 220;                         // a pálya hossza
@@ -28,73 +31,89 @@ export function run(container, { onGift } = {}) {
   scene.add(new THREE.HemisphereLight(0xffffff, 0xcdb7ff, 1.5));
   const sun = new THREE.DirectionalLight(0xfff0d0, 1.4); sun.position.set(6, 12, 4); scene.add(sun);
 
-  // --- pálya és díszlet: felhőpálya, felhővár tornyok, szivárványívek, felhők ---
-  const white = new THREE.MeshLambertMaterial({ color: 0xffffff });
-  const track = new THREE.Mesh(new THREE.BoxGeometry(LANE * 2 + 3.2, 0.5, LEN + 60), new THREE.MeshLambertMaterial({ color: 0xf4eeff }));
+  // --- pálya és díszlet: felhőpálya, felhővár tornyok, szivárványívek, felhők (mind példányosítva) ---
+  const geos = [], mats = [];
+  const G = g => { geos.push(g); return g; }, Mt = m => { mats.push(m); return m; };
+  const lambert = Mt(new THREE.MeshLambertMaterial({ color: 0xffffff })), basic = Mt(new THREE.MeshBasicMaterial({ color: 0xffffff }));
+  const tmp = new THREE.Object3D(), col = new THREE.Color();
+  // egy fajta díszletelem az összes helyén, egyetlen rajzolással; items: [x, y, z, sx, sy, sz, szín, (rx)]
+  function inst(geo, mat, items) {
+    const m = new THREE.InstancedMesh(geo, mat, items.length);
+    items.forEach(([x, y, z, sx, sy, sz, c, rx = 0], i) => { tmp.position.set(x, y, z); tmp.scale.set(sx, sy, sz); tmp.rotation.set(rx, 0, 0); tmp.updateMatrix(); m.setMatrixAt(i, tmp.matrix); m.setColorAt(i, col.setHex(c)); });
+    scene.add(m); return m;
+  }
+  const track = new THREE.Mesh(G(new THREE.BoxGeometry(LANE * 2 + 3.2, 0.5, LEN + 60)), Mt(new THREE.MeshLambertMaterial({ color: 0xf4eeff })));
   track.position.set(0, -0.3, -LEN / 2 + 10); scene.add(track);
-  for (const x of [-LANE, LANE]) { const stripe = new THREE.Mesh(new THREE.PlaneGeometry(0.1, LEN + 60), new THREE.MeshBasicMaterial({ color: 0xd9c8ff })); stripe.rotation.x = -Math.PI / 2; stripe.position.set(x * 1.0, -0.04, -LEN / 2 + 10); scene.add(stripe); }
-  const towerColors = [0xffd6ea, 0xe6d6ff, 0xd6e6ff, 0xfff0b8];
+  inst(G(new THREE.PlaneGeometry(0.1, LEN + 60)), basic, [-LANE, LANE].map(x => [x, -0.04, -LEN / 2 + 10, 1, 1, 1, 0xd9c8ff, -Math.PI / 2]));
+  const towerColors = [0xffd6ea, 0xe6d6ff, 0xd6e6ff, 0xfff0b8], towers = [], roofs = [], flags = [], wins = [], puffs = [];
   for (let z = 6; z > -LEN - 40; z -= 17) {
     for (const side of [-1, 1]) {
-      const x = side * (6.5 + Math.random() * 4), h = 4 + Math.random() * 5, c = towerColors[(Math.random() * 4) | 0];
-      const t = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.4, h, 10), new THREE.MeshLambertMaterial({ color: c })); t.position.set(x, h / 2 - 1, z); scene.add(t);
-      const roof = new THREE.Mesh(new THREE.ConeGeometry(1.6, 2, 10), new THREE.MeshLambertMaterial({ color: 0x8e5be8 })); roof.position.set(x, h - 1 + 1, z); scene.add(roof);
-      const flag = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.4, 0.05), new THREE.MeshLambertMaterial({ color: 0xff8fc8 })); flag.position.set(x + 0.4, h + 1.8, z); scene.add(flag);
-      const win = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.6, 0.1), new THREE.MeshBasicMaterial({ color: 0xffe08a })); win.position.set(x - side * 1.2, h / 2, z); scene.add(win);
-      const cloud = new THREE.Mesh(new THREE.SphereGeometry(2.2, 12, 10), white); cloud.scale.set(1.6, 0.6, 1.2); cloud.position.set(x, -1.2, z); scene.add(cloud);
+      const x = side * (6.5 + Math.random() * 4), h = 4 + Math.random() * 5;
+      towers.push([x, h / 2 - 1, z, 1, h, 1, towerColors[(Math.random() * 4) | 0]]);
+      roofs.push([x, h, z, 1, 1, 1, 0x8e5be8]);
+      flags.push([x + 0.4, h + 1.8, z, 1, 1, 1, 0xff8fc8]);
+      wins.push([x - side * 1.2, h / 2, z, 1, 1, 1, 0xffe08a]);
+      puffs.push([x, -1.2, z, 1.6 * 2.2, 0.6 * 2.2, 1.2 * 2.2, 0xffffff]);
     }
   }
-  for (let z = -10; z > -LEN; z -= 38) {          // szivárványívek a pálya fölött
-    const colors = [0xff5d5d, 0xffb020, 0xffe14d, 0x4cc38a, 0x4a7dff];
-    colors.forEach((c, i) => { const arc = new THREE.Mesh(new THREE.TorusGeometry(5.2 - i * 0.28, 0.14, 8, 24, Math.PI), new THREE.MeshLambertMaterial({ color: c })); arc.position.set(0, -0.3, z); scene.add(arc); });
-  }
-  for (let i = 0; i < 28; i++) { const c = new THREE.Mesh(new THREE.SphereGeometry(1.5 + Math.random() * 1.5, 10, 8), white); c.scale.set(1.8, 0.7, 1.2); c.position.set((Math.random() - 0.5) * 60, 6 + Math.random() * 10, -Math.random() * (LEN + 40)); scene.add(c); }
-  // cél: kapu szalaggal
-  const gate = new THREE.Group();
-  for (const x of [-LANE - 1.4, LANE + 1.4]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 5, 10), new THREE.MeshLambertMaterial({ color: 0xffd24d })); p.position.set(x, 2.2, 0); gate.add(p); }
-  const banner = new THREE.Mesh(new THREE.BoxGeometry(LANE * 2 + 3, 0.9, 0.12), new THREE.MeshLambertMaterial({ color: 0xff5d8f })); banner.position.set(0, 4.5, 0); gate.add(banner);
-  const ribbon = new THREE.Mesh(new THREE.BoxGeometry(LANE * 2 + 2.8, 0.14, 0.05), new THREE.MeshBasicMaterial({ color: 0xffffff })); ribbon.position.set(0, 0.7, 0); gate.add(ribbon);
-  gate.position.z = -LEN; scene.add(gate);
-  for (let i = 0; i < 8; i++) { const sq = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.6), new THREE.MeshBasicMaterial({ color: i % 2 ? 0x222222 : 0xffffff })); sq.position.set(-LANE - 1 + i * 0.6, 0.05, -LEN - 0.5); sq.rotation.x = -Math.PI / 2; scene.add(sq); }
+  inst(G(new THREE.CylinderGeometry(1.2, 1.4, 1, 10)), lambert, towers);
+  inst(G(new THREE.ConeGeometry(1.6, 2, 10)), lambert, roofs);
+  inst(G(new THREE.BoxGeometry(0.7, 0.4, 0.05)), lambert, flags);
+  inst(G(new THREE.BoxGeometry(0.4, 0.6, 0.1)), basic, wins);
+  const cloudGeo = G(new THREE.SphereGeometry(1, 12, 10)), sky = [];
+  for (let i = 0; i < 28; i++) { const r = 1.5 + Math.random() * 1.5; sky.push([(Math.random() - 0.5) * 60, 6 + Math.random() * 10, -Math.random() * (LEN + 40), 1.8 * r, 0.7 * r, 1.2 * r, 0xffffff]); }
+  inst(cloudGeo, lambert, [...puffs, ...sky]);
+  const arcs = [], RAINBOW = [0xff5d5d, 0xffb020, 0xffe14d, 0x4cc38a, 0x4a7dff];
+  for (let z = -10; z > -LEN; z -= 38) RAINBOW.forEach((c, i) => { const k = (5.2 - i * 0.28) / 5.2; arcs.push([0, -0.3, z, k, k, k, c]); });   // szivárványívek a pálya fölött
+  inst(G(new THREE.TorusGeometry(5.2, 0.14, 8, 24, Math.PI)), lambert, arcs);
+  // cél: kapu szalaggal és kockás vonallal
+  const box = G(new THREE.BoxGeometry(1, 1, 1));
+  inst(G(new THREE.CylinderGeometry(0.2, 0.2, 5, 10)), lambert, [-LANE - 1.4, LANE + 1.4].map(x => [x, 2.2, -LEN, 1, 1, 1, 0xffd24d]));
+  inst(box, lambert, [[0, 4.5, -LEN, LANE * 2 + 3, 0.9, 0.12, 0xff5d8f]]);
+  inst(box, basic, [[0, 0.7, -LEN, LANE * 2 + 2.8, 0.14, 0.05, 0xffffff], ...Array.from({ length: 8 }, (_, i) => [-LANE - 1 + i * 0.6, 0.05, -LEN - 0.5, 0.6, 0.01, 0.6, i % 2 ? 0x222222 : 0xffffff])]);
 
-  // --- akadályok (mindkét sávban, azonos helyeken) ---
-  const hurdleGeo = new THREE.BoxGeometry(1.7, 0.18, 0.18), postGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.7, 6);
+  // --- akadályok (mindkét sávban, azonos helyeken): egy rúd-háló és egy oszlop-háló az összeshez ---
   const hurdles = [];
-  for (let z = -22; z > -LEN + 14; z -= HURDLE_EVERY + (hurdles.length % 3)) {
-    for (const lane of [-1, 1]) {
-      const g = new THREE.Group();
-      const bar = new THREE.Mesh(hurdleGeo, new THREE.MeshLambertMaterial({ color: lane < 0 ? 0xff5d8f : 0x4aa8ff })); bar.position.y = 0.6; g.add(bar);
-      for (const sx of [-0.8, 0.8]) { const p = new THREE.Mesh(postGeo, white); p.position.set(sx, 0.35, 0); g.add(p); }
-      g.position.set(lane * LANE, 0, z); scene.add(g); hurdles.push({ z, lane, g });
-    }
+  for (let z = -22; z > -LEN + 14; z -= HURDLE_EVERY + ((hurdles.length / 2) % 3)) for (const lane of [-1, 1]) hurdles.push({ z, lane, tip: 0 });
+  const bars = new THREE.InstancedMesh(G(new THREE.BoxGeometry(1.7, 0.18, 0.18)), lambert, hurdles.length);
+  const posts = new THREE.InstancedMesh(G(new THREE.CylinderGeometry(0.08, 0.08, 0.7, 6)), lambert, hurdles.length * 2);
+  const base = new THREE.Object3D(), part = new THREE.Object3D(), m4 = new THREE.Matrix4();
+  // egy akadály helyzete: ha belefutottak, kedvesen hátrabillen
+  function poseHurdle(h, i) {
+    base.position.set(h.lane * LANE, -0.1 * h.tip, h.z); base.rotation.set(-0.6 * h.tip, 0, 0); base.updateMatrix();
+    part.position.set(0, 0.6, 0); part.updateMatrix(); bars.setMatrixAt(i, m4.multiplyMatrices(base.matrix, part.matrix));
+    [-0.8, 0.8].forEach((sx, k) => { part.position.set(sx, 0.35, 0); part.updateMatrix(); posts.setMatrixAt(i * 2 + k, m4.multiplyMatrices(base.matrix, part.matrix)); });
+    bars.instanceMatrix.needsUpdate = posts.instanceMatrix.needsUpdate = true;
   }
+  hurdles.forEach((h, i) => { poseHurdle(h, i); bars.setColorAt(i, col.setHex(h.lane < 0 ? 0xff5d8f : 0x4aa8ff)); posts.setColorAt(i * 2, col.setHex(0xffffff)); posts.setColorAt(i * 2 + 1, col.setHex(0xffffff)); });
+  scene.add(bars, posts);
 
   // --- versenyzők ---
   const me = makeUnicorn({ body: 0xffffff, mane: 0xff5d8f, horn: 0xffd24d, scale: 1.0 });
   const rv = makeUnicorn({ body: 0xd6e6ff, mane: 0x4aa8ff, horn: 0xc0e8ff, scale: 1.0 });
   [me, rv].forEach(u => { u.rotation.y = 0; scene.add(u); });
-  const S = { me: null, rv: null, t: 0, phase: 'ready', countdown: 3.2, endT: 0, result: null };
-  const racer = (x) => ({ x, z: 0, y: 0, vy: 0, grounded: true, slow: 0, blink: 0, nextH: 0 });
+  const S = { me: null, rv: null, t: 0, phase: 'ready', countdown: 3.2, endT: 0, result: null, shown: null, hoofT: 0, goT: null };
+  const racer = (x) => ({ x, z: 0, y: 0, vy: 0, grounded: true, slow: 0, blink: 0, ang: 0 });
   function reset() {
-    S.me = racer(-LANE); S.rv = racer(LANE); S.t = 0; S.phase = 'ready'; S.countdown = 3.2; S.result = null; centerEl.innerHTML = ''; hint.style.opacity = 1;
+    S.me = racer(-LANE); S.rv = racer(LANE); S.t = 0; S.phase = 'ready'; S.countdown = 3.2; S.result = null; S.endT = 0; S.shown = null; S.goT = null; centerEl.innerHTML = ''; hint.style.opacity = 1;
     me.visible = rv.visible = true;
   }
   reset();
 
-  function jump() { const r = S.me; if (S.phase !== 'run') return; if (r.grounded) { r.vy = JUMP; r.grounded = false; } }
+  function jump() { const r = S.me; if (S.phase !== 'run') return; if (r.grounded) { r.vy = JUMP; r.grounded = false; play('boing'); } }
   root.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; jump(); });
   const key = e => { if (e.code === 'Space') { e.preventDefault(); jump(); } };
   window.addEventListener('keydown', key);
 
   function hitCheck(r, lane) {                   // akadályba ütközés: ha a lábak nem elég magasan vannak
-    for (const h of hurdles) {
-      if (h.lane !== lane) continue;
-      if (Math.abs(r.z - (-h.z)) < 0.55 && r.y < 0.75 && !h.hit?.[lane]) {
-        (h.hit = h.hit || {})[lane] = true;
-        r.slow = 1.1; r.blink = 1.1;               // lelassul és villog
-        h.g.rotation.x = -0.6; h.g.position.y = -0.1;  // az akadály billen (kedvesen)
+    hurdles.forEach((h, i) => {
+      if (h.lane !== lane || h.hit) return;
+      if (Math.abs(r.z - (-h.z)) < 0.55 && r.y < 0.75) {
+        h.hit = true; r.slow = 1.1; r.blink = 1.1;   // lelassul és villog
+        h.tip = 1; poseHurdle(h, i);                 // az akadály kedvesen hátrabillen
+        if (r === S.me) play('bump');
       }
-    }
+    });
   }
   function aiJump(r) {                           // az ellenfél 82%-ban ugrik időben
     const next = hurdles.find(h => h.lane === 1 && -h.z > r.z + 0.5 && !h.aiDecided);
@@ -105,10 +124,15 @@ export function run(container, { onGift } = {}) {
     S.t += dt;
     if (S.phase === 'ready') {
       S.countdown -= dt;
-      const n = Math.ceil(S.countdown);
-      centerEl.innerHTML = S.countdown > 0 ? `<div class="race-count">${n > 0 ? n : ''}</div>` : '<div class="race-count go">Rajt!</div>';
-      if (S.countdown <= 0) { S.phase = 'run'; setTimeout(() => { if (S.phase === 'run') centerEl.innerHTML = ''; }, 700); }
+      const n = S.countdown > 0 ? Math.min(3, Math.ceil(S.countdown)) : 0;
+      if (n !== S.shown) {                             // a felirat csak váltáskor íródik újra (nem minden képkockában)
+        S.shown = n;
+        centerEl.innerHTML = n > 0 ? `<div class="race-count">${n}</div>` : '<div class="race-count go">Rajt!</div>';
+        play(n > 0 ? 'beep' : 'go');
+      }
+      if (S.countdown <= 0) { S.phase = 'run'; S.goT = S.t; }
     }
+    if (S.phase === 'run' && S.goT != null && S.t - S.goT > 0.7) { S.goT = null; centerEl.innerHTML = ''; }
     if (S.phase === 'run' || S.phase === 'done') {
       for (const [r, lane, isRival] of [[S.me, -1, false], [S.rv, 1, true]]) {
         if (S.phase === 'run' || r.z < LEN + 8) {
@@ -125,36 +149,43 @@ export function run(container, { onGift } = {}) {
       }
       if (S.phase === 'run') {
         if (S.me.z >= LEN || S.rv.z >= LEN) finish(S.me.z >= S.rv.z ? 'win' : 'lose');
+        else if (S.me.grounded && (S.hoofT -= dt) <= 0) { S.hoofT = S.me.slow > 0 ? 0.42 : 0.24; play('step'); }   // patakopogás
       }
+      if (S.phase === 'done') S.endT += dt;
       hint.style.opacity = S.me.z > 14 ? 0 : 1;
     }
     // megjelenítés
-    for (const [u, r, isRival] of [[me, S.me, false], [rv, S.rv, true]]) {
-      u.position.set(r.x, r.y, -r.z);
+    // a célban: mindketten megállnak, egymás felé fordulnak és összebújnak (a másik unikornis is barát)
+    const hug = S.phase === 'done' && S.endT > 1.3 ? Math.min(1, (S.endT - 1.3) / 0.8) : 0;
+    for (const [u, r, side] of [[me, S.me, 1], [rv, S.rv, -1]]) {
+      if (hug > 0) { const z = Math.max(S.me.z, S.rv.z); r.z += (z - r.z) * Math.min(1, dt * 3); r.x = -side * (LANE - 0.8 * hug); }
+      r.ang += ((-side * Math.PI / 2) * hug - r.ang) * Math.min(1, dt * 6);
+      u.position.set(r.x, r.y + (hug >= 1 ? Math.abs(Math.sin(S.endT * 6)) * 0.25 : 0), -r.z);
+      u.rotation.order = 'YXZ'; u.rotation.y = r.ang;
       u.visible = r.blink > 0 ? (Math.floor(r.blink * 12) % 2 === 0) : true;
-      const running = S.phase === 'run' || S.phase === 'done';
+      const running = S.phase === 'run' || (S.phase === 'done' && hug === 0);
       animateRunner(u, S.t, running ? (r.slow > 0 ? 0.35 : 1) : 0);
       u.rotation.x = r.grounded ? 0 : -0.2;
     }
-    const lead = S.me;
-    const tz = -lead.z;
+    const tz = -(hug > 0 ? Math.max(S.me.z, S.rv.z) : S.me.z);
     camera.position.set(0, 4.6, tz + 8.5); camera.lookAt(0, 1.2, tz - 9);
     sun.position.set(6, 12, tz + 4); sun.target.position.set(0, 0, tz); sun.target.updateMatrixWorld();
     mkMe.style.left = Math.min(100, (S.me.z / LEN) * 100) + '%'; mkRv.style.left = Math.min(100, (S.rv.z / LEN) * 100) + '%';
   }
 
-  async function finish(result) {
-    S.phase = 'done'; S.result = result;
+  function finish(result) {
+    S.phase = 'done'; S.result = result; S.endT = 0;
+    play('cheer');
     if (result === 'win') {
       const gift = nextGift();
       if (gift) onGift?.('race-' + Date.now());
-      centerEl.innerHTML = `<div class="race-card"><div class="big">🏆</div><h2>Nyertél!</h2>${gift ? `<p>Gyönyörű ajándékot kaptál:</p><div class="gift">${gift.icon}</div><b>${gift.name}</b><p class="sm">Az öltöztetőben ki is próbálhatod!</p>` : '<p>Minden ajándékot megnyertél! Te vagy a bajnok!</p>'}<button class="giant again">Még egyszer</button></div>`;
-      say(gift ? `Nyertél! Gyönyörű ajándékot kaptál: ${gift.name}! Az öltöztetőben kipróbálhatod.` : 'Nyertél! Te vagy a bajnok!');
+      centerEl.innerHTML = `<div class="race-card"><div class="big">🏆</div><h2>Nyertél!</h2>${gift ? `<p>Ajándékot kaptál:</p><div class="gift">${gift.icon}</div><b>${gift.name}</b><p class="sm">Az öltöztetőben ki is próbálhatod!</p>` : '<p>Te vagy a bajnok!</p>'}<button class="giant again">Még egyszer</button></div>`;
+      say(gift ? `Nyertél! Ajándékot kaptál: ${gift.name}!` : 'Nyertél! Te vagy a bajnok!');
     } else {
-      centerEl.innerHTML = `<div class="race-card"><div class="big">🦄</div><h2>Majdnem!</h2><p>A másik unikornis most gyorsabb volt. Próbáljuk újra!</p><button class="giant again">Újra</button></div>`;
-      say('Majdnem! A másik unikornis most gyorsabb volt. Próbáljuk újra! Figyelj az akadályokra, és koppints időben!');
+      centerEl.innerHTML = `<div class="race-card"><div class="big">🦄💖🦄</div><h2>Szép futás volt!</h2><p>Most a barátod ért be előbb.</p><button class="giant again">Még egyszer</button></div>`;
+      say('Szép futás volt! Most a barátod ért be előbb. Futunk még egyet?');
     }
-    centerEl.querySelector('.again')?.addEventListener('click', () => { hurdles.forEach(h => { h.hit = null; h.aiDecided = false; h.g.rotation.x = 0; h.g.position.y = 0; }); reset(); });
+    centerEl.querySelector('.again')?.addEventListener('click', () => { hurdles.forEach((h, i) => { h.hit = false; h.aiDecided = false; h.tip = 0; poseHurdle(h, i); }); reset(); });
   }
 
   function size() { const w = root.clientWidth || window.innerWidth, h = root.clientHeight || window.innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = h > w ? 70 : 55; camera.updateProjectionMatrix(); }
@@ -166,12 +197,14 @@ export function run(container, { onGift } = {}) {
   raf = requestAnimationFrame(frame);
 
   // teszteléshez: gyorsított léptetés és állapot (nem része a játéknak)
-  container.__race = { S, step, jump, hurdles, render: () => renderer.render(scene, camera), LEN };
+  container.__busy = () => S.phase === 'run' || S.phase === 'ready';   // a jutalomidő vége megvárja a futam végét
+  container.__race = { S, step, jump, hurdles, render: () => renderer.render(scene, camera), LEN, info: () => renderer.info.render, canvas, busy: () => S.phase === 'run' || S.phase === 'ready' };
 
-  say('Verseny! Koppints, hogy átugord az akadályokat! Ha belefutsz, lelassulsz.');
+  say('Verseny! Koppints, és az unikornisod átugorja az akadályt!');
   return () => {
     cancelAnimationFrame(raf); ro?.disconnect(); window.removeEventListener('resize', size); window.removeEventListener('keydown', key);
-    scene.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose()); });
+    scene.traverse(o => { if (o.isInstancedMesh) o.dispose(); if (o.geometry) o.geometry.dispose(); if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose()); });
+    geos.forEach(g => g.dispose()); mats.forEach(m => m.dispose());
     renderer.dispose(); renderer.forceContextLoss?.();
   };
 }
