@@ -76,7 +76,13 @@ export function chooseInStation(state, list, rand, now, legacySolved = () => 0) 
   const levels = [...new Set(mine.map(e => e.level))].sort((a, b) => a - b);
   const below = levels.filter(l => l <= want);
   const lv = below.length ? below[below.length - 1] : levels[0];
-  return freshest(mine.filter(e => e.level === lv), state, rand);
+  // ha ezen a szinten már mindet látta, a legközelebbi szint (legfeljebb eggyel a kívánt fölött) még nem látott feladata jön
+  const atLv = mine.filter(e => e.level === lv);
+  if (!atLv.some(e => state.seen[e.id] === undefined)) {
+    const near = levels.filter(l => l !== lv && l <= want + 1).sort((a, b) => Math.abs(a - lv) - Math.abs(b - lv) || a - b);
+    for (const l of near) { const fresh = mine.filter(e => e.level === l && state.seen[e.id] === undefined); if (fresh.length) return pickRand(fresh, rand); }
+  }
+  return freshest(atLv, state, rand);
 }
 
 export function chooseNext(state, pool, feedPool, rand, now, legacySolved) {

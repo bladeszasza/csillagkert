@@ -20,6 +20,9 @@ const OLD = {
   szamol: [/^(count|math)\|/, /^pick\|(Melyik szám|Melyikből van)/, /^order\|Rendezd sorba a számokat/],
   forma: [/^pick\|(Melyik a kör|Melyik a háromszög|Mi van fent|Mi van lent|Melyik piros|Melyik sárga|Merre mutat|Mi van az alma)/],
   okos: [/^memory\|/, /^pick\|(Melyik nem illik|Mi jön ezután\?\|)/],
+  hang: [/^clap\|/, /^betu-[A-Z]$/, /^pick\|(Mi rímel|Melyik állat neve kezdődik)/],
+  zene: [/^music\|/],
+  algo: [/^algo\|/, /^order\|Hogyan készítünk szendvicset/, /^pick\|(Hány taps lesz|Mi jön ezután\? Találd ki|Ha sötét van)/],
 };
 export function legacySolvedIn(seen, station) {
   const res = OLD[station]; if (!res || !seen) return 0;

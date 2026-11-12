@@ -18,23 +18,28 @@ Feladatok → csillagok → jutalomjáték. Hibázásért nincs büntetés: szel
   számolókockák, harangok, piknik…), a jelükre koppintva lehet odamenni. A „Tovább" gomb megmaradt annak, aki nem akar választani.
 - **Rozi, a robot** beszél (böngésző-hang), bemutatkozik, ő osztja a csillagokat; az arca a hangulathoz igazodik.
 - **Feladatok:** vonalkövetés és betűk, számolás 20-ig, összeadás/kivonás, formák, színek és téri viszonyok,
-  gondolkodtató feladatok (sorminta, kakukktojás, ellentétek, párok, „Mi tűnt el?", memória), hangok és rímek,
-  zene (harangok, szó–mi, mély–magas, halk–hangos, egyforma–különböző, feljebb–lejjebb),
-  állatetetés (a kert valódi 3D lakóját etetjük), testünk, időutazás, robotprogramozás (algoritmikus gondolkodás), rajz.
-  A Számoló rét, a Formák és színek és az Okoskodó feladatai sablonokból készülnek, állomásonként több száz (lásd lent).
+  gondolkodtató feladatok (sorminta, kakukktojás, ellentétek, párok, „Mi tűnt el?", memória), hangok és rímek
+  (szótagtaps, rím, kezdő- és véghang, betű), zene (harangok, feljebb–lejjebb, dallamív, ritmuskártyák, halk–hangos,
+  hosszú–rövid, gyors–lassú, dallam-visszhang), állatetetés (a kert valódi 3D lakóját etetjük), testünk, időutazás,
+  robotprogramozás (építés, ismétlés, hibakeresés, „Hová ér?", ha–akkor), rajz.
+  Hat állomás feladatai sablonokból készülnek, állomásonként több száz (lásd lent).
 - **Jutalomjátékok:** Unikornis-futás, Felhővár-verseny, szabad futás procedurális világban, hami-adagoló (3D cica),
   cica-etetés, Barátom (fésülés, simogatás, labdázás), unikornis-öltöztető (ajándékokkal), buborékpukkasztás.
 - Nincs build lépés: sima HTML + ES modulok + three.js (`vendor/`). GitHub Pages-en fut. A haladás csak az eszközön tárolódik.
 
 ## Tananyag és sorrend
 
-Az M4 mérföldkő első harmada kész: **3 állomás generált** (a 8 generálhatóból), a többi az M4 következő részeiben jön.
+Az M4 mérföldkő második harmada kész: **6 állomás generált** (a 8 generálhatóból); a Ceruzavár és a Rajzasztal az M4
+harmadik részében jön.
 
 | Állomás | Önálló feladat | Készség |
 |---|---:|---:|
 | Számoló rét | 758 | 10 |
 | Formák és színek | 304 | 11 |
 | Okoskodó | 407 | 8 |
+| Hangok háza | 618 | 7 |
+| Zenevár | 293 | 7 |
+| Robotpálya | 464 | 6 |
 
 - **Sablonok** (`js/content/`): egy sablon egy feladatfajta; a „cél" az, ami a választ meghatározza (darabszám, minta,
   tárgy). Egy önálló feladat egy (sablon, cél) pár: a tárgy fajtája, a színe, a rossz válaszok és a sorrend díszítés,

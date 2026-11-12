@@ -11,8 +11,8 @@ Minden forrásnál jelölöm, hogyan ellenőriztem (2026. november 12-én):
 olvastam. A **saját beállítás** jelzésű számok az én döntéseim az elvek alapján, nem kutatásból átvett értékek: a
 tapasztalat szerint hangolandók.
 
-Állapot: az M4 első harmada. Generált állomás: **Számoló rét, Formák és színek, Okoskodó**. A Hangok háza, a
-Zenevár és a Robotpálya az M4 második, a Ceruzavár és a Rajzasztal a harmadik részében készül. A tény-állomások
+Állapot: az M4 második harmada. Generált állomás: **Számoló rét, Formák és színek, Okoskodó, Hangok háza, Zenevár,
+Robotpálya**. A Ceruzavár és a Rajzasztal az M4 harmadik részében készül. A tény-állomások
 (Világunk, Egészség, Testünk csodái, Időutazás, Állatok, Szívkert) kézzel írt, a szülő által átnézett ténytáblát
 kapnak az M6-ban.
 
@@ -40,7 +40,7 @@ használat.
 | elemi számolás | Számoló rét |
 | relációszókincs (alatt, között, több, legnagyobb…) | Formák és színek (téri viszonyok, méret), Számoló rét (több, kevesebb, előtte, utána) |
 | tapasztalati következtetés, összefüggés-megértés | Okoskodó (sorminta, kakukktojás, csoportosítás, analógia) |
-| beszédhallgatás | Hangok háza (M4/2) |
+| beszédhallgatás | Hangok háza |
 | írásmozgás-koordináció | Ceruzavár (M4/3) |
 | szocialitás | Szívkert (M6) |
 
@@ -75,7 +75,7 @@ A szabályok a `js/scheduler-core.js` fájlban vannak, Node-tesztekkel (`tests/s
 | Kihívás és bemelegítés | 90% fölött 35% eséllyel egy szinttel nehezebb; 70–90% között 20% nehezebb, 15% könnyebb; 70% alatt nincs nehezebb, 40% könnyebb | Saját beállítás. A sikerarányt az utolsó 20 értékelt feladatból számolja (5 alatt 80%-ot feltételez). |
 | Melyik készség jöhet | csak az, amelyiknek a legkönnyebb feladata legfeljebb egy szinttel van a gyerek szintje fölött | Saját beállítás: kezdőnek így nem jön bontás vagy sorszám, amíg a számolás alapjai nem mennek. |
 | Készség-választás | a szintjéhez illők közül a legrégebben gyakorolt | Kevert gyakorlás. |
-| Feladat-választás | a még nem látott közül véletlenszerűen, különben a legrégebben látott | Egy 300 feladatos szimulációban nincs ismétlődő feladat (teszt). |
+| Feladat-választás | a még nem látott közül véletlenszerűen; ha a gyerek szintjén mindet látta, a legközelebbi szint (legfeljebb eggyel nehezebb) még nem látott feladata; különben a legrégebben látott | Egy 300 feladatos szimulációban nincs ismétlődő feladat (teszt). |
 | Állomás-váltás | nem az utolsó kettő közül, a három legrégebben látogatott egyike | Saját beállítás. |
 | Etetés | minden 2–3. feladat | Az 1.0-ból megtartva. |
 
@@ -83,8 +83,10 @@ A szabályok a `js/scheduler-core.js` fájlban vannak, Node-tesztekkel (`tests/s
 
 A 250-es kapu nem az egyedi azonosítókat számolja, hanem az önálló **(sablon, cél)** párokat. A cél csak az, ami a
 választ meghatározza (például a darabszám, a számhármas, a minta típusa); a tárgy fajtája, a színe, az eltérítők és a
-sorrend díszítés, nem új feladat. Állás: Számoló rét **758**, Formák és színek **304**, Okoskodó **407** önálló
-feladat (`tests/generated.test.mjs`).
+sorrend díszítés, nem új feladat. Állás: Számoló rét **758**, Formák és színek **304**, Okoskodó **407**, Hangok háza
+**618**, Zenevár **293**, Robotpálya **464** önálló feladat (`tests/generated.test.mjs`). A Zenevárban a feljebb vagy
+lejjebb ugyanúgy szóló (transzponált) dallam nem új feladat; a Robotpályán az eltolt vagy nagyobb pályán ugyanaz a
+program sem.
 
 Minden generált feladatra automatikus ellenőrzés fut: pontosan egy helyes válasz; nincs ismétlődő válasz; a helyes
 válasz helye egyenletes; minden válasz valahol helyes is; a kimondott szövegben nincs számjegy, jel vagy emoji; a
@@ -157,6 +159,74 @@ gyakorlása [másodlagos, általános szakirodalmi háttér, forrást ehhez nem 
 | „Mi tűnt el?" | 1–5 | 3, 4, 5 kép, a hely látszik → 4–6 kép összekeverve; a rossz válaszok nem is voltak a képen |
 | memória (gyakorló) | 1–5 | 3–6 pár témás paklikból; a kártya neve felfordításkor elhangzik (szókincs) |
 
+### 3.4 Hangok háza (7 sablon, 7 készség)
+
+**Mire épül**: a DIFER beszédhallgatás (beszédhanghallás) területe (a forrásból csak a készség nevét ellenőriztem), és a
+fonológiai tudatosság szokásos sorrendje: előbb a nagyobb egységek (szótag, rím), aztán az egyes hangok (kezdőhang,
+véghang), végül a betű. Ehhez a sorrendhez ebben a részben forrást nem ellenőriztem; a szintek beosztása **saját
+döntés**. A feladatok nem DIFER-tesztek, és nem is utánozzák azokat.
+
+**A szóbank** 132 képes szó. A szótagokat, az első és az utolsó hangot a program számolja ki a szóból, és teszt
+ellenőrzi: magyarul egy szótag egy magánhangzó; a kétjegyű betű (cs, sz, zs, gy, ny, ty, dz, dzs) egy hang; a
+szótag-határ a kiejtés szerinti (ma-ci, al-ma). Ugyanaz a kép mindenhol ugyanazt a nevet kapja, mint a többi
+állomáson (a 🐻 maci, nem medve).
+
+| Készség | Szintek | Mi nehezedik |
+|---|---|---|
+| szótag-taps | 1–3 | egy-két szótagos szó → három → négy és több szótag; a pöttyök csak tapsolás közben jelennek meg, előre nem árulják el a választ |
+| melyik szó hosszabb? | 2–4 | a leghosszabb szót kell megtalálni: két szótagos → három → négy és több szótagos; a többi szó mindig rövidebb |
+| azonos első szótag | 2 | „Melyik kezdődik úgy, mint a ma-ci?" |
+| rím | 2–3 | zárt utolsó szótag (majom–citrom) → nyitott (cica–katica). A rossz válasz utolsó magánhangzója és utolsó hangja is más, ezért a „majdnem rím" (kés–kéz) nem lehet megtévesztő válasz |
+| kezdőhang | 3–4 | magánhangzók és kitartható hangok (m, n, s, sz, l, r, f, v, h, j…) → a többi (p, t, k, b, d, g, cs…). A rossz válasz soha nem a hasonló hang (b–p, d–t, s–sz, a–á) |
+| véghang | 4–5 | magánhangzó a szó végén → mássalhangzó |
+| betű és hang | 5 | a nagy betű látszik, Rozi kimondja a nevét („Ez az M betű"), a gyerek a vele kezdődő képet keresi |
+
+**Szülőnek érdemes meghallgatni** (az iPad felolvasóján múlik, asztalról nem ellenőrizhető): a szótag-tapsnál Rozi
+külön szótagokat mond („e, le, fánt"), a betű-feladatnál a betű nevét („az Ny betű"). Ha valamelyik furcsán szól,
+azt jelezni kell. A **mondóka-kiegészítés** a tervben szerepelt, de nem készült el: ehhez ellenőrzött szövegforrás kell.
+
+### 3.5 Zenevár (9 sablon, 7 készség)
+
+**Mire épül**: a Kodály-koncepció sorrendje (a szó–mi hangközzel kezd, aztán jön a lá, a dó és a ré; a fá és a ti
+később; [Wikipédia: Kodály method](https://en.wikipedia.org/wiki/Kod%C3%A1ly_method), Choksy alapján, [másodlagos]).
+**Csak viszonyított hallás**: soha nem kéri, hogy a gyerek egy hangot magában megnevezzen; a harangok előbb a nevükkel
+együtt szólnak, és a kérdés mindig összevetés („melyik szólt a végén?", „feljebb vagy lejjebb?"). A szintek beosztása
+**saját döntés**. A ritmuskártyák saját jelek (nagy kör = tá, két kis kör = ti-ti, szaggatott kör = szün), nem a
+Kodály-féle ritmusírás.
+
+| Készség | Szintek | Mi nehezedik |
+|---|---|---|
+| melyik harang? | 2–5 | szó, mi, lá → dó, mi, szó és mi, ré, dó → négy, majd öt harang |
+| merre ment a hang? | 1–5 | nagy ugrás → kisebb hangköz → egy lépés (szekund) → félhang (mi–fá, ti–dó) csak az 5. szinten; „ugyanaz" is lehet a válasz |
+| dallamív | 2–4 | három hang: felfelé lépcső, lefelé lépcső, domb vagy völgy; szó–mi–lá → dó-val → ré-vel |
+| ritmus | 2–4 | négy ütés tá és ti-ti → több ti-ti → egy szünet (szün) |
+| melyik a legmagasabb / legmélyebb? | 1–5 | három harang egymás után; oktáv különbség → egyre kisebb, végül félhang |
+| hangerő, hossz, tempó | 1–4 | „melyik a leghangosabb / leghalkabb, leghosszabb / legrövidebb, leggyorsabb / leglassabb?": nagy különbség → kisebb különbség (a harmadik harang a kettő között szól). A hangerő-fokozatok különbségét a hangmotor után mértük (hangos és halk között legalább 9 dB) |
+| dallam-visszhang | 1–5 | a gyerek a harangokon visszajátssza: két-három hang szó–mi → lá → dó, ré → öt hang (dó, ré, mi, szó, lá) |
+
+A hallásos feladat előtt laponként egyszer **hallás-próba** jön („Hallod a csengőt?"); ha a gyerek nem hallja, Rozi
+egy felnőttet kér (hangerő, néma mód). Tévedés után a hangsor újra szól; a visszhangnál a második tévedés után a
+harangok is felvillannak, a harmadik után közösen játsszák.
+
+### 3.6 Robotpálya (6 sablon, 6 készség)
+
+**Mire épül**: a korai programozás szokásos fogalmai (sorrend, ismétlés, hibakeresés, feltétel). Ehhez a részhez
+forrást nem ellenőriztem; a sorrend és a szintek **saját összeállítás**. A robot **abszolút irányokban** lép (fel,
+le, balra, jobbra), nem fordul el, így egy ötéves a képernyőn követheti.
+
+| Készség | Szintek | Mi nehezedik |
+|---|---|---|
+| programépítés | 1–5 | egyenes út → egy forduló → virágok kerülgetése (legalább két forduló vagy kerülő), legfeljebb nyolc lépés |
+| ismétlés (×2, ×3) | 3–5 | kevesebb hely van a programban, mint ahány lépés kell, ezért az ismétlés gomb kell; egyenes → forduló → virágok közt |
+| hibakeresés | 2–5 | hiányzik az utolsó lépés → egy fölösleges lépés; a robot épp a hibás lépésnél ütközik meg, és az a lépés kap jelet |
+| hová ér a robot? | 1–5 | egy-két nyíl → forduló → négy nyíl → ismétléses program. A többi gyümölcs nem esik a robot útjába, így nem kétértelmű, hol áll meg |
+| melyik program jó? | 2–5 | három program, pontosan egy ér a csillaghoz; a többi máshová ér, és a csillagon át sem megy |
+| ha–akkor | 2–5 | két, három, négy szabálykártya (szín → nyíl); az 5. szinten két jel egymás után |
+
+A pályákat rögzített magból sorsolja a program (minden betöltéskor ugyanazok), és egy teszt minden pályát megold. A
+2. tévedés után megmutatott és a 3. után együtt megépített program a legegyszerűbb megoldás (a legkevesebb
+gombnyomás), és teszt ellenőrzi, hogy elfér a program helyein.
+
 ---
 
 ## 4. Rozi mondatai (monológ-könyvtár)
@@ -178,12 +248,14 @@ A mondatok a `js/lines.js` fájlban vannak; szándékonként legalább hat vált
 
 ## 5. Ami még hátra van, és amit nem tudunk
 
-- **Még nem generált** (M4/2, M4/3): Hangok háza (a fonológiai tudatosság sorrendje: szó → szótag → rím →
-  kezdőhang), Zenevár (Kodály-sorrend: a gyakorlatok a kis terccel, a szó–mi hangközzel kezdenek, aztán egyenként
-  jön a lá, a dó és a ré; a fá és a ti csak később, mert a félhangot a gyerekek nehezen éneklik tisztán
-  ([Wikipédia: Kodály method](https://en.wikipedia.org/wiki/Kod%C3%A1ly_method), Choksy: *The Kodály Method I*,
-  1999, 9–12. o. alapján, [másodlagos]); nem abszolút hallást kér, hanem „ugyanaz vagy más?", „feljebb vagy
-  lejjebb?"), Robotpálya, Ceruzavár, Rajzasztal.
+- **Még nem generált** (M4/3): Ceruzavár, Rajzasztal. (A Zenevár Kodály-sorrendjének forrása: a gyakorlatok a kis
+  terccel, a szó–mi hangközzel kezdenek, aztán egyenként jön a lá, a dó és a ré; a fá és a ti csak később, mert a
+  félhangot a gyerekek nehezen éneklik tisztán; [Wikipédia: Kodály method](https://en.wikipedia.org/wiki/Kod%C3%A1ly_method),
+  Choksy: *The Kodály Method I*, 1999, 9–12. o. alapján, [másodlagos].)
+- **A Robotpálya régi feladatai**: a hét régi pálya helyett generáltak jöttek. A szendvics-sorrend (hétköznapi
+  sorrend) és a „Ha sötét van a szobában…" kérdés most kimarad, az M6 ténytábláiban (Egészség, Világunk) térhet
+  vissza; a „Hány taps lesz összesen?" számolást a Számoló rét, a színes sormintát az Okoskodó sorminta-feladatai
+  fedik le.
 - **Szívkert** (M6): a szociális-érzelmi tanulás öt területe (CASEL: önismeret, önszabályozás, társas tudatosság,
   kapcsolati készségek, felelős döntéshozatal [másodlagos, CASEL-t idéző oldalak alapján; a CASEL saját oldalán
   ellenőrizendő]).
@@ -209,14 +281,14 @@ A tervezéskor mind a 136 régi feladatot átnéztük; 61-et jelöltünk javíta
 | Egészség | 5 | 5 javítva (3 áthelyezés az M1-ben; a kézmosás képei és a fogkefe-kérdés rossz válaszai most) |
 | Testünk csodái | 5 | 5 javítva (az „erek" helyett most „Mivel hallunk?", így a fül is lehet helyes válasz) |
 | Időutazás | 5 | 4 javítva; 1 kivéve: a piramis (az emoji a háromszög jele), az M6-ban rajzolt képpel térhet vissza |
-| Robotpálya | 5 | 5 javítva (áthelyezések és a „kétszer, háromszor" kiejtése korábban; a nyelvtan és a taps-tény most) |
+| Robotpálya | 5 | 5 javítva (áthelyezések és a „kétszer, háromszor" kiejtése korábban; a nyelvtan és a taps-tény az M4/1-ben); az M4/2-ben az egész állomás generált lett |
 | Ceruzavár | 3 | 2 javítva korábban (a kör azonosítója, a név nélküli betű); **1 nyitott**: kilenc feladat ugyanazt az utasítást mondja → M4/3 |
-| Hangok háza | 8 | **nyitott** → M4/2, az állomás generált lesz |
-| Zenevár | 4 | **nyitott** → M4/2, az állomás generált lesz |
+| Hangok háza | 8 | kivéve, a generált feladatok váltják ki (a válaszok nevét Rozi kimondja, a kép látszik, a tapsolásnál nincs számjegy, sok rím-feladat) |
+| Zenevár | 4 | kivéve, a generált feladatok váltják ki (nincs abszolút hallás: a harangok előbb a nevükkel szólnak; a hangnév mindig harang neve; a felirat „ti") |
 | Rajzasztal | 0 | – |
 
-Összesen: 17 kiváltva generált feladattal, 29 javítva, 1 kivéve, **14 nyitott** (ebből 12 a következő M4-részekben,
-1 az M6-ban, 1 a Ceruzavárral az M4/3-ban).
+Összesen: 29 kiváltva generált feladattal, 29 javítva, 1 kivéve, **2 nyitott** (1 az M6-ban, 1 a Ceruzavárral az
+M4/3-ban).
 
 ---
 

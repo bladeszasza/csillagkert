@@ -6,6 +6,7 @@ import { rng } from '../js/content/rng.js';
 import { optionKey } from '../js/activities/pick.js';
 import { setScope } from '../js/scope.js';
 import { stopSpeaking } from '../js/voice.js';
+import { compress } from '../js/robot-path.js';
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
 async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < ms) { const v = fn(); if (v) return v; await wait(50); } return null; }
@@ -63,6 +64,27 @@ async function solveEcho(d, item, mistake) {
   for (const k of item.melody) { if (!await waitFor(() => ready(d), 10000)) throw new Error('a harangok zárva maradtak'); bell(k).click(); await wait(120); }
 }
 
+// robotpálya: a megoldó a program gombjait nyomja (ismétlésnél előbb a ×n gombot); hibakeresésnél kiveszi a hibás lépést,
+// vagy hozzáadja a hiányzót. Tévedésnek egy rossz irányú lépést (hibakeresésnél a hibás programot) futtat le.
+async function solveAlgo(d, item, ans, mistake) {
+  const open = () => d.querySelector('.activity.algo[data-locked="0"]');
+  if (!await waitFor(open, 10000)) throw new Error('a robotpálya nem nyílt meg');
+  const run = async () => { d.querySelector('#arun').click(); await waitFor(() => d.querySelector('.activity[data-locked="1"]'), 2000); };
+  const press = async toks => { for (const t of toks) { if (item.loops) d.querySelector(`.amul[data-m="${t.times}"]`).click(); d.querySelector(`.acmd[data-d="${t.dir}"]`).click(); await wait(30); } };
+  if (mistake) {
+    if (!item.prefill?.length) await press([{ dir: ['up', 'down', 'left', 'right'].find(x => x !== ans[0]), times: 1 }]);
+    await run();
+    if (!await waitFor(open, 20000)) throw new Error('tévedés után nem nyílt meg újra');
+  }
+  if (item.prefill?.length) {
+    if (ans.length < item.prefill.length) {
+      let i = item.prefill.findIndex((x, k) => x !== ans[k]); if (i < 0) i = item.prefill.length - 1;
+      d.querySelector(`.atok[data-i="${i}"]`).click();
+    } else await press([{ dir: ans[ans.length - 1], times: 1 }]);
+  } else { d.querySelector('#aclear').click(); await press(compress(ans, item.loops)); }
+  await run();
+}
+
 export async function testContent(ok) {
   window.__soundSpeed = 4;                                 // a hangok ugyanazok, csak gyorsabban szólnak (a teszt ideje miatt)
   const runs = [], badLines = [];
@@ -84,6 +106,7 @@ export async function testContent(ok) {
       const tpl = TEMPLATES.find(t => t.id === item.template);
       if (item.type === 'memory') await solveMemory(d, () => result);
       else if (item.type === 'echo') { if (mistake) mistakes++; await solveEcho(d, item, mistake); await waitFor(() => result || err, 10000); }
+      else if (item.type === 'algo') { if (mistake) mistakes++; await solveAlgo(d, item, tpl.solve(item), mistake); await waitFor(() => result || err, 15000); }
       else if (item.type === 'clap') { if (mistake) mistakes++; await solveClap(d, tpl.solve(item), mistake); await waitFor(() => result || err, 10000); }
       else {
         if (item.memo) await waitFor(() => d.querySelector('.answer'), item.memo.ms + 4000);     // "Mi tűnt el?": előbb a kép

@@ -33,9 +33,6 @@ const FACTS = {
   'Melyik szerv pumpálja a vért?|szív': 'A szív pumpálja a vért az egész testünkben.',
   'Melyik állat élt nagyon régen, és ma már nem él?|dinoszaurusz': 'A dinoszauruszok nagyon régen éltek, ma már nincsenek.',
   'Piros a lámpa. Mit csinálsz?|megállok': 'Piros lámpánál megállunk, és megvárjuk a zöldet.',
-  'Mi jön ezután? Találd ki a szabályt!|kék': 'Utána a kék jön: két piros és egy kék ismétlődik.',
-  'Hány taps lesz összesen?|három': 'Háromszor tapsolunk: az három taps.',
-  'Ha sötét van a szobában, mit kapcsolunk fel?|lámpát': 'Ha sötét van a szobában, felkapcsoljuk a lámpát.',
 };
 const ORDER_FACTS = {
   'Hogyan mossunk kezet? Koppints sorrendben!': 'Víz, szappan, dörzsölés, öblítés, végül törölközés.',
@@ -44,14 +41,12 @@ const ORDER_FACTS = {
   'Rakd sorba a hét napjait! Koppints sorrendben!': 'Hétfő, kedd, szerda, csütörtök, péntek, szombat, vasárnap.',
   'Hogyan nő a virág? Koppints sorrendben!': 'Először mag van, abból csíra nő, végül virág lesz belőle.',
   'Hogyan változott a közlekedés? Koppints sorrendben!': 'Régen lovon jártak, aztán jött a vonat, az autó, és végül a repülő.',
-  'Hogyan készítünk szendvicset? Koppints sorrendben!': 'Kenyér, vaj, sajt, és kész is a szendvics!',
   'Hogyan mosunk fogat? Koppints sorrendben!': 'Fogkrém a kefére, fogmosás, öblítés, és jöhet a mosoly!',
 };
 const opt = (s, ok) => { const i = s.indexOf(' '); return i < 0 ? { t: s, ok } : { t: s.slice(0, i), name: s.slice(i + 1), ok }; };
 const pick = (icon, prompt, correct, ...wrong) => ({ type: 'pick', icon, prompt, fact: FACTS[prompt + '|' + (opt(correct, true).name || '')], options: [opt(correct, true), ...wrong.map(w => opt(w, false))] });
 const withQ = (q, p) => ({ ...p, q });
 const order = (icon, prompt, ...steps) => ({ type: 'order', icon, prompt, fact: ORDER_FACTS[prompt], steps: steps.map(s => opt(s)) });
-const algo = o => ({ type: 'algo', ...o });
 // Állatetetés: a kert valódi lakóját etetjük (js/friends.js: ki mit eszik). A kulcs az állat és a jó étel párja.
 // A mindenevő barátnál (ANY) mindegyik étel jó: ott a gyerek választ, a kulcs vége "mind".
 const feed = ([kind, good, ...rest]) => {
@@ -67,7 +62,6 @@ const BASE = [
   // ✏️ Ceruzavár · 🔤 Hangok · 🌍 Világunk · 🍎 Egészség · 🫀 Testünk · 🏺 Időutazás · 🎵 Zene · 🤖 Robotpálya · 🎨 Rajz
   { type: 'trace', path: 'hullam', say: 'Kövesd a hullámos vonalat a kiscicától a csillagig!' },
   letter('A'),
-  algo({ w: 4, h: 2, start: [0, 0], goal: [3, 0], max: 5, say: 'Ismerkedj a robottal! Nyomd meg a jobbra nyilat annyiszor, ahányat a robotnak lépnie kell, aztán indítsd el!' }),
   pick('🫀', 'Melyik szerv pumpálja a vért?', '❤️ szív', '🧠 agy', '🦷 fog'),
   pick('🏺', 'Melyik állat élt nagyon régen, és ma már nem él?', '🦖 dinoszaurusz', '🐶 kutya', '🐱 cica'),
   { type: 'draw', template: 'nap' },
@@ -86,7 +80,6 @@ const BASE = [
 
   { type: 'trace', path: 'kor' },
   letter('M'),
-  algo({ w: 3, h: 3, start: [0, 2], goal: [2, 0], max: 6 }),
   pick('🌍', 'Mikor látjuk a csillagokat az égen?', '🌙 éjszaka', '☀️ délben', '🌤️ délután'),
   pick('🍎', 'Melyik az egészséges?', '🥕 répa', '🍭 nyalóka', '🍟 sült krumpli'),
   pick('🏺', 'Hol laktak a királyok és a lovagok régen?', '🏰 vár', '🏢 felhőkarcoló', '⛺ sátor'),
@@ -100,7 +93,6 @@ const BASE = [
 
   { type: 'trace', path: 'hegyek' },
   letter('O'),
-  order('🤖', 'Hogyan készítünk szendvicset? Koppints sorrendben!', '🍞 kenyeret veszünk elő', '🧈 megkenjük vajjal', '🧀 sajtot teszünk rá', '🥪 megesszük'),
   pick('🌍', 'Melyik nap jön péntek után?', '🎈 szombat', '🎒 hétfő', '📚 szerda'),
   pick('🫀', 'Mivel hallunk?', '👂 fül', '👃 orr', '🦶 láb'),
   { type: 'draw', say: 'Rajzolj, amit csak szeretnél!' },
@@ -109,7 +101,6 @@ const BASE = [
   order('🌍', 'Mi történik a nap folyamán? Koppints sorrendben!', '🌅 reggel', '☀️ dél', '🌇 este', '🌙 éjszaka'),
   order('🫀', 'Hogyan változunk az évek alatt? Koppints sorrendben!', '👶 baba', '🧒 gyerek', '🧑 felnőtt', '🧓 idős'),
   letter('L'),
-  algo({ w: 4, h: 3, start: [0, 0], goal: [3, 2], walls: [[1, 0], [1, 1]], max: 6 }),
   pick('🏺', 'Kik védték a várat?', '⚔️ lovagok', '🧑‍🏫 tanítók', '🧑‍🎨 festők'),
 
   { type: 'trace', path: 'nyolcas', say: 'Kövesd a nyolcast! Körbe-körbe, mint a kisvasút.' },
@@ -118,25 +109,18 @@ const BASE = [
   pick('🫀', 'Mivel fogjuk meg a kanalat?', '✋ kéz', '🦶 láb', '👃 orr'),
   order('🏺', 'Hogyan változott a közlekedés? Koppints sorrendben!', '🐎 ló', '🚂 vonat', '🚗 autó', '✈️ repülő'),
   letter('K'),
-  algo({ w: 4, h: 3, start: [0, 0], goal: [3, 2], prefill: ['right', 'right', 'right', 'down'], max: 6 }),
 
   { type: 'trace', path: 'hullam' },
   pick('🫀', 'Mivel szagolunk?', '👃 orr', '👂 fül', '👀 szem'),
   order('🌍', 'Hogyan nő a virág? Koppints sorrendben!', '🫘 mag', '🌱 csíra', '🌷 virág'),
   pick('🫀', 'Mivel érezzük az ízeket?', '👅 nyelv', '👀 szem', '✋ kéz'),
   letter('T'),
-  algo({ w: 6, h: 2, start: [0, 0], goal: [5, 1], loops: true, max: 4, say: 'Új gombok: a kétszer és a háromszor gomb! Így egy nyíllal többet lépsz. Segítsd a robotot a csillaghoz!' }),
 
   pick('🫀', 'Hány ujjunk van két kezünkön?', '🔟 tíz', '5️⃣ öt', '8️⃣ nyolc'),
   pick('🫀', 'Mit csinálunk, ha álmosak vagyunk?', '😴 alszunk', '🏃 szaladgálunk', '⚽ focizunk'),
   pick('🏺', 'Melyikhez nem kell villany?', '🕯️ gyertya', '💡 villanykörte', '📺 tévé'),
-  algo({ w: 5, h: 5, start: [0, 4], goal: [4, 0], walls: [[2, 2], [2, 3], [1, 2]], loops: true, max: 6 }),
-  { ...withQ('👏 👏 👏', pick('🤖', 'Hány taps lesz összesen?', '3️⃣ három', '2️⃣ kettő', '5️⃣ öt')), say: 'Háromszor tapsolunk. Hány taps lesz összesen?' },
   withQ('🚦', pick('🌍', 'Piros a lámpa. Mit csinálsz?', '✋ megállok', '🚶 átmegyek', '🏃 szaladok')),
-  withQ('🔴🔴🔵 🔴🔴🔵 🔴🔴 ❓', pick('🤖', 'Mi jön ezután? Találd ki a szabályt!', '🔵 kék', '🔴 piros', '🟡 sárga')),
   order('🍎', 'Hogyan mosunk fogat? Koppints sorrendben!', '🪥 fogkrémet teszünk a kefére', '🦷 megmossuk minden fogunkat', '🚰 kiöblítjük a szánkat', '😁 mosolygunk'),
-  algo({ w: 5, h: 4, start: [0, 0], goal: [4, 3], walls: [[1, 0], [1, 1], [3, 2], [3, 3]], loops: true, max: 6 }),
-  pick('🤖', 'Ha sötét van a szobában, mit kapcsolunk fel?', '💡 lámpát', '📺 tévét', '🔊 hangszórót'),
 ];
 
 const FEED = MEALS.map(feed);

@@ -7,6 +7,7 @@ import { rng } from '../js/content/rng.js';
 import { pickSpeech, resetLines } from '../js/lines.js';
 import { STATIONS } from '../js/curriculum.js';
 import { NOTES } from '../js/notes.js';
+import { simulate, solve as robotSolve, compress } from '../js/robot-path.js';
 
 const SEEDS = [1, 2, 3];
 const answerOf = o => o.n ?? (o.name || o.key);
@@ -87,6 +88,25 @@ test('minden feladat megoldható: a független megoldó ugyanazt a választ tal�
       assert.ok(new Set(it.melody).size >= 2, `egyhangú dallam: ${where}`);
       assert.equal(ans, it.melody.join('.'), where);
       spoken(`Igen! Pont így szólt: ${it.melody.map(n => NOTES[n].name).join(', ')}.`, where);
+    } else if (it.type === 'algo') {
+      // robotpálya: a megoldás elér a csillagig; a segítség (amit a feladat-modul a 2. és 3. tévedésnél mutat) elfér a helyeken;
+      // ismétléses feladat ismétlés nélkül nem férne el; a hibás program tényleg hibás, egy lépés javítja, és ütközésnél épp
+      // a megjelölt (ütköző) lépés kivétele a javítás
+      const inb = ([x, y]) => x >= 0 && y >= 0 && x < it.w && y < it.h, same = (a, b) => a[0] === b[0] && a[1] === b[1];
+      assert.ok(it.w <= 6 && it.h <= 5 && inb(it.start) && inb(it.goal) && !same(it.start, it.goal), `rossz pálya: ${where}`);
+      for (const c of it.walls) assert.ok(inb(c) && !same(c, it.start) && !same(c, it.goal), `rossz virág: ${where}`);
+      assert.ok(Array.isArray(ans) && simulate(it, ans).ok, `a megoldás nem ér a csillaghoz: ${where}`);
+      const help = robotSolve(it);
+      assert.ok(help && compress(help, !!it.loops).length <= it.max, `a segítség nem fér el: ${where}`);
+      if (it.loops) assert.ok(help.length > it.max, `ismétlés nélkül is elférne: ${where}`);
+      else assert.ok(ans.length <= it.max, `a megoldás nem fér el: ${where}`);
+      if (it.prefill?.length) {
+        const f = simulate(it, it.prefill);
+        assert.ok(!f.ok && it.prefill.length <= it.max, `a hibás program nem hibás: ${where}`);
+        assert.equal(Math.abs(it.prefill.length - ans.length), 1, `nem egy lépés a javítás: ${where}`);
+        if (f.why !== 'short') assert.ok(simulate(it, it.prefill.filter((_, i) => i !== f.step)).ok, `nem a megjelölt lépés a hibás: ${where}`);
+      }
+      spoken(it.say, where);
     } else assert.fail(`ismeretlen feladattípus: ${it.type} (${where})`);
   }
 });
@@ -94,7 +114,9 @@ test('minden feladat megoldható: a független megoldó ugyanazt a választ tal�
 test('Rozi minden mondata kimondható: nincs számjegy, jel, emoji, és rövidek a mondatok', () => {
   resetLines();
   for (const t of TEMPLATES) for (const x of targetsOf(t)) {
-    const it = build(x.id, rng(x.id)); if (it.type !== 'pick') continue;
+    const it = build(x.id, rng(x.id));
+    if (it.type === 'algo') { spoken(it.say, x.id); continue; }
+    if (it.type !== 'pick') continue;
     const sp = pickSpeech(it);
     if (it.memo) spoken(it.memo.say, x.id);
     for (const st of it.intro?.steps || []) spoken(st.say, x.id);

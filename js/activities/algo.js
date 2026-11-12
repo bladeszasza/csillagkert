@@ -2,32 +2,16 @@
 // Az algoritmikus gondolkodás alapjai: sorrend, ismétlés (×2, ×3), akadály kikerülése, hibajavítás.
 // Hibánál nem büntetünk: elmondjuk, hol akadt el, kiemeljük a hibás lépést; 2. hibánál megmutatjuk a megoldást,
 // 3. hibánál a robot lassan maga "begépeli" – a gyerek csak elindítja. A programot a lépésekre koppintva lehet javítani.
+// A segítség a robot-path.js legegyszerűbb programja (ugyanaz, amit a tesztek ellenőriznek). A .activity data-locked jelzi,
+// mikor fut a robot (a böngészős teszt ehhez igazodik); a várakozásokat a teszt gyorsíthatja (__soundSpeed).
 import { say } from '../voice.js';
 import { happy } from '../sounds.js';
-
-const DIRS = { up: [0, -1, '⬆️', 'fel'], down: [0, 1, '⬇️', 'le'], left: [-1, 0, '⬅️', 'balra'], right: [1, 0, '➡️', 'jobbra'] };
 import { sleep } from '../scope.js';
+import { DIRS, solve, compress } from '../robot-path.js';
+export { solve, compress };
 
-// legrövidebb út (BFS) a segítséghez: [irányok]
-export function solve({ w, h, start, goal, walls = [] }) {
-  const wall = new Set(walls.map(([x, y]) => x + ',' + y)), seen = new Set([start.join(',')]), q = [[start[0], start[1], []]];
-  while (q.length) {
-    const [x, y, path] = q.shift();
-    if (x === goal[0] && y === goal[1]) return path;
-    for (const [k, [dx, dy]] of Object.entries(DIRS)) {
-      const nx = x + dx, ny = y + dy, key = nx + ',' + ny;
-      if (nx < 0 || ny < 0 || nx >= w || ny >= h || wall.has(key) || seen.has(key)) continue;
-      seen.add(key); q.push([nx, ny, [...path, k]]);
-    }
-  }
-  return null;
-}
-// egymás utáni azonos lépések összevonása ×n tokenekké (ha az ismétlés engedélyezett)
-export function compress(path, loops) {
-  const out = [];
-  for (const d of path) { const l = out[out.length - 1]; if (loops && l && l.dir === d && l.times < 3) l.times++; else out.push({ dir: d, times: 1 }); }
-  return out;
-}
+const speed = () => globalThis.__soundSpeed || 1;
+const wait = ms => sleep(ms / speed());
 
 export function run(container, level) {
   const { w, h, start, goal, walls = [], loops = false, max = 8, prefill = [], say: sayText } = level;
@@ -50,7 +34,9 @@ export function run(container, level) {
           <button class="giant arun" id="arun">▶️ Indítás</button>
         </div>
       </div>`;
-    const gridEl = container.querySelector('.agrid'), robotEl = container.querySelector('.arobot'), progEl = container.querySelector('#aprog');
+    const gridEl = container.querySelector('.agrid'), robotEl = container.querySelector('.arobot'), progEl = container.querySelector('#aprog'), box = container.querySelector('.activity');
+    const lock = v => { box.dataset.locked = v ? '1' : '0'; };
+    lock(false);
     const place = () => { robotEl.style.transform = `translate(${robot.x * (cell + 4)}px, ${robot.y * (cell + 4)}px)`; };
     const tokenHtml = (t, i, cls = '') => `<button class="atok ${cls}" data-i="${i}">${DIRS[t.dir][2]}${t.times > 1 ? `<b>×${t.times}</b>` : ''}</button>`;
     const render = (hi = -1, ghost = false) => {
@@ -67,7 +53,7 @@ export function run(container, level) {
     container.querySelector('#aclear').addEventListener('click', () => { if (running || finished) return; program = []; render(); });
 
     async function exec() {
-      running = true; robot = { x: start[0], y: start[1] }; place(); await sleep(450);
+      running = true; lock(true); robot = { x: start[0], y: start[1] }; place(); await wait(450);
       for (let i = 0; i < program.length; i++) {
         if (!container.isConnected) return { ok: null };
         render(i);
@@ -75,32 +61,33 @@ export function run(container, level) {
         for (let k = 0; k < t.times; k++) {
           const nx = robot.x + dx, ny = robot.y + dy;
           if (nx < 0 || ny < 0 || nx >= w || ny >= h || wallSet.has(nx + ',' + ny)) {          // nekiütközik: kedvesen megáll
-            robotEl.classList.add('bump'); await sleep(450); robotEl.classList.remove('bump');
+            robotEl.classList.add('bump'); await wait(450); robotEl.classList.remove('bump');
             return { ok: false, step: i, why: nx < 0 || ny < 0 || nx >= w || ny >= h ? 'a pálya szélén' : 'a virágoknál' };
           }
-          robot.x = nx; robot.y = ny; place(); await sleep(420);
+          robot.x = nx; robot.y = ny; place(); await wait(420);
         }
       }
       render();
-      return robot.x === goal[0] && robot.y === goal[1] ? { ok: true } : { ok: false, step: program.length - 1, why: 'a csillag előtt' };
+      return robot.x === goal[0] && robot.y === goal[1] ? { ok: true } : { ok: false, step: program.length - 1, why: 'short' };
     }
 
     container.querySelector('#arun').addEventListener('click', async () => {
       if (running || finished) return;
       if (!program.length) { say('Előbb rakd össze a programot a nyilakkal!', { remember: false }); return; }
-      const res = await exec(); running = false;
+      const res = await exec();
       if (res.ok === null) return;
       if (res.ok) { finished = true; gridEl.classList.add('win'); happy('🦄'); await say('A robot odaért a csillaghoz! Szuper programozó vagy!'); resolve({ wrong: fails }); return; }
       fails++; robot = { x: start[0], y: start[1] }; place(); render(res.step);
-      if (fails === 1) say(`Majdnem! A robot elakadt ${res.why}. Nézd meg a megjelölt lépést, és javítsd ki! Koppints egy lépésre, ha ki akarod venni.`, { remember: false });
+      if (fails === 1) say(`Majdnem! ${res.why === 'short' ? 'A robot megállt, de nem ért el a csillagig.' : `A robot elakadt ${res.why}.`} Nézd meg a megjelölt lépést, és javítsd ki! Koppints egy lépésre, ha ki akarod venni.`, { remember: false });
       else if (fails === 2) {
         say('Segítek! Nézd meg ezt a sort, ez vezet el a csillaghoz.', { remember: false });
         const tk = compress(solution, loops); const hint = document.createElement('div'); hint.className = 'ahint'; hint.innerHTML = '<span>Segítség:</span>' + tk.map((t, i) => tokenHtml(t, i, 'ghost')).join(''); progEl.after(hint);
       } else {
         say('Építsük meg együtt! Nézd, ahogy a robot programja elkészül, aztán nyomd meg az indítást.', { remember: false });
         program = []; render();
-        for (const t of compress(solution, loops).slice(0, max)) { await sleep(700); program.push({ ...t }); render(); }
+        for (const t of compress(solution, loops).slice(0, max)) { await wait(700); if (!container.isConnected) return; program.push({ ...t }); render(); }
       }
+      running = false; lock(false);
     });
     say(sayText || (prefill.length ? 'Hiba van a programban! A robot nem jut el a csillagig. Javítsd ki, aztán nyomd meg az indítást!' : 'Rakd össze a nyilakból a programot, ami elvezeti a robotot a csillaghoz! Aztán nyomd meg az indítást.'));
   });

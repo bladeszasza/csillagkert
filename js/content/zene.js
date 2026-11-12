@@ -176,7 +176,8 @@ export const ZENE = [
     } },
 
   // 5–8. Három harang egymás után: a leg-magasabb / -mélyebb, -hangosabb / -halkabb, -hosszabb / -rövidebb, -gyorsabb / -lassabb.
-  ...['magas', 'hangero', 'hossz', 'tempo'].map(kind => ({ ...S, id: `zene.${kind}`, skill: kind === 'magas' ? 'zene.magassag' : `zene.${kind}`,
+  // A hangerő, a hossz és a tempó egy készség (a hang egy tulajdonságának összevetése): külön-külön szintenként csak egy feladat jutna rájuk.
+  ...['magas', 'hangero', 'hossz', 'tempo'].map(kind => ({ ...S, id: `zene.${kind}`, skill: kind === 'magas' ? 'zene.magassag' : 'zene.osszevet',
     targets: () => kind === 'magas'
       ? ['hi', 'lo'].flatMap(sup => MAGAS_GAPS.map(([gap, level]) => ({ key: `${sup}-${gap}`, level, sup, gap })))
       : ['hi', 'lo'].flatMap(sup => [['nagy', sup === 'hi' ? 1 : 2], ['kicsi', sup === 'hi' ? 3 : 4]].map(([c, level]) => ({ key: `${sup}-${c}`, level, sup, c }))),
