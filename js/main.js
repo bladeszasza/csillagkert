@@ -192,6 +192,8 @@ async function runItem(item, station, via) {
   running = true;
   const inGarden = item.type === 'feed';                     // az etetés a kertben zajlik: ott a kert nem áll meg
   goArea(null);                                              // minden feladat a kert közepéről indul (a tópartról / tanyáról is)
+  const before = new Set(friendsFor(progress.get().total, progress.get().friends));
+  const fedNew = inGarden && !before.has(item.kind) ? [item.kind] : [];   // első etetés: ő is új lakó (a kertrészbe költözik)
   setMuted(false); garden?.pause(!inGarden);
   if (inGarden) progress.addFriend(item.kind);               // akit etetünk, az mostantól a kertben lakik
   $('home').hidden = true;
@@ -211,6 +213,7 @@ async function runItem(item, station, via) {
   running = false;
   if (res !== 'done') {
     progress.skip(idOf(item)); if (via === 'next') noteRound(item);     // legközelebb más feladat jön
+    renderAreaButtons();                                     // a félbehagyott első etetés után is ott a gomb az új lakó kertrészéhez
     $('home').hidden = false;
     setTimeout(() => say(res === 'abort' ? 'Semmi baj! Válassz mást, vagy játssz, ha kedved van.' : 'Semmi baj! Válasszunk mást!', { remember: false }), 400);
     return;
@@ -223,7 +226,7 @@ async function runItem(item, station, via) {
   garden?.setDay(Math.min(meter, perReward()) / perReward());
   garden?.cheer();
   // A tópartra / tanyára érkező új barátot megnézzük: a kamera odasiklik, kicsivel később vissza (ha a gyerek közben nem választott mást)
-  const newcomer = arrived.map(friendById).find(f => f.area);
+  const newcomer = [...arrived, ...fedNew].map(friendById).find(f => f.area);
   if (newcomer && garden) {
     goArea(newcomer.area);
     areaTimer = setTimeout(() => { if (!running && garden.area() === newcomer.area) goArea(null); }, 6500);

@@ -346,9 +346,9 @@ export function createGarden(canvas) {
     feeding = { ...feeding, done: true };
     zoom.from = zoomAt(now); zoom.to = 0; zoom.t0 = now; zoom.dur = 900;
     a.chew = 0;
-    if (a.def.area) {                                                                     // a tópartra / tanyára: kisétál oldalt, és otthon bukkan fel
+    if (a.def.area) {                                                                     // a tópartra / tanyára: kisétál oldalt, és a kertrész széléről hazasétál
       const [hx, hz] = a.def.home;
-      walk(a, 10.5, FEED_SPOT[1] + 0.6, 1600, b => { b.x = hx; b.z = hz; b.heading = b.want = b.face0; }, true);
+      walk(a, 10.5, FEED_SPOT[1] + 0.6, 1600, b => { b.x = hx + (hx < 0 ? -8 : 8); b.z = hz + 0.8; walk(b, hx, hz, 2600, 'idle', true); }, true);
     } else {
       const via = a.z > FEED_GATE[1] + 0.3 ? [FEED_GATE] : [];                           // hazafelé is a résen át megy
       walk(a, a.def.home[0], a.def.home[1], Math.max(600, pathLen(a, a.def.home[0], a.def.home[1], via) / 3.2 * 1000), 'idle', true, via);

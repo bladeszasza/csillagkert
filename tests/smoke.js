@@ -6,7 +6,7 @@ import { stopSpeaking } from '../js/voice.js';
 import { CURRICULUM } from '../js/curriculum.js';
 import { createGarden } from '../js/garden.js';
 import { soundLog, soundMark, VOICE } from '../js/sounds.js';
-import { MEALS, ANY, friendById, FRIENDS, AREAS } from '../js/friends.js';
+import { MEALS, ANY, friendById, FRIENDS, AREAS, MAX_FLOWERS } from '../js/friends.js';
 
 const results = [];
 const ok = (name, pass, info = '') => { results.push({ name, pass: !!pass, info: String(info) }); };
@@ -148,7 +148,9 @@ async function testGarden() {
   ok('kert: a kert közepén lakó minden barát a kezdő képen van', out.length === 0 && Object.keys(center).length === 6, out.length ? `kilóg: ${out.join(', ')}` : Object.entries(center).map(([k, r]) => `${k} ${Math.round(r.cx)},${Math.round(r.cy)}`).join(' · '));
   garden.setStars(70 + 230, []); await wait(2900); garden.debug(); await wait(1900); d = garden.debug();
   ok('kert: 300 csillagnál mind a 19 barát itt van, és a 300 virág sem kerül több rajzolási hívásba', d.friends.length === 19 && d.flowers === 300 && d.calls <= calls70 + 2 && d.calls <= 150, `virágok: ${d.flowers}, hívások: ${d.calls} (70 csillagnál ${calls70}), háromszögek: ${d.triangles}`);
-  ok('kert: a háromszögek száma a teljes kerttel is kordában marad (saját határ: 250 ezer)', d.triangles <= 250000, `háromszögek: ${d.triangles}`);
+  const tri300 = d.triangles;
+  garden.setStars(MAX_FLOWERS, []); await wait(900); d = garden.debug();
+  ok(`kert: a háromszögek száma a teljes kerttel is kordában marad (${MAX_FLOWERS} virág; saját határ: 250 ezer)`, d.flowers === MAX_FLOWERS && d.triangles <= 250000 && d.calls <= 150, `300 csillagnál ${tri300}, ${MAX_FLOWERS} csillagnál ${d.triangles} háromszög, ${d.calls} hívás`);
 
   // kertrészek: a kamera átsiklik, ott minden lakó a képen van (a gombsor fölött), és koppintásra a saját hangján szól
   {
@@ -239,6 +241,7 @@ async function testGarden() {
     ok(`etetés a tanyáról: ${friendById(kind).name} – ${pick}`, there && done && kindsSince(l0) === `munch,munch,munch,${VOICE[kind]}` && spoken() - s0 === 1, `a kert közepén, közelről: ${there}; ${window.__spoken.slice(s0).join(' | ')} · ${kindsSince(l0)}`);
     garden.endFeed(); setScope(null); h.remove(); await wait(1900);
   }
+  await wait(2700);                                           // kisétál oldalt, aztán a tanya széléről hazasétál
   {
     const ms = garden.goTo('tanya'); await wait(ms + 250);
     const g = garden.debug(), off = ['hen', 'cow'].filter(k => { const r = g.screen[k]; return !r.visible || r.left < 0 || r.right > 900 || r.bottom > 650; });
@@ -256,8 +259,16 @@ async function testGarden() {
   garden.pause(true); canvas.remove();
 }
 
+// --- 7. minden állathang valóban lejátszódik (a játékban a play() elnyeli a hibát, itt nem) ---
+async function testVoices() {
+  const { playStrict } = await import('../js/sounds.js'), bad = [];
+  let state = '';
+  for (const f of FRIENDS) { try { state = playStrict(VOICE[f.id]); } catch (e) { bad.push(`${f.id} (${VOICE[f.id]}): ${e.message}`); } await wait(40); }
+  ok('állathangok: mind a 19 saját hang hiba nélkül lejátszódik', bad.length === 0, bad.join(' · ') || `hangmotor: ${state}; ${FRIENDS.map(f => VOICE[f.id]).join(', ')}`);
+}
+
 export async function runAll() {
-  for (const t of [testHarness, testLoudness, testPositions, testClap, testStart, testAbort, testGarden]) { try { await t(); } catch (e) { ok(t.name, false, e.stack || e.message); } }
+  for (const t of [testHarness, testLoudness, testPositions, testClap, testStart, testAbort, testVoices, testGarden]) { try { await t(); } catch (e) { ok(t.name, false, e.stack || e.message); } }
   window.__results = results;
   return results;
 }

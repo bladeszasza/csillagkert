@@ -122,6 +122,13 @@ export function animalVoice(id, { happy: glad = false, defer = setTimeout } = {}
 export const munch = () => play('munch');
 // Napló a tesztekhez: mi szólalt meg utoljára (hang nélkül is rögzül)
 export const soundLog = [];
+// tesztekhez: lejátssza a hangot úgy, hogy a hiba ne nyelődjön el (a play() csendben továbblép, hogy a játék ne álljon meg)
+export function playStrict(kind) {
+  if (!SOUNDS[kind]) throw new Error('nincs ilyen hang: ' + kind);
+  if (!unlockAudio()) throw new Error('nincs hangmotor');
+  SOUNDS[kind]();
+  return actx.state;
+}
 // a napló az utolsó 40 hangot tartja meg; a sorszám (n) a tesztnek mutatja, mi szólt egy adott pillanat óta
 let soundCount = 0;
 export const soundMark = () => soundCount;
