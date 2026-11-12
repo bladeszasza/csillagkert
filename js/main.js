@@ -33,7 +33,7 @@ const activities = {
   draw: () => import('./activities/draw.js'),
   betu: () => import('./activities/betu.js'),
   seq: () => import('./activities/seq.js'),
-  music: () => import('./activities/music.js'),
+  echo: () => import('./activities/echo.js'),
   feed: () => import('./activities/feed.js'),
   algo: () => import('./activities/algo.js'),
 };

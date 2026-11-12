@@ -9,6 +9,7 @@ import { soundLog, soundMark, VOICE } from '../js/sounds.js';
 import { MEALS, ANY, friendById, FRIENDS, AREAS, MAX_FLOWERS } from '../js/friends.js';
 import { testOpenWorld, testMinigames } from './smoke-games.js';
 import { testContent } from './smoke-content.js';
+import { VOL } from '../js/notes.js';
 
 const results = [];
 const ok = (name, pass, info = '') => { results.push({ name, pass: !!pass, info: String(info) }); };
@@ -39,6 +40,11 @@ async function testLoudness() {
   const quietOld = await rms(c => oldTone(c, 392, 0.06)), quietNew = await rms(newTone(784, 0.22)), loudNew = await rms(newTone(784, 1));
   ok('a "halk" példa is hallható', quietNew >= quietOld * 3, `régi ${quietOld.toFixed(4)} → új ${quietNew.toFixed(4)}`);
   ok('a halk és a hangos jól megkülönböztethető', loudNew >= quietNew * 2, `halk ${quietNew.toFixed(4)}, hangos ${loudNew.toFixed(4)}`);
+  // a Zenevár "melyik a leghangosabb / leghalkabb?" feladatai: a fokozatok a kompresszor után is jól elkülönülnek
+  const lv = {}; for (const [k, v] of Object.entries(VOL)) lv[k] = await rms(newTone(784, v));
+  const db = (a, b) => 20 * Math.log10(a / b);
+  ok('Zenevár: a hangerő-fokozatok a hangmotor után is elkülönülnek', db(lv.hangos, lv.halk) >= 9 && db(lv.hangos, lv.kozepes) >= 3 && db(lv.kozepes, lv.halk) >= 3,
+    `hangos–közepes ${db(lv.hangos, lv.kozepes).toFixed(1)} dB, közepes–halk ${db(lv.kozepes, lv.halk).toFixed(1)} dB`);
   const peak = await (async () => { const c = new OfflineAudioContext(1, 44100, 44100), chain = buildChain(c); for (const f of [392, 523, 659, 784, 1047, 1319]) scheduleNote(c, chain.buses.music, f, { dur: 0.8, vol: 1 }); const d = (await c.startRendering()).getChannelData(0); let m = 0; for (const v of d) m = Math.max(m, Math.abs(v)); return m; })();
   ok('hat hang egyszerre sem torzít (csúcs < 1)', peak < 0.999, `csúcs ${peak.toFixed(3)}`);
 }
@@ -77,7 +83,9 @@ async function testAbort() {
     ['count', { n: 6 }, d => [...d.querySelectorAll('.answer')].find(b => +b.dataset.n !== 6).click()],
     ['math', { a: 4, b: 2, op: '+' }, d => [...d.querySelectorAll('.answer')].find(b => +b.dataset.n !== 6).click()],
     ['clap', { word: { t: '🍎', name: 'alma', parts: ['al', 'ma'] } }, d => d.querySelector('.clap').click()],
-    ['music', { mode: 'highlow', notes: [] }, () => {}],
+    ['echo', { melody: ['szo', 'mi', 'szo'], bells: ['mi', 'szo'] }, d => d.querySelector('[data-h="1"]')?.click()],
+    ['pick', { type: 'pick', prompt: 'Merre ment a hang?', fact: 'A második hang magasabb volt.', hint: 'Figyeld!', sound: { events: [{ n: 'do', dur: 0.8, gap: 0.3 }, { n: 'szo', dur: 0.8 }] },
+      options: [{ key: 'fel', t: '⬆️', name: 'feljebb', ok: true }, { key: 'le', t: '⬇️', name: 'lejjebb', ok: false, said: 'Ez lejjebb.' }, { key: 'u', t: '➡️', name: 'ugyanaz', ok: false, said: 'Ez ugyanaz.' }] }, () => {}],
   ]) {
     const mod = await import(`../js/activities/${file}.js`);
     const ac = new AbortController(), d = host(); setScope(ac.signal);
@@ -85,7 +93,7 @@ async function testAbort() {
     mod.run(d, item); await wait(350); poke(d); await wait(500);
     ac.abort(); stopSpeaking(); setScope(null); d.remove();
     const before = spoken(); await wait(2600);
-    ok(`${file}: megszakítás után csend`, spoken() === before && before > start, `előtte ${before - start} mondat, a megszakítás után ${spoken() - before}`);
+    ok(`${file}${item.sound ? ' (hallásos)' : ''}: megszakítás után csend`, spoken() === before && before > start, `előtte ${before - start} mondat, a megszakítás után ${spoken() - before}`);
   }
 }
 

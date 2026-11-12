@@ -24,6 +24,10 @@
   import { TEMPLATES, targetsOf, build } from '../js/content/engine.js';
   import { rng } from '../js/content/rng.js';
   import { markup } from '../js/activities/pick.js';
+  import { NOTES } from '../js/notes.js';
+  const nm = n => NOTES[n].name;
+  // a hallásos feladat hangsora szövegesen (a galéria nem játszik hangot): hangnév, (hangerő), [hossz], TÁ / ti taps, · csend
+  const sndText = evs => evs.map(e => e.rest ? '·' : e.clap ? (e.dur >= 0.5 ? 'TÁ' : 'ti') : nm(e.n) + (e.vol !== undefined ? '(' + e.vol + ')' : '') + (e.dur !== undefined && e.dur !== 0.8 ? '[' + e.dur + ']' : '') + (e.hi ? '@' + e.hi : '')).join(' ');
   const st = new URLSearchParams(location.search).get('st') || 'szamol';
   document.getElementById('h').textContent = `Feladat-galéria: ${st}`;
   const out = document.getElementById('g');
@@ -34,9 +38,10 @@
       const card = document.createElement('div'); card.className = 'gcard';
       const body = it.type === 'pick' ? markup(it, it.options)
         : it.type === 'memory' ? `<div class="activity"><div class="prompt">memória: ${it.deck.length} pár</div><div class="qbox" style="font-size:60px">${it.deck.map(c => `<span title="${c.n}">${c.e}</span>`).join(' ')}</div><div class="prompt">${it.deck.map(c => c.n).join(', ')}</div></div>`
+        : it.type === 'echo' ? `<div class="activity music"><div class="prompt">visszhang: ${it.melody.map(nm).join(' – ')}</div><div class="answers"><span class="mbell">🎵</span></div><div class="answers bells">${it.bells.map(k => `<button class="answer key bell" style="background:${NOTES[k].c}"><span>🔔</span><small>${nm(k)}</small></button>`).join('')}</div></div>`
         : it.type === 'clap' ? `<div class="activity"><div class="prompt">tapsolás: ${it.word.parts.join('-')}</div><div class="items"><span class="item" style="font-size:150px">${it.word.t}</span></div><div class="prompt">${it.word.name} · ${it.word.parts.length} szótag</div></div>`
         : `<div class="activity"><div class="prompt">${it.type} ${JSON.stringify({ n: it.n, a: it.a, b: it.b, op: it.op })}</div></div>`;
-      card.innerHTML = `<div class="gin">${body}</div><p>${x.id} · ${x.level}. szint</p>`;
+      card.innerHTML = `<div class="gin">${body}</div><p>${x.id} · ${x.level}. szint${it.sound ? '<br>🔊 ' + sndText(it.sound.events) : ''}</p>`;
       if (it.type === 'pick') card.querySelectorAll('.answer').forEach(b => { if (it.options[+b.dataset.i].ok) b.classList.add('ok-mark'); });
       out.appendChild(card);
     }

@@ -6,6 +6,7 @@ import { TEMPLATES, GENERATED, targetsOf, build, entries } from '../js/content/e
 import { rng } from '../js/content/rng.js';
 import { pickSpeech, resetLines } from '../js/lines.js';
 import { STATIONS } from '../js/curriculum.js';
+import { NOTES } from '../js/notes.js';
 
 const SEEDS = [1, 2, 3];
 const answerOf = o => o.n ?? (o.name || o.key);
@@ -57,6 +58,9 @@ test('minden feladat megoldható: a független megoldó ugyanazt a választ tal�
       assert.equal(new Set(names).size, names.length, `ismétlődő név: ${where}`);
       assert.ok(it.fact && it.hint, `hiányzó tény vagy segítség: ${where}`);
       for (const o of it.options) if (!o.ok) assert.ok(o.said, `tévedésnél nincs tanító mondat: ${where}`);
+      // hallásos feladat: minden hang ismert, és amit a gyerek választ, az a hallottból dől el (a megoldó a hangsort nézi)
+      if (it.sound) for (const e of [...it.sound.events, ...(it.sound.again || []), ...(it.intro?.steps || []).flatMap(s => s.events)]) assert.ok(e.rest || e.clap || NOTES[e.n], `ismeretlen hang: ${where}`);
+      if (it.fixed) assert.ok(it.sound, `kötött sorrend csak hallásos feladatnál: ${where}`);
     } else if (it.type === 'count') {
       assert.ok(Number.isInteger(it.n) && it.n >= 1 && it.n <= 20, where); assert.equal(ans, it.n);
     } else if (it.type === 'math') {
@@ -76,6 +80,13 @@ test('minden feladat megoldható: a független megoldó ugyanazt a választ tal�
       for (const p of w.parts) assert.equal((p.match(/[aáeéiíoóöőuúüű]/g) || []).length, 1, `egy szótagban egy magánhangzó kell: ${where}`);
       assert.ok(w.parts.length <= 6, where);
       spoken(`${w.parts.join(', ')}. ${w.name}! Két szótag.`, where); spoken(`Tapsold el a szót: ${w.name}!`, where); spoken(`Most te jössz: ${w.name}!`, where);
+    } else if (it.type === 'echo') {
+      assert.ok(Array.isArray(it.melody) && it.melody.length >= 2 && it.melody.length <= 5, `rossz dallamhossz: ${where}`);
+      assert.ok(it.bells.length >= 2 && it.bells.length <= 5 && new Set(it.bells).size === it.bells.length, `rossz harangsor: ${where}`);
+      for (const n of it.melody) assert.ok(it.bells.includes(n) && NOTES[n], `a dallam hangja nincs a harangok közt: ${where}`);
+      assert.ok(new Set(it.melody).size >= 2, `egyhangú dallam: ${where}`);
+      assert.equal(ans, it.melody.join('.'), where);
+      spoken(`Igen! Pont így szólt: ${it.melody.map(n => NOTES[n].name).join(', ')}.`, where);
     } else assert.fail(`ismeretlen feladattípus: ${it.type} (${where})`);
   }
 });
@@ -86,21 +97,28 @@ test('Rozi minden mondata kimondható: nincs számjegy, jel, emoji, és rövidek
     const it = build(x.id, rng(x.id)); if (it.type !== 'pick') continue;
     const sp = pickSpeech(it);
     if (it.memo) spoken(it.memo.say, x.id);
+    for (const st of it.intro?.steps || []) spoken(st.say, x.id);
     spoken(sp.question, x.id); spoken(sp.right(0), x.id); spoken(sp.right(2), x.id);
     for (const o of it.options.filter(o => !o.ok)) for (const n of [1, 2, 3]) spoken(sp.wrong(o, n), x.id);
   }
 });
 
 test('a helyes válasz helye nem árulkodó: a helyes válasz minden helyen előfordul', () => {
+  // a válaszok számától függően (3 harang, 5 harang…) külön számolunk; minden helynek legalább a várt fele kell
+  // (ahol egy helyre ötnél kevesebb minta jutna, ott a kis szám miatt nem döntünk)
   for (const t of TEMPLATES) {
-    const pos = new Map();
+    const groups = new Map();
     for (const x of targetsOf(t)) for (const seed of SEEDS) {
       const it = build(x.id, rng(`${x.id}@${seed}`)); if (it.type !== 'pick') continue;
-      const i = it.options.findIndex(o => o.ok); pos.set(i, (pos.get(i) || 0) + 1);
+      const n = it.options.length, pos = groups.get(n) || new Map(), i = it.options.findIndex(o => o.ok);
+      pos.set(i, (pos.get(i) || 0) + 1); groups.set(n, pos);
     }
-    if (!pos.size) continue;
-    const counts = [...pos.values()], total = counts.reduce((a, b) => a + b, 0);
-    assert.ok(pos.size >= 3 && Math.min(...counts) >= total / 6, `${t.id}: a helyes válasz helye egyenlőtlen ${JSON.stringify([...pos])}`);
+    for (const [n, pos] of groups) {
+      const total = [...pos.values()].reduce((a, b) => a + b, 0), expected = total / n;
+      if (expected < 5) continue;
+      const counts = Array.from({ length: n }, (_, i) => pos.get(i) || 0);
+      assert.ok(Math.min(...counts) >= expected / 2, `${t.id}: a helyes válasz helye egyenlőtlen (${n} válasz) ${JSON.stringify(counts)}`);
+    }
   }
 });
 

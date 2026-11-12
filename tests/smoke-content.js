@@ -44,7 +44,27 @@ async function solveClap(d, n, mistake) {
   await tap(n);
 }
 
+// hallásos feladat: a hallás-próbán (laponként egyszer) a hüvelykujjra koppint, aztán megvárja, amíg a hang lejátszódik
+const ready = d => d.querySelector('.activity[data-locked="0"]');
+async function openSound(d) {
+  const first = await waitFor(() => d.querySelector('[data-h="1"]') || ready(d), 20000);
+  if (first?.dataset.h === '1') for (let k = 0; k < 100 && d.querySelector('[data-h="1"]'); k++) { d.querySelector('[data-h="1"]').click(); await wait(100); }
+  if (!await waitFor(() => ready(d), 30000)) throw new Error('a hallásos feladat nem nyílt meg');
+}
+// dallam-visszhang: a dallam hangjait sorban megkoppintja (tévedésnél előbb egy rossz harangot)
+async function solveEcho(d, item, mistake) {
+  await openSound(d);
+  const bell = k => d.querySelector(`.bell[data-k="${k}"]`);
+  if (mistake) {
+    bell(item.bells.find(k => k !== item.melody[0])).click();
+    await waitFor(() => d.querySelector('.activity[data-locked="1"]'), 3000);
+    if (!await waitFor(() => ready(d), 30000)) throw new Error('tévedés után nem nyílt meg újra');
+  }
+  for (const k of item.melody) { if (!await waitFor(() => ready(d), 10000)) throw new Error('a harangok zárva maradtak'); bell(k).click(); await wait(120); }
+}
+
 export async function testContent(ok) {
+  window.__soundSpeed = 4;                                 // a hangok ugyanazok, csak gyorsabban szólnak (a teszt ideje miatt)
   const runs = [], badLines = [];
   for (const t of TEMPLATES) {
     const byLevel = new Map(); for (const x of targetsOf(t)) if (!byLevel.has(x.level)) byLevel.set(x.level, x);
@@ -63,12 +83,15 @@ export async function testContent(ok) {
     try {
       const tpl = TEMPLATES.find(t => t.id === item.template);
       if (item.type === 'memory') await solveMemory(d, () => result);
+      else if (item.type === 'echo') { if (mistake) mistakes++; await solveEcho(d, item, mistake); await waitFor(() => result || err, 10000); }
       else if (item.type === 'clap') { if (mistake) mistakes++; await solveClap(d, tpl.solve(item), mistake); await waitFor(() => result || err, 10000); }
       else {
         if (item.memo) await waitFor(() => d.querySelector('.answer'), item.memo.ms + 4000);     // "Mi tűnt el?": előbb a kép
+        if (item.sound) await openSound(d);
         if (mistake) { buttonFor(d, item, false).click(); mistakes++; for (let k = 0; k < 40 && d.querySelector('.shake'); k++) await wait(50); await wait(150); }
         // a tanítás (közös számolás) alatt a gombok zárva vannak: a megoldó addig próbálkozik, amíg el nem fogadják
-        for (let k = 0; k < 60 && !result && !err; k++) { if (k % 5 === 0) buttonFor(d, item, true)?.click(); await wait(60); }
+        const tries = item.sound ? 400 : 60;                 // hallásos feladatnál tévedés után újra szól a hang: tovább vár
+        for (let k = 0; k < tries && !result && !err; k++) { if (k % 5 === 0 && (!item.sound || ready(d))) buttonFor(d, item, true)?.click(); await wait(60); }
       }
     } catch (e) { err = e; }
     if (result && !err) solved++; else fails.push(`${x.id}: ${err ? err.message : 'nem fejeződött be'}`);
@@ -77,6 +100,7 @@ export async function testContent(ok) {
     ac.abort(); stopSpeaking(); setScope(null); d.remove(); await wait(20);
     await Promise.race([p, wait(10)]);
   }
+  delete window.__soundSpeed;
   const graded = TEMPLATES.filter(t => t.graded !== false).length;
   ok(`generált feladatok: a megoldó mind a ${runs.length} mintát megoldja a valódi feladatban (minden sablon, minden szint)`, solved === runs.length, fails.slice(0, 6).join(' · ') || `${solved} megoldva`);
   ok('generált feladatok: a szándékos tévedés eljut az ütemezőhöz', reported === mistakes && mistakes === graded, `${reported} / ${mistakes} tévedés jelentve`);

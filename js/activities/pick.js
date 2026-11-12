@@ -2,11 +2,15 @@
 // Büntetés nélkül: 1. tévedés → újra; 2. → eltűnik egy rossz válasz; 3. → a jó felragyog.
 // A kimondott mondatokat a js/lines.js pickSpeech() állítja össze (Node-ban is tesztelhető).
 // Eredmény: { wrong } – hányszor tévedett (az ütemező ebből hangolja a nehézséget).
-import { say } from '../voice.js';
+import { say, setRepeatHandler } from '../voice.js';
 import { withArt } from '../hu.js';
 import { pickSpeech } from '../lines.js';
 import { dots } from './count.js';
 import { sleep } from '../scope.js';
+import { hearingCheck, playEvents } from './hearing.js';
+
+// hangos feladat (item.sound): a bemutató (item.intro) laponként egyszer szól fogalmanként
+const introShown = new Set();
 
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
@@ -35,6 +39,9 @@ export const markup = ({ prompt, q, qHtml, icon = '🧠' }, opts) => `
 // options: [{ t: '🍎', name: 'alma', ok: true }, ...] vagy számkártya { n: 7, name: 'hét', ok }
 // q: nagy kérdéssor (emoji-szöveg), qHtml: tetszőleges kép-tartalom (csoportok, jelenet)
 // item.memo: { html, say, ms } – "Mi tűnt el?": előbb ezt a képet nézi meg, aztán jön a kérdés (megszakításkor megáll)
+// item.sound: { events, again? } (és a válasznál o.tone: koppintásra ez szól) – hallásos feladat: a kérdés után a hangsor szól, addig a gombok zárva; a 🔊 a hangot is
+//   újrajátssza, tévedés után az again (vagy az egész) hangsor szól újra. item.fixed: a válaszok sorrendje kötött
+//   (a balról jobbra megszólaló harangok). item.intro: { key, steps: [{ hi, say, events }] } – bemutató az első alkalommal.
 export function run(container, item) {
   const { prompt, options, fact } = item;
   return new Promise(async resolve => {
@@ -43,21 +50,26 @@ export function run(container, item) {
       await say(item.memo.say, { remember: false });
       await sleep(item.memo.ms);
     }
-    const opts = shuffle(options);
+    if (item.sound) await hearingCheck(container);
+    const opts = item.fixed ? options.slice() : shuffle(options);
     const speech = pickSpeech({ ...item, options: opts }, legacyName);   // a válaszok a képernyő sorrendjében hangzanak el
     container.innerHTML = markup(item, opts);
     const btns = [...container.querySelectorAll('.answer')];
     let wrong = 0, locked = false, finished = false;
+    const box = container.querySelector('.activity');
+    const lock = v => { locked = v; box.dataset.locked = v ? '1' : '0'; };
+    const playAll = async evs => { lock(true); await playEvents(container, evs); lock(false); };
 
     btns.forEach((btn, i) => btn.addEventListener('click', async () => {
       if (locked || finished) return;
       const o = opts[i];
+      if (item.sound && o.tone) { lock(true); await playEvents(container, o.tone); }       // a harang megszólal, amire koppintott (a zárat a folytatás oldja)
       if (o.ok) {
-        finished = true; btn.classList.add('win');
+        finished = true; btn.classList.add('win'); if (item.sound) setRepeatHandler(null);
         await say(fact ? speech.right(wrong) : explain(prompt, o));
         resolve({ wrong });
       } else {
-        locked = true; wrong++;
+        lock(true); wrong++;
         btn.classList.add('shake');
         // tanít: megmondja, mi az, amit választott, aztán röviden visszakérdez / segít
         await say(speech.wrong(o, wrong), { remember: false });
@@ -67,9 +79,23 @@ export function run(container, item) {
           if (bad.length > 1) bad[0].classList.add('gone');
         }
         if (wrong >= 3) btns[opts.findIndex(x => x.ok)].classList.add('glow');
-        locked = false;
+        if (item.sound) { await sleep(250); await playAll(item.sound.again || item.sound.events); }
+        lock(false);
       }
     }));
-    say(speech.question);
+    if (!item.sound) { say(speech.question); return; }
+    // hallásos feladat: bemutató (egyszer), kérdés, aztán a hangsor; a 🔊 a kérdést és a hangot is megismétli
+    lock(true);
+    const intro = item.intro;
+    if (intro && !introShown.has(intro.key)) {
+      for (const st of intro.steps) {
+        const el = st.hi && container.querySelector(`[data-k="${CSS.escape(st.hi)}"]`);
+        el?.classList.add('glow'); await say(st.say, { remember: false }); await playEvents(container, st.events); await sleep(350); el?.classList.remove('glow');
+      }
+      introShown.add(intro.key);
+    }
+    setRepeatHandler(async () => { if (locked || finished) return; lock(true); await say(speech.question, { remember: false }); await playEvents(container, item.sound.events); lock(false); });
+    await say(speech.question); await sleep(250);
+    await playAll(item.sound.events);
   });
 }

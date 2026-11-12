@@ -51,7 +51,6 @@ const opt = (s, ok) => { const i = s.indexOf(' '); return i < 0 ? { t: s, ok } :
 const pick = (icon, prompt, correct, ...wrong) => ({ type: 'pick', icon, prompt, fact: FACTS[prompt + '|' + (opt(correct, true).name || '')], options: [opt(correct, true), ...wrong.map(w => opt(w, false))] });
 const withQ = (q, p) => ({ ...p, q });
 const order = (icon, prompt, ...steps) => ({ type: 'order', icon, prompt, fact: ORDER_FACTS[prompt], steps: steps.map(s => opt(s)) });
-const music = (mode, notes, say) => ({ type: 'music', mode, notes, say });
 const algo = o => ({ type: 'algo', ...o });
 // Állatetetés: a kert valódi lakóját etetjük (js/friends.js: ki mit eszik). A kulcs az állat és a jó étel párja.
 // A mindenevő barátnál (ANY) mindegyik étel jó: ott a gyerek választ, a kulcs vége "mind".
@@ -67,7 +66,6 @@ const letter = L => ({ type: 'betu', text: L, say: `Fesd át ${artLetter(L)} ${L
 const BASE = [
   // ✏️ Ceruzavár · 🔤 Hangok · 🌍 Világunk · 🍎 Egészség · 🫀 Testünk · 🏺 Időutazás · 🎵 Zene · 🤖 Robotpálya · 🎨 Rajz
   { type: 'trace', path: 'hullam', say: 'Kövesd a hullámos vonalat a kiscicától a csillagig!' },
-  music('highlow', [], 'Ismerkedjünk a hangokkal! Vannak mély és magas hangok.'),
   letter('A'),
   algo({ w: 4, h: 2, start: [0, 0], goal: [3, 0], max: 5, say: 'Ismerkedj a robottal! Nyomd meg a jobbra nyilat annyiszor, ahányat a robotnak lépnie kell, aztán indítsd el!' }),
   pick('🫀', 'Melyik szerv pumpálja a vért?', '❤️ szív', '🧠 agy', '🦷 fog'),
@@ -75,7 +73,6 @@ const BASE = [
   { type: 'draw', template: 'nap' },
 
   { type: 'trace', path: 'lejto' },
-  music('learn', ['szo', 'mi']),
   pick('🌍', 'Melyik évszakban esik a hó?', '❄️ tél', '🏖️ nyár', '🌸 tavasz'),
   pick('🫀', 'Mivel gondolkodunk?', '🧠 agy', '🦴 csont', '👅 nyelv'),
   pick('🫀', 'Mivel látunk?', '👀 szem', '👂 fül', '👃 orr'),
@@ -83,7 +80,6 @@ const BASE = [
 
   { type: 'trace', path: 'cikcak' },
   pick('🌍', 'Ki oltja a tüzet?', '🧑‍🚒 tűzoltó', '🧑‍⚕️ orvos', '🧑‍🍳 szakács'),
-  music('learn', ['szo', 'mi', 'la']),
   order('🍎', 'Hogyan mossunk kezet? Koppints sorrendben!', '🚰 vizezd be', '🧼 szappanozd be', '🫧 dörzsöld habosra', '💧 öblítsd le', '🧻 töröld meg'),
   pick('🫀', 'Mivel lélegzünk?', '🫁 tüdő', '🦷 fog', '👂 fül'),
   { type: 'betu', useName: true, text: 'M', say: 'Írd át a betűket! Ez a te neved!' },
@@ -92,15 +88,12 @@ const BASE = [
   letter('M'),
   algo({ w: 3, h: 3, start: [0, 2], goal: [2, 0], max: 6 }),
   pick('🌍', 'Mikor látjuk a csillagokat az égen?', '🌙 éjszaka', '☀️ délben', '🌤️ délután'),
-  music('loud', [], 'Vannak halk és hangos hangok is.'),
   pick('🍎', 'Melyik az egészséges?', '🥕 répa', '🍭 nyalóka', '🍟 sült krumpli'),
   pick('🏺', 'Hol laktak a királyok és a lovagok régen?', '🏰 vár', '🏢 felhőkarcoló', '⛺ sátor'),
   { type: 'draw', template: 'haz' },
 
   { type: 'trace', path: 'hurok' },
-  music('same', [], 'Figyeld meg, egyforma-e két hang!'),
   pick('🫀', 'Mivel rágunk?', '🦷 fog', '👃 orr', '👂 fül'),
-  music('learn', ['mi', 're', 'do']),
   withQ('🐥', pick('🌍', 'Kinek a kicsinye a csibe?', '🐔 tyúk', '🐮 tehén', '🐷 malac')),
   pick('🍎', 'Mivel mosunk fogat?', '🪥 fogkefe', '🧼 szappan', '🧽 szivacs'),
   { type: 'draw', template: 'virag' },
@@ -110,11 +103,9 @@ const BASE = [
   order('🤖', 'Hogyan készítünk szendvicset? Koppints sorrendben!', '🍞 kenyeret veszünk elő', '🧈 megkenjük vajjal', '🧀 sajtot teszünk rá', '🥪 megesszük'),
   pick('🌍', 'Melyik nap jön péntek után?', '🎈 szombat', '🎒 hétfő', '📚 szerda'),
   pick('🫀', 'Mivel hallunk?', '👂 fül', '👃 orr', '🦶 láb'),
-  music('learn', ['do', 'mi', 'szo']),
   { type: 'draw', say: 'Rajzolj, amit csak szeretnél!' },
 
   { type: 'trace', path: 'spiral' },
-  music('updown', [], 'A hang felfelé is mehet, lefelé is.'),
   order('🌍', 'Mi történik a nap folyamán? Koppints sorrendben!', '🌅 reggel', '☀️ dél', '🌇 este', '🌙 éjszaka'),
   order('🫀', 'Hogyan változunk az évek alatt? Koppints sorrendben!', '👶 baba', '🧒 gyerek', '🧑 felnőtt', '🧓 idős'),
   letter('L'),
@@ -172,7 +163,7 @@ export const STATIONS = [
   { id: 'algo', emoji: '🤖', name: 'Robotpálya' },
   { id: 'rajz', emoji: '🎨', name: 'Rajzasztal' },
 ];
-const BY_TYPE = { trace: 'ceruza', betu: 'ceruza', count: 'szamol', math: 'szamol', memory: 'okos', clap: 'hang', draw: 'rajz', seq: 'hang', music: 'zene', feed: 'allat', algo: 'algo' };
+const BY_TYPE = { trace: 'ceruza', betu: 'ceruza', count: 'szamol', math: 'szamol', memory: 'okos', clap: 'hang', draw: 'rajz', seq: 'hang', echo: 'zene', feed: 'allat', algo: 'algo' };
 const BY_ICON = { '🔺': 'forma', '🔤': 'hang', '🧩': 'okos', '🌍': 'vilag', '🍎': 'egeszseg', '🔢': 'szamol', '🫀': 'test', '🏺': 'ido', '🤖': 'algo' };
 export const stationOf = item => item.station || BY_TYPE[item.type] || BY_ICON[item.icon] || 'okos';
 export const itemsOf = id => CURRICULUM.filter(i => stationOf(i) === id);

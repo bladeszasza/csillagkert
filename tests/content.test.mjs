@@ -72,11 +72,18 @@ test('rosszul besorolt feladatok a helyükön vannak', () => {
   assert.equal(where('Hogyan mosunk fogat? Koppints sorrendben!'), 'egeszseg');
 });
 
-test('zene: Kodály-sorrend (szó–mi-vel kezd), minden mód ismert', () => {
-  const music = CURRICULUM.filter(i => i.type === 'music');
-  const firstLearn = music.find(i => i.mode === 'learn');
-  assert.deepEqual(firstLearn.notes, ['szo', 'mi']);
-  for (const m of music) assert.ok(['learn', 'highlow', 'loud', 'same', 'updown'].includes(m.mode), `ismeretlen mód: ${m.mode}`);
+test('zene: Kodály-sorrend (szó–mi-vel kezd, fá és ti csak az 5. szinten), és csak viszonyított hallás', async () => {
+  const { TEMPLATES, targetsOf, build } = await import('../js/content/engine.js');
+  const { rng } = await import('../js/content/rng.js');
+  const zene = TEMPLATES.filter(t => t.station === 'zene').flatMap(t => targetsOf(t).map(x => [x, build(x.id, rng(x.id))]));
+  const notesOf = it => (it.type === 'echo' ? it.melody : (it.sound?.events || []).map(e => e.n).filter(Boolean));
+  for (const [x, it] of zene.filter(([x]) => x.level === 1 && x.id.startsWith('zene.visszhang'))) assert.ok(notesOf(it).every(n => n === 'szo' || n === 'mi'), `az első szint nem szó–mi: ${x.id}`);
+  for (const [x, it] of zene) if (notesOf(it).some(n => n === 'fa' || n === 'ti')) assert.equal(x.level, 5, `fá vagy ti az 5. szint alatt: ${x.id}`);
+  // "melyik harang szólt?": előbb minden harang megszólal (a gyerek összehasonlít, nem fejből nevez meg)
+  for (const [x, it] of zene.filter(([x]) => x.id.startsWith('zene.harang'))) {
+    const refs = it.sound.events.filter(e => e.hi).map(e => e.hi);
+    assert.deepEqual([...refs].sort(), it.options.map(o => o.key).sort(), `nem szól minden harang előbb: ${x.id}`);
+  }
 });
 
 test('magyar nyelvtani segédek', () => {
