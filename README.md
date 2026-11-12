@@ -41,16 +41,30 @@ Ki mit eszik (`js/friends.js`): rossz válasz csak olyan étel lehet, amit az á
 | róka | hús, tojás | [Wildlife Online: Red Fox Diet](https://www.wildlifeonline.me.uk/animals/article/red-fox-diet-what-foxes-eat) (kisemlősök, tojás, bogyók) – szülői átnézésre vár |
 | maci | hal, áfonya, hús – **mindegyik jó** | A barnamedve mindenevő: növények, bogyók, hal, kisemlősök ([US National Park Service](https://www.nps.gov/subjects/bears/brown-bears.htm)). Nála ezért nincs rossz válasz (szülői döntés): Rozi elmondja, hogy „a maci sokfélét eszik", és a gyerek választja ki, mit ad neki. |
 
+## Több gyerek, mentés
+
+- **Mindenkinek saját világa van:** külön csillagok, kert, barátok, látott feladatok, ruhatár és beállítások.
+  Új gyereket a szülői sarokban lehet felvenni (bal alsó ⚙ gomb, 3 mp-ig nyomva tartva → „＋ Új gyerek").
+- **Ki játszik?** Ha több gyerek van, induláskor mindenki a saját jelére koppint (olvasni nem kell hozzá).
+  Játék közben a jobb felső, jelet mutató gombbal lehet átadni a helyet a testvérnek.
+- **A korábbi, egyetlen mentés** az első gyerek lesz, semmi nem vész el belőle; a régi mentés biztonsági másolatként megmarad.
+- **Mentés fájlba / visszatöltés** (szülői sarok): a játszó gyerek állása egy fájlba menthető, és másik eszközön
+  (vagy a főképernyőre telepített példányban) visszatölthető. A visszatöltött mentés mindig új gyerekként jelenik meg.
+- Minden adat az eszközön marad (`localStorage`, `js/progress.js`); a hang beállításai az eszközhöz tartoznak, nem a gyerekhez.
+
 ## Telepítés a főképernyőre
 
 Safari → Megosztás → „Főképernyőhöz adás". Így teljes képernyőn indul.
 Figyelem: a főképernyőre telepített példány **külön mentést** használ, mint a Safari-ban megnyitott oldal,
-ott a csillagok elölről indulnak. (A mentés fájlba írása és visszatöltése a következő mérföldkőben érkezik.)
+ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba menthető, és ott visszatölthető.
 
 ## Fejlesztés és tesztek
 
 - Helyi kipróbálás: `node serve.cjs . 8080`, majd `http://localhost:8080/`.
 - Tartalom-tesztek: `node --test tests/content.test.mjs` (egyedi azonosítók, egy helyes válasz, besorolás, nyelvtan,
-  etetési tábla, a barátok érkezése, a virágok helye, mentés).
+  etetési tábla, a barátok érkezése, a virágok helye).
+- Profil- és mentés-tesztek: `node --test tests/profiles.test.mjs` (a régi mentés átvétele, sérült adatok, két gyerek
+  függetlensége, két megnyitott lap, mentés fájlba és visszatöltés, hibás fájl elutasítása).
 - Böngészős füstteszt: `http://localhost:8080/tests/smoke.html` (hangerő-mérés, a jó válasz helye, megszakítás utáni csend,
   minden feladattípus elindul, a kert lakói és rajzolási terhe, etetés a 3D állattal minden úton).
+  A füstteszt memóriában élő tárolóval fut, a valódi mentéshez nem nyúl.

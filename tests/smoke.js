@@ -65,6 +65,7 @@ async function testHarness() {
   const mod = await import('../js/activities/count.js'), ac = new AbortController(), d = host(), before = spoken(); setScope(ac.signal);
   mod.run(d, { n: 4 }); await wait(400);
   ok('a teszt hallja Rozit (az ál-felolvasó rögzít)', spoken() > before, `rögzített mondatok: ${spoken() - before}`);
+  ok('a teszt nem nyúl a valódi mentéshez (memóriában élő tároló)', window.__memStorage === true, window.__memStorage ? 'a localStorage helyén ál-tároló van' : 'A VALÓDI localStorage van használatban!');
   ac.abort(); stopSpeaking(); setScope(null); d.remove(); await wait(300);
 }
 

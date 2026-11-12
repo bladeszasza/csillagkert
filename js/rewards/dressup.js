@@ -3,8 +3,8 @@
 // Vektorgrafika (SVG): forgatásnál és bármilyen méretben éles, és nem kell vászonra emojit rajzolni.
 import { isUnlocked } from '../gifts.js';
 import { say } from '../voice.js';
+import { progress } from '../progress.js';
 
-const SAVE = 'csillagkert_dress_v1';
 const COLORS = ['#ffffff', '#ffd6ea', '#d6e6ff', '#e6d6ff', '#fff0b8', '#c8f2dd', '#ffc9a8', '#3b2a63'];
 const MANES = ['#ff5d8f', '#8e5be8', '#4aa8ff', '#4cc38a', '#ffb020', '#ff7ac8', '#2fd0d0'];
 
@@ -42,8 +42,9 @@ const TABS = [
 
 const DEFAULT = { body: 'c0', pattern: 'none', mane: 'c0', manestyle: 'wave', horn: 'gold', hornstyle: 'straight', wing: 'none', head: 'none', eyes: 'normal', neck: 'none', bg: 'garden', stickers: [] };
 
-function load() { try { return { ...DEFAULT, ...JSON.parse(localStorage.getItem(SAVE) || '{}') }; } catch (e) { return { ...DEFAULT }; } }
-function save(s) { try { localStorage.setItem(SAVE, JSON.stringify(s)); } catch (e) {} }
+// A ruhatár a játszó gyerek profiljában él (mindenkinek saját unikornisa van)
+function load() { const d = progress.get().dress, s = { ...DEFAULT, ...(d && typeof d === 'object' ? d : {}) }; s.stickers = Array.isArray(s.stickers) ? s.stickers.slice() : []; return s; }
+function save(s) { progress.set({ dress: s }); }
 
 const colorOf = (key, id) => { const g = TABS.flatMap(t => t.groups).find(x => x.key === key); return g?.items.find(i => i.id === id)?.color; };
 const star = (x, y, r, fill) => { let d = ''; for (let i = 0; i < 10; i++) { const rad = i % 2 ? r * 0.45 : r, a = -Math.PI / 2 + i * Math.PI / 5; d += `${i ? 'L' : 'M'}${(x + Math.cos(a) * rad).toFixed(1)} ${(y + Math.sin(a) * rad).toFixed(1)}`; } return `<path d="${d}Z" fill="${fill}" stroke="#e69a00" stroke-width="2" stroke-linejoin="round"/>`; };

@@ -11,6 +11,12 @@
 <p id="sum">Fut…</p>
 <ul id="list"></ul>
 <script>
+// A tesztek SOHA nem nyúlnak a valódi mentéshez: a localStorage helyére egy üres, memóriában élő tároló kerül.
+(() => {
+  const m = new Map();
+  const mem = { get length() { return m.size; }, key: i => [...m.keys()][i] ?? null, getItem: k => (m.has(k) ? m.get(k) : null), setItem: (k, v) => { m.set(k, String(v)); }, removeItem: k => { m.delete(k); }, clear: () => m.clear() };
+  try { Object.defineProperty(window, 'localStorage', { value: mem, configurable: true }); window.__memStorage = window.localStorage === mem; } catch (e) { window.__memStorage = false; }
+})();
 // Ál-felolvasó: nem ad hangot, de rögzíti, mit mondana Rozi (window.__spoken), és gyorsan "befejezi" a mondatot.
 window.__spoken = [];
 const fake = {

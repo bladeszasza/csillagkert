@@ -49,6 +49,7 @@
     <div class="big-emoji">🐱⭐🦄</div>
     <h1>Csillagkert</h1>
     <button id="start-btn" class="giant">Koppints ide!</button>
+    <div id="who" class="who" hidden></div>
     <p id="voice-warn" hidden>🔇 Nincs magyar hang ezen az eszközön. Szülőknek: a bal alsó ⚙ gomb (3 mp) mutatja a teendőt.</p>
   </div>
 </section>
@@ -57,6 +58,7 @@
 <section id="home" hidden>
   <div id="stations"></div>
   <button id="next" class="giant">▶ Tovább</button>
+  <button id="switch" class="round" aria-label="Másik játékos" hidden></button>
 </section>
 
 <!-- Feladat -->
@@ -100,13 +102,34 @@
 <div id="parent" hidden>
   <div class="card wide">
     <h2>Szülői sarok</h2>
-    <label>A gyerek neve (csak ezen az eszközön tárolódik)
+    <div class="kids">
+      <b>Gyerekek</b> <span class="hint">(mindenkinek saját csillagai, kertje és ruhatára van; koppints arra, aki játszik)</span>
+      <div id="p-kids"></div>
+      <div class="row">
+        <button id="p-add" class="small">＋ Új gyerek</button>
+        <button id="p-del" class="small danger" hidden>A mostani gyerek törlése</button>
+      </div>
+      <div id="p-new" hidden>
+        <label>Az új gyerek neve <input id="p-new-name" type="text" autocomplete="off" maxlength="30"></label>
+        <label>Életkora
+          <select id="p-new-age"><option value="4">4 éves</option><option value="5" selected>5 éves</option><option value="6">6 éves</option><option value="7">7 éves</option></select>
+        </label>
+        <div class="row"><button id="p-new-ok" class="small ok">Létrehozás</button><button id="p-new-cancel" class="small">Mégse</button></div>
+      </div>
+    </div>
+    <label class="child">A gyerek neve (csak ezen az eszközön tárolódik)
       <input id="p-name" type="text" autocomplete="off" maxlength="30">
     </label>
-    <label>Jutalomjáték hossza
+    <label class="child">Életkora
+      <select id="p-age"><option value="4">4 éves</option><option value="5">5 éves</option><option value="6">6 éves</option><option value="7">7 éves</option></select>
+    </label>
+    <label class="child">Jele a „Ki játszik?" kártyán
+      <select id="p-mark"></select>
+    </label>
+    <label class="child">Jutalomjáték hossza
       <select id="p-minutes"><option value="2">2 perc</option><option value="4">4 perc</option><option value="6">6 perc</option><option value="10">10 perc</option></select>
     </label>
-    <label>Hány csillag kell kezdetben a jutalomjátékhoz? (minden kör után +2)
+    <label class="child">Hány csillag kell kezdetben a jutalomjátékhoz? (minden kör után +2)
       <select id="p-per"><option value="5">5 csillag</option><option value="7">7 csillag</option><option value="10">10 csillag</option><option value="15">15 csillag</option></select>
     </label>
     <label>Játékhangok és zene hangereje
@@ -119,10 +142,16 @@
       <select id="p-voicesel"></select>
     </label>
     <p id="p-voice"></p>
-    <div id="p-stats"></div>
+    <div id="p-stats" class="child"></div>
+    <div class="row">
+      <button id="p-export" class="small child">💾 Mentés fájlba</button>
+      <button id="p-import" class="small">📂 Visszatöltés fájlból</button>
+      <input id="p-file" type="file" accept="application/json,.json" hidden>
+    </div>
+    <p class="hint">A mentés-fájl a játszó gyerek állását tartalmazza (a nevével együtt), és csak oda kerül, ahová te mented. A visszatöltött mentés új gyerekként jelenik meg, meglévőt nem ír felül.</p>
     <div class="row">
       <button id="p-test" class="small">🔊 Hangpróba</button>
-      <button id="p-reset" class="small danger">Újrakezdés</button>
+      <button id="p-reset" class="small danger child">Újrakezdés</button>
       <button id="p-close" class="small ok">Kész</button>
     </div>
     <p class="hint">Ha nincs magyar hang: Beállítások → Kisegítő lehetőségek → Felolvasott tartalom → Hangok → Magyar.</p>

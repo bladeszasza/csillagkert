@@ -27,7 +27,7 @@ export function listHuVoices() {
 
 function pickVoice() {
   const hu = listHuVoices();
-  const saved = progress.get().voiceURI;
+  const saved = progress.device.get().voiceURI;       // a hangválasztás az eszközé, nem a gyereké
   voice = hu.find(v => v.voiceURI === saved) || hu[0] || null;
   return voice;
 }
@@ -39,7 +39,7 @@ if ('speechSynthesis' in window) {
 
 export function hasHungarianVoice() { return !!(voice || pickVoice()); }
 export function currentVoiceName() { return (voice || pickVoice())?.name || ''; }
-export function chooseVoice(uri) { progress.set({ voiceURI: uri || '' }); pickVoice(); }
+export function chooseVoice(uri) { progress.device.set({ voiceURI: uri || '' }); pickVoice(); }
 export function setVoiceEnabled(v) { enabled = v; }
 // A robot szájmozgatásához: cb(true) beszéd indulásakor, cb(false) végén
 export function onSpeaking(cb) { listeners.add(cb); return () => listeners.delete(cb); }
@@ -65,7 +65,7 @@ export function chunks(text) {
 }
 
 const SPEECH_VOL = [0.6, 0.8, 1.0];              // szülői beállítás: a beszéd hangereje
-const speechVol = () => SPEECH_VOL[progress.get().speechVol ?? 1] ?? 0.8;
+const speechVol = () => SPEECH_VOL[progress.device.get().speechVol ?? 1] ?? 0.8;
 const hang = () => new Promise(() => {});
 
 // Kimondja a szöveget. Ha nincs magyar hang, nem mond semmit (a feladatok képileg is megoldhatók).

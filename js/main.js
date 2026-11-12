@@ -8,6 +8,7 @@ import { unlock as unlockAudio } from './audio.js';
 import { emote, moodFor, introduce } from './robot.js';
 import { renderMeter, flyStar } from './stars.js';
 import { setupParent } from './parent.js';
+import { friendsFor, friendById } from './friends.js';
 
 const $ = id => document.getElementById(id);
 
@@ -59,11 +60,24 @@ const name = () => progress.get().name;
 const perReward = () => Math.min(30, (progress.get().perReward || 10) + 2 * (progress.get().rewardsDone || 0));
 
 let garden = null;
-try { garden = createGarden($('garden')); garden.setStars(progress.get().total, progress.get().friends); window.__garden = garden; }
+try { garden = createGarden($('garden')); window.__garden = garden; }
 catch (e) { console.warn('3D nem indult el', e); } // a feladatok 3D nélkül is működnek
 
-setupParent(() => location.reload());
-renderMeter(Math.min(progress.get().meter, perReward()), perReward());
+// --- Profilok: minden gyereknek saját állása és saját kertje van ---
+// Váltás = újratöltés. A szülői sarokból választott gyerek azonosítója egy újratöltésen át a lapon marad (sessionStorage).
+const PICK = 'csillagkert:pick';
+function restart(pick) { try { if (pick) sessionStorage.setItem(PICK, pick); else sessionStorage.removeItem(PICK); } catch (e) {} location.reload(); }
+try { const pick = sessionStorage.getItem(PICK); sessionStorage.removeItem(PICK); if (pick) progress.use(pick); } catch (e) {}
+// A játszó gyerek kertje és csillagmérője. Több gyereknél csak a választás után töltjük fel (addig üres a kert).
+function fillFor() {
+  garden?.setStars(progress.get().total, progress.get().friends);
+  renderMeter(Math.min(progress.get().meter, perReward()), perReward());
+  const many = progress.list().length > 1;
+  $('switch').hidden = !many; $('switch').textContent = progress.get().mark;
+}
+if (progress.ready()) fillFor();
+setupParent(restart);
+$('switch').addEventListener('click', () => restart());      // a „Ki játszik?" képernyőre visz
 
 // Állomások: a gyerek szabadon is választhat (a "Tovább" gomb a sorrendet követi)
 $('stations').innerHTML = STATIONS.map(st => `<button class="station" data-st="${st.id}" aria-label="${st.name}"><span>${st.emoji}</span><small>${st.name}</small></button>`).join('');
@@ -90,16 +104,33 @@ $('stage').addEventListener('pointerdown', e => {
   lastNudge = Date.now(); repeatLast();
 });
 
-// 1) Az első koppintás oldja fel a hangot (iOS)
-$('start-btn').addEventListener('click', async () => {
+// 1) Az első koppintás oldja fel a hangot (iOS). Több gyereknél ez a koppintás a „Ki játszik?" kártyára esik.
+if (!progress.ready()) {
+  const who = $('who');
+  $('start-btn').hidden = true; who.hidden = false;
+  const title = document.createElement('h2'); title.textContent = 'Ki játszik?'; who.append(title);
+  const row = document.createElement('div'); row.className = 'who-row'; who.append(row);
+  for (const p of progress.list()) {                         // a név és a jel szövegként kerül ki (nem HTML-ként)
+    const b = document.createElement('button'); b.className = 'who-card'; b.dataset.id = p.id; b.setAttribute('aria-label', p.name || 'Játékos');
+    const mark = document.createElement('span'); mark.className = 'mark'; mark.textContent = p.mark;
+    const nm = document.createElement('b'); nm.textContent = p.name || '';
+    const pals = document.createElement('small'); pals.textContent = friendsFor(p.total, p.friends).map(id => friendById(id).emoji).join('');
+    b.append(mark, nm, pals);
+    b.addEventListener('click', () => { unlockAudio(); if (progress.use(p.id)) { fillFor(); begin(); } });
+    row.append(b);
+  }
+}
+$('start-btn').addEventListener('click', begin);
+async function begin() {
   unlockAudio();                                             // a hangmotor felhasználói koppintásra indul (iOS)
+  try { navigator.storage?.persist?.(); } catch (e) {}       // kérjük, hogy a rendszer ne ürítse a mentést (nem mindenhol érhető el)
   $('start').hidden = true; $('hud').hidden = false; $('robot').hidden = false;
   const justIntro = !progress.get().introDone;
   if (justIntro) await introduce();                          // Rozi bemutatkozik (egyszer)
   if (!name() && !progress.get().nameAsked) await askName();
   say(justIntro ? (name() ? `Örülök, ${name()}! Gyűjtsünk együtt csillagokat!` : 'Gyűjtsünk együtt csillagokat!') : (name() ? `Szia ${name()}! Gyűjtsünk csillagokat!` : 'Szia! Gyűjtsünk csillagokat!'), { remember: false });
   if (progress.get().meter >= perReward()) openReward(); else $('home').hidden = false;
-});
+}
 
 // Név bekérése az elején (átugorható)
 function askName() {
