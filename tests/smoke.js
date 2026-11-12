@@ -142,7 +142,8 @@ async function testGarden() {
   const out = Object.entries(d.screen).filter(([, r]) => r.left < 0 || r.right > 900 || r.top < 0 || r.bottom > 650).map(([k]) => k);
   ok('kert: minden barát a képen van', out.length === 0, out.length ? `kilóg: ${out.join(', ')}` : Object.entries(d.screen).map(([k, r]) => `${k} ${Math.round(r.cx)},${Math.round(r.cy)}`).join(' · '));
   garden.setStars(300, []); d = garden.debug();
-  ok('kert: 300 virág sem kerül több rajzolási hívásba (nincs 70-es plafon)', d.flowers === 300 && d.calls === calls70, `virágok: ${d.flowers}, hívások: ${d.calls}, háromszögek: ${d.triangles}`);
+  // (a 70 virágos mérésnél az érkező barátok szívecskéi is látszhatnak, ezért itt kevesebb hívás is lehet – több nem)
+  ok('kert: 300 virág sem kerül több rajzolási hívásba (nincs 70-es plafon)', d.flowers === 300 && d.calls <= calls70, `virágok: ${d.flowers}, hívások: ${d.calls}, háromszögek: ${d.triangles}`);
 
   const feed = await import('../js/activities/feed.js'), canvases = document.querySelectorAll('canvas').length;
   // a) jó étel a szájához húzva
