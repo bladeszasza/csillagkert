@@ -3,7 +3,7 @@
 // (futáskor összekeveredik), formátum: 'emoji név'. A kiválasztás (js/queue.js) a megoldottakat kerüli.
 
 import { withArt, artLetter } from './hu.js';
-import { MEALS, friendById } from './friends.js';
+import { MEALS, ANY, friendById } from './friends.js';
 
 // Kijelentések a helyes válaszhoz: kulcs = kérdés|helyes válasz neve. Elhangzik: "Igen! <kijelentés>"
 const FACTS = {
@@ -80,7 +80,11 @@ const algo = o => ({ type: 'algo', ...o });
 const num = n => `${n} ${NUMS[n - 1]}`;
 const NUMS = ['egy', 'kettő', 'három', 'négy', 'öt', 'hat', 'hét', 'nyolc', 'kilenc', 'tíz', 'tizenegy', 'tizenkettő', 'tizenhárom', 'tizennégy', 'tizenöt', 'tizenhat', 'tizenhét', 'tizennyolc', 'tizenkilenc', 'húsz'];
 // Állatetetés: a kert valódi lakóját etetjük (js/friends.js: ki mit eszik). A kulcs az állat és a jó étel párja.
-const feed = ([kind, good, ...wrong]) => ({ type: 'feed', key: `feed-${kind}-${good}`, kind, animal: friendById(kind).emoji, name: friendById(kind).name, good, wrong });
+// A mindenevő barátnál (ANY) mindegyik étel jó: ott a gyerek választ, a kulcs vége "mind".
+const feed = ([kind, good, ...rest]) => {
+  const base = { type: 'feed', kind, animal: friendById(kind).emoji, name: friendById(kind).name };
+  return good === ANY ? { ...base, key: `feed-${kind}-mind`, any: rest } : { ...base, key: `feed-${kind}-${good}`, good, wrong: rest };
+};
 
 // Betűlecke: 1) betű átírása, 2–3) melyik szó kezdődik ezzel a hanggal? — egyetlen csillagért.
 // A kérdésben mindig a MÁSIK helyes szó a példa, hogy ne áruljuk el a választ. Csak egyszerű hangokkal kezdődő szavak.

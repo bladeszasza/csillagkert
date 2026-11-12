@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CURRICULUM, STATIONS, stationOf, idOf, BASE_ITEMS, FEED_ITEMS } from '../js/curriculum.js';
 import { art, withArt, artLetter, ACC_NUM, numAttr, fromNum } from '../js/hu.js';
-import { FRIENDS, FOODS, MEALS, friendById, friendsFor, flowerSpot, MAX_FLOWERS, FEED_SPOT } from '../js/friends.js';
+import { FRIENDS, FOODS, MEALS, ANY, friendById, friendsFor, flowerSpot, MAX_FLOWERS, FEED_SPOT } from '../js/friends.js';
 import { progress } from '../js/progress.js';
 
 const flat = CURRICULUM.flatMap(i => (i.type === 'seq' ? [i, ...i.steps] : [i]));
@@ -70,21 +70,30 @@ test('etetés: csak a kert 3D lakóit etetjük, a jó étel igaz, a rossz étel 
   MEALS.forEach(([kind, good, ...wrong], i) => {
     const f = friendById(kind);
     assert.ok(f, `ismeretlen állat: ${kind}`);
+    if (i > 0) assert.notEqual(MEALS[i - 1][0], kind, 'egymás után ugyanaz az állat éhes');
+    if (good === ANY) {                                   // mindenevő: mindegyik felkínált étel jó, ezért mind legyen biztosan igaz
+      assert.ok(wrong.length >= 3 && new Set(wrong).size === wrong.length, `legalább három különböző étel kell: ${kind}`);
+      for (const x of wrong) { assert.ok(f.eats.includes(x), `${f.name} nem biztosan eszik ilyet: ${x}`); assert.ok(FOODS[x]?.t || FOODS[x]?.svg, `hiányzó kép: ${x}`); }
+      return;
+    }
     assert.ok(f.eats.includes(good), `${f.name} nem eszik ilyet: ${good}`);
     assert.ok(wrong.length >= 2, `legalább három válasz kell: ${kind} ${good}`);
     for (const w of wrong) assert.ok(!f.eats.includes(w) && !f.maybe.includes(w), `védhető "rossz" válasz: ${f.name} – ${w}`);
     for (const x of [good, ...wrong]) { assert.ok(FOODS[x]?.acc, `hiányzó tárgyeset: ${x}`); assert.ok(FOODS[x].t || FOODS[x].svg, `hiányzó kép: ${x}`); }
     assert.equal(new Set([good, ...wrong]).size, wrong.length + 1, `ismétlődő étel: ${kind} ${good}`);
-    if (i > 0) assert.notEqual(MEALS[i - 1][0], kind, 'egymás után ugyanaz az állat éhes');
     const key = `${kind}|${good}`; assert.ok(!keys.has(key), `ismétlődő tény: ${key}`); keys.add(key);
   });
   // minden rossz válaszként használt étel legalább egyszer jó válasz is (ne lehessen kizárással megtanulni)
-  const goods = new Set(MEALS.map(m => m[1]));
-  for (const w of new Set(MEALS.flatMap(m => m.slice(2)))) assert.ok(goods.has(w), `soha nem helyes étel: ${w}`);
-  // a feladatsorban az etetésnek saját kulcsa van (állat + jó étel), és minden barátot lehet etetni
-  assert.deepEqual(FEED_ITEMS.map(idOf), MEALS.map(m => `feed-${m[0]}-${m[1]}`));
-  // a maci kivétel: mindenevő, nincs két biztosan rossz válasza (lásd js/friends.js) – ha mégis kap feladatot, ez a teszt szóljon
-  for (const f of FRIENDS) assert.equal(MEALS.some(m => m[0] === f.id), f.id !== 'bear', `etetős feladat: ${f.name}`);
+  const quiz = MEALS.filter(m => m[1] !== ANY);
+  const goods = new Set(quiz.map(m => m[1]));
+  for (const w of new Set(quiz.flatMap(m => m.slice(2)))) assert.ok(goods.has(w), `soha nem helyes étel: ${w}`);
+  // a feladatsorban az etetésnek saját kulcsa van (állat + jó étel, a mindenevőnél "mind"), és minden barátot lehet etetni
+  assert.deepEqual(FEED_ITEMS.map(idOf), MEALS.map(m => `feed-${m[0]}-${m[1] === ANY ? 'mind' : m[1]}`));
+  for (const f of FRIENDS) assert.ok(MEALS.some(m => m[0] === f.id), `nincs etetős feladata: ${f.name}`);
+  // a maci mindenevő: nála nincs rossz válasz (a szülő döntése), a kvíz-sorokban ezért nem szerepel
+  assert.deepEqual(MEALS.filter(m => m[0] === 'bear').map(m => m[1]), [ANY]);
+  const bear = FEED_ITEMS.find(i => i.kind === 'bear');
+  assert.deepEqual(bear.any, ['hal', 'áfonya', 'hús']); assert.equal(bear.wrong, undefined);
 });
 
 test('kert: a barátok a csillagokkal érkeznek, etetéssel hamarabb is', () => {

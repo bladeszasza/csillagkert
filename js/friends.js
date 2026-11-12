@@ -9,7 +9,7 @@ export const FRIENDS = [
   { id: 'bunny', emoji: '🐰', name: 'nyuszi', stars: 3, home: [-2.5, 1.2], height: 1.9, eats: ['répa', 'saláta', 'széna'], maybe: ['áfonya', 'bambusz'] },
   { id: 'dog', emoji: '🐶', name: 'kutya', stars: 8, home: [2.4, 1.2], height: 1.55, eats: ['hús', 'csont'], maybe: ['répa', 'saláta', 'tojás', 'hal', 'áfonya'] },
   { id: 'fox', emoji: '🦊', name: 'róka', stars: 15, home: [-4.75, -0.6], height: 1.55, eats: ['hús', 'tojás'], maybe: ['áfonya', 'hal', 'csont', 'széna'] },
-  { id: 'bear', emoji: '🐻', name: 'maci', stars: 30, home: [4.65, -0.6], height: 1.55, eats: ['hal', 'áfonya'], maybe: ['hús', 'tojás', 'répa', 'saláta', 'csont', 'széna'] },
+  { id: 'bear', emoji: '🐻', name: 'maci', stars: 30, home: [4.65, -0.6], height: 1.55, eats: ['hal', 'áfonya', 'hús'], maybe: ['tojás', 'répa', 'saláta', 'csont', 'széna'] },
   { id: 'panda', emoji: '🐼', name: 'panda', stars: 55, home: [2.2, -3.6], height: 1.55, eats: ['bambusz'], maybe: ['répa', 'saláta', 'áfonya'] },
 ];
 export const friendById = id => FRIENDS.find(f => f.id === id);
@@ -38,14 +38,16 @@ export const FOODS = {
 // Etetős feladatok: [állat, jó étel, rossz étel, rossz étel]. Egymás után más-más állat jön.
 // A nyuszi, a cica, a kutya és a panda párjai a jóváhagyott tervből valók; a rókáé forrásból (lásd README: „Etetés"),
 // a szülő átnézi. Rossz válasz csak olyan étel lehet, amit az állat biztosan nem eszik.
-// A macinak egyelőre NINCS etetős feladata: a barnamedve mindenevő (hal, bogyó, fű, gyökér, hús), ezért a
-// „mit eszik?” kérdéshez nincs két biztosan rossz válasz. A kertben lakik, koppintásra brummog; a feladatáról a szülő dönt.
+// A maci mindenevő (hal, bogyó, hús, fű, gyökér), ezért nála nincs rossz válasz: a sora [állat, ANY, étel, étel, étel],
+// és MINDEGYIK étel jó – a gyerek választja ki, mit ad neki (a szülő döntése). Itt is csak olyan étel állhat, amit biztosan eszik.
+export const ANY = '*';
 export const MEALS = [
   ['bunny', 'répa', 'hús', 'hal'],
   ['cat', 'hal', 'répa', 'széna'],
   ['dog', 'csont', 'széna', 'bambusz'],
   ['panda', 'bambusz', 'hal', 'csont'],
   ['fox', 'hús', 'saláta', 'bambusz'],
+  ['bear', ANY, 'hal', 'áfonya', 'hús'],
   ['bunny', 'saláta', 'csont', 'tojás'],
   ['cat', 'hús', 'saláta', 'bambusz'],
   ['dog', 'hús', 'bambusz', 'széna'],

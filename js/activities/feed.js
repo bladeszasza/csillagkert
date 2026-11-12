@@ -12,13 +12,16 @@ import { FOODS } from '../friends.js';
 
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
-export function run(container, { kind, animal, name, good, wrong }, ctx = {}) {
+// any: mindenevő barát (a maci) – mindegyik felkínált étel jó, a gyerek választ; ilyenkor nincs tévedés.
+export function run(container, { kind, animal, name, good, wrong, any }, ctx = {}) {
   return new Promise(resolve => {
-    const foods = shuffle([{ name: good, ok: true }, ...wrong.map(n => ({ name: n, ok: false }))]).map(f => ({ ...f, ...FOODS[f.name] }));
+    const offered = any ? any.map(n => ({ name: n, ok: true })) : [{ name: good, ok: true }, ...wrong.map(n => ({ name: n, ok: false }))];
+    const foods = shuffle(offered).map(f => ({ ...f, ...FOODS[f.name] }));
     const A = withArt(name), Acap = withArt(name, true);
+    const ask = any ? 'Mit adsz neki?' : 'Mit eszik?';
     container.innerHTML = `
       <div class="activity feedpad">
-        <div class="prompt">Éhes ${A}! Mit eszik? 🍽️</div>
+        <div class="prompt">Éhes ${A}! ${ask} 🍽️</div>
         <div class="animal-wrap" id="feed-win"><div class="animal" id="animal">${animal}</div><div class="bubble" id="bubble"></div></div>
         <div class="feed-table"><div class="answers foods">${foods.map((f, i) => `<button class="answer pic food" data-i="${i}" aria-label="${f.name}">${f.svg || f.t}<small>${f.name}</small></button>`).join('')}</div></div>
       </div>`;
@@ -100,7 +103,8 @@ export function run(container, { kind, animal, name, good, wrong }, ctx = {}) {
       btn.addEventListener('pointercancel', () => { start = null; home(btn); });
     });
 
-    say(`Éhes ${A}! Mit eszik?`);                    // egyetlen rövid megszólalás; a 🔊 gomb megismétli
+    // egyetlen rövid megszólalás; a 🔊 gomb megismétli. A mindenevőnél a tudnivaló a kérdésben hangzik el.
+    say(any ? `Éhes ${A}! ${Acap} sokfélét eszik. Mit adsz neki?` : `Éhes ${A}! Mit eszik?`);
     sleep(live ? live.arriveMs : 0).then(() => { locked = false; });   // amíg a barát odasétál, az étel vár
   });
 }

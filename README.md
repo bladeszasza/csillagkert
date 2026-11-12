@@ -39,7 +39,7 @@ Ki mit eszik (`js/friends.js`): rossz válasz csak olyan étel lehet, amit az á
 | kutya | csont, hús | jóváhagyott terv |
 | panda | bambusz | jóváhagyott terv |
 | róka | hús, tojás | [Wildlife Online: Red Fox Diet](https://www.wildlifeonline.me.uk/animals/article/red-fox-diet-what-foxes-eat) (kisemlősök, tojás, bogyók) – szülői átnézésre vár |
-| maci | egyelőre nincs feladata | A barnamedve mindenevő: növények, bogyók, hal, kisemlősök, fű, gyökér ([US National Park Service](https://www.nps.gov/subjects/bears/brown-bears.htm)), ezért a „mit eszik?” kérdéshez nincs két biztosan rossz válasz. A kertben lakik; a feladatáról a szülő dönt. |
+| maci | hal, áfonya, hús – **mindegyik jó** | A barnamedve mindenevő: növények, bogyók, hal, kisemlősök ([US National Park Service](https://www.nps.gov/subjects/bears/brown-bears.htm)). Nála ezért nincs rossz válasz (szülői döntés): Rozi elmondja, hogy „a maci sokfélét eszik", és a gyerek választja ki, mit ad neki. |
 
 ## Telepítés a főképernyőre
 

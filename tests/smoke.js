@@ -6,7 +6,7 @@ import { stopSpeaking } from '../js/voice.js';
 import { CURRICULUM } from '../js/curriculum.js';
 import { createGarden } from '../js/garden.js';
 import { soundLog, VOICE } from '../js/sounds.js';
-import { MEALS, friendById } from '../js/friends.js';
+import { MEALS, ANY, friendById } from '../js/friends.js';
 
 const results = [];
 const ok = (name, pass, info = '') => { results.push({ name, pass: !!pass, info: String(info) }); };
@@ -116,7 +116,7 @@ const mid = el => { const r = el.getBoundingClientRect(); return [r.left + r.wid
 const tap = el => { const [x, y] = mid(el); pev(el, 'pointerdown', x, y); pev(el, 'pointerup', x, y); };
 const dragTo = (el, tx, ty) => { const [x, y] = mid(el); pev(el, 'pointerdown', x, y); for (let k = 1; k <= 5; k++) pev(el, 'pointermove', x + (tx - x) * k / 5, y + (ty - y) * k / 5); pev(el, 'pointerup', tx, ty); };
 const foodBtn = (d, n) => [...d.querySelectorAll('.food')].find(b => b.getAttribute('aria-label') === n);
-const feedItem = (kind, good) => { const m = MEALS.find(x => x[0] === kind && x[1] === good), f = friendById(kind); return { type: 'feed', kind, animal: f.emoji, name: f.name, good, wrong: m.slice(2) }; };
+const feedItem = (kind, good) => { const m = MEALS.find(x => x[0] === kind && x[1] === good), f = friendById(kind), base = { type: 'feed', kind, animal: f.emoji, name: f.name }; return good === ANY ? { ...base, any: m.slice(2) } : { ...base, good, wrong: m.slice(2) }; };
 const kindsSince = n => soundLog.slice(n).map(x => x.kind).join(',');
 
 async function testGarden() {
@@ -175,6 +175,15 @@ async function testGarden() {
     const before = spoken(), l0 = soundLog.length; await wait(2600);
     const e = garden.debug();
     ok('feed: megszakítás után csend, a kamera visszatér', spoken() === before && before > s0 && soundLog.length === l0 && e.feeding === null && e.zoom === 0, `előtte ${before - s0} mondat, utána ${spoken() - before}; hangok utána: ${soundLog.length - l0}`);
+  }
+  // e) a maci mindenevő: bármelyik felkínált ételt megeszi, tévedés nincs
+  for (const pick of feedItem('bear', ANY).any) {
+    const ac = new AbortController(), h = host(), s0 = spoken(), l0 = soundLog.length; let done = false; setScope(ac.signal);
+    feed.run(h, feedItem('bear', ANY), { garden }).then(() => { done = true; });
+    await wait(2800); tap(foodBtn(h, pick)); await wait(4300);
+    const said = window.__spoken.slice(s0);
+    ok(`maci: ${pick} – ez is jó neki (nincs rossz válasz)`, done && said.length === 1 && /sokfélét eszik/.test(said[0]) && kindsSince(l0) === `munch,munch,munch,${VOICE.bear}` && !h.querySelector('.food.gone, .food.glow'), `${said.join(' | ')} · ${kindsSince(l0)}`);
+    garden.endFeed(); setScope(null); h.remove(); await wait(300);
   }
   // d) 3D kert nélkül is megoldható (az állat képével)
   {
