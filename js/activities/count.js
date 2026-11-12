@@ -54,7 +54,7 @@ export function run(container, { n = 3 }) {
       if (val === n) {
         finished = true; btn.classList.add('win');
         await say(`Igen! ${numAttr(NAMES[n - 1])} ${THING_NAME[thing]} van.`);
-        resolve();
+        resolve({ wrong });
       } else {
         locked = true; wrong++;
         btn.classList.add('shake');

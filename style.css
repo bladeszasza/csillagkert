@@ -434,3 +434,50 @@ button { touch-action: none; }
 #home .station { transition: transform .1s, opacity .35s; }
 #home.away .station { opacity: 0; pointer-events: none; }
 .who-card small { max-width: 250px; line-height: 1.25; }
+
+/* --- Generált feladatok (M4): kérdés-kép, csoportok, számsor, számkártya --- */
+.qbox { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 18px; max-width: min(92vw, 820px); background: var(--card); border-radius: 26px; padding: 12px 22px; }
+.qbox svg { display: block; max-width: 70vw; height: auto; }
+.grp-items { display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px 4px; font-size: clamp(30px, min(5.5vw, 7vh), 52px); line-height: 1.1; font-style: normal; }
+.grp-items i { font-style: normal; }
+.grp-items b { width: 12px; }
+.qbox .grp-items { font-size: clamp(34px, min(6.5vw, 8vh), 60px); }
+.answer.pic.grp { font-size: 16px; min-width: clamp(150px, 26vmin, 230px); max-width: 30vw; padding: 10px 12px; }
+.answer.pic.grp .grp-items { font-size: clamp(22px, min(3.6vw, 4.6vh), 38px); max-width: 26vw; }
+.answer.num { min-width: clamp(100px, 18vmin, 150px); font-size: clamp(44px, 8vmin, 72px); }
+.numrow { display: inline-flex; gap: clamp(8px, 2vw, 18px); }
+.numrow b { min-width: 1.4em; padding: 4px 10px; border-radius: 16px; background: #fff; border: 4px solid #c9b3f5; font-size: clamp(40px, 7vmin, 66px); text-align: center; }
+.numrow b.next { color: var(--purple); border-style: dashed; }
+.hidebox { font-size: clamp(64px, 11vmin, 104px); }
+.queue { display: inline-flex; align-items: flex-end; gap: 2px; font-size: clamp(30px, min(5vw, 7vh), 54px); }
+.queue i { font-style: normal; }
+.answer.pic svg { display: block; margin: 0 auto; width: clamp(70px, 16vmin, 120px); height: auto; }
+.scene { display: grid; grid-template-columns: repeat(3, clamp(64px, 13vmin, 110px)); grid-auto-rows: clamp(64px, 13vmin, 110px); gap: 6px; }
+.scene span { display: flex; align-items: center; justify-content: center; font-size: clamp(42px, 9vmin, 80px); background: #fff; border-radius: 16px; }
+/* Formák és színek: vegyes formák, torony, színkeverés, színtelen kép, árnyék, méret */
+.shapes { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 12px; max-width: min(86vw, 620px); }
+.qbox .shapes svg { width: clamp(44px, 9vmin, 70px); height: auto; }
+.tower { display: inline-flex; flex-direction: column; align-items: center; }
+.qbox .tower svg { width: clamp(46px, 8.5vmin, 66px); height: auto; margin-top: -3px; }
+.mix { display: inline-flex; align-items: center; gap: 12px; font-size: clamp(34px, 7vmin, 58px); font-weight: 900; color: var(--ink); }
+.qbox .mix svg { width: clamp(66px, 13vmin, 104px); height: auto; }
+.mix b.next { color: var(--purple); }
+.nocolor { filter: grayscale(1) contrast(1.15); font-size: clamp(84px, 17vmin, 140px); line-height: 1; }
+.silsrc { font-size: clamp(84px, 17vmin, 140px); line-height: 1; }
+.sil { filter: brightness(0); opacity: .85; }
+.answer.pic .sz { display: block; line-height: 1; }
+.qbox > svg.shape { width: clamp(110px, 21vmin, 160px); height: auto; }
+/* Okoskodó: sorminta, csoport-hármas, nagy kép, analógia */
+.seq { display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 8px; font-size: clamp(32px, min(6vw, 7.5vh), 58px); line-height: 1.15; }
+.seq i { font-style: normal; display: inline-flex; }
+.seq svg { width: clamp(38px, 7.5vmin, 60px) !important; height: auto; }
+.seq b.next { display: inline-flex; align-items: center; justify-content: center; min-width: 1.1em; height: 1.1em; border: 4px dashed #c9b3f5; border-radius: 14px; color: var(--purple); font-size: .8em; }
+.memo .seq { font-size: clamp(40px, min(8vw, 10vh), 76px); }
+/* tízelemű sor: kisebb képek, hogy egy sorban maradjon (a törés összezavarná a mintát) */
+.seq.long { font-size: clamp(26px, min(4.8vw, 6vh), 46px); gap: 4px 5px; }
+.seq.long svg { width: clamp(30px, 6vmin, 48px) !important; }
+.answer.pic .trio { display: flex; gap: 2px; font-size: .5em; }
+.big1 { font-size: clamp(80px, 16vmin, 130px); line-height: 1; }
+.analog { display: inline-flex; align-items: center; gap: 8px; font-size: clamp(40px, 8vmin, 70px); }
+.analog i { font-style: normal; } .analog b { color: var(--purple); font-size: .7em; } .analog s { width: 28px; }
+.analog b.next { border: 4px dashed #c9b3f5; border-radius: 14px; padding: 0 12px; }

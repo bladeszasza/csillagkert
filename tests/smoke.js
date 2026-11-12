@@ -8,6 +8,7 @@ import { createGarden } from '../js/garden.js';
 import { soundLog, soundMark, VOICE } from '../js/sounds.js';
 import { MEALS, ANY, friendById, FRIENDS, AREAS, MAX_FLOWERS } from '../js/friends.js';
 import { testOpenWorld, testMinigames } from './smoke-games.js';
+import { testContent } from './smoke-content.js';
 
 const results = [];
 const ok = (name, pass, info = '') => { results.push({ name, pass: !!pass, info: String(info) }); };
@@ -274,10 +275,11 @@ async function testVoices() {
 
 async function testOpenWorldGame() { await testOpenWorld(ok); }
 async function testMinigameList() { await testMinigames(ok); }
+async function testGeneratedContent() { await testContent(ok); }
 
 export async function runAll() {
   const only = new URLSearchParams(location.search).get('only');      // pl. smoke.html?only=games – csak a játékok tesztje
-  const all = [testHarness, testLoudness, testPositions, testClap, testStart, testAbort, testVoices, testGarden, testOpenWorldGame, testMinigameList];
+  const all = [testHarness, testLoudness, testPositions, testClap, testStart, testGeneratedContent, testAbort, testVoices, testGarden, testOpenWorldGame, testMinigameList];
   const list = only === 'games' ? [testOpenWorldGame, testMinigameList] : only ? all.filter(t => t.name.toLowerCase().includes(only)) : all;   // pl. ?only=garden
   for (const t of list) { try { await t(); } catch (e) { ok(t.name, false, e.stack || e.message); } }
   window.__results = results;

@@ -12,4 +12,4 @@ jobs:
         with:
           node-version: 22
       - name: Tartalom-tesztek
-        run: node --test tests/content.test.mjs tests/profiles.test.mjs tests/reward-timer.test.mjs
+        run: node --test tests/content.test.mjs tests/profiles.test.mjs tests/reward-timer.test.mjs tests/generated.test.mjs tests/scheduler.test.mjs

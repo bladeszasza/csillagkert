@@ -28,9 +28,9 @@ export function moodFor(text) {
 export async function introduce() {
   const r = robot(), bub = document.getElementById('rozi-bubble');
   if (!r) return;
-  const text = 'Szia! Rozi vagyok, a robot! Én osztom a csillagokat. Minden feladat után kapsz tőlem egy csillagot. Ha összegyűlt elég, jöhet a játék! Gyere, kezdjük!';
+  const text = 'Szia! Rozi vagyok, a robot! Együtt fedezzük fel a világot: a számokat, a hangokat, az állatokat. Minden nappal okosabbak leszünk. Gyere, kezdjük!';
   r.classList.add('intro'); emote('happy', 0);
-  if (bub) { bub.textContent = 'Szia! Rozi vagyok, a robot! 🌟 Én osztom a csillagokat!'; bub.classList.add('on'); }
+  if (bub) { bub.textContent = 'Szia! Rozi vagyok, a robot! 🌟 Fedezzük fel együtt a világot!'; bub.classList.add('on'); }
   let skipped = false;
   const skip = new Promise(res => { const h = () => { skipped = true; res(); }; r.addEventListener('click', h, { once: true }); setTimeout(res, 14000); });
   const minWait = 6500;   // legalább ennyi ideig látszik (a beszéd úgyis hosszabb); koppintásra átugorható

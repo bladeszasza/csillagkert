@@ -15,10 +15,32 @@ test('minden feladatnak egyedi azonosítója van', () => {
   assert.equal(seen.size, BASE_ITEMS.length + FEED_ITEMS.length);
 });
 
-test('minden feladat egy létező állomáshoz tartozik, és minden állomáson van feladat', () => {
+test('minden feladat egy létező állomáshoz tartozik, és minden állomáson van feladat', async () => {
+  const { POOL, FEED_POOL } = await import('../js/content/index.js');
+  const { GENERATED } = await import('../js/content/engine.js');
   const ids = new Set(STATIONS.map(s => s.id));
   for (const it of CURRICULUM) assert.ok(ids.has(stationOf(it)), `ismeretlen állomás: ${stationOf(it)}`);
-  for (const s of STATIONS) assert.ok(CURRICULUM.some(i => stationOf(i) === s.id), `üres állomás: ${s.id}`);
+  for (const s of STATIONS) assert.ok([...POOL, ...FEED_POOL].some(e => e.station === s.id), `üres állomás: ${s.id}`);
+  // a sablonokból készülő állomások régi, kézzel írt feladatai kikerültek (nem keverednek a generáltakkal)
+  for (const it of CURRICULUM) assert.ok(!GENERATED.includes(stationOf(it)), `régi feladat egy generált állomáson: ${idOf(it)}`);
+});
+
+test('tény-állomások: az audit szerint javított feladatok', () => {
+  const prompts = new Set(flat.map(i => i.prompt));
+  // kikerült vagy átfogalmazott kérdések (védhető második válasz, felnőttes szó, rossz ige, félrevezető kép)
+  for (const p of ['Mikor megyünk aludni?', 'Mi folyik az ereinkben?', 'Mi segít, hogy kipihenjük magunkat?', 'Mivel ízlelünk?',
+    'Mi élt nagyon régen, az emberek előtt?', 'Mi melegített és világított az ősembereknek?', 'Mit építettek az egyiptomiak a fáraóknak?',
+    'Ki védte a várat?', 'Hogyan világítottak régen, villany nélkül?', 'Mit használunk fogmosáshoz?', 'Hogyan növünk? Koppints sorrendben!'])
+    assert.ok(!prompts.has(p), `még benne van: ${p}`);
+  // a "fül" eddig csak rossz válasz volt: most egy kérdésnek ő a helyes válasza
+  assert.ok(picks.some(p => p.options.some(o => o.ok && o.name === 'fül')), 'a fül sehol nem helyes válasz');
+  // a csibe kérdésénél látszik a csibe; a mag képe nem gesztenye; a kézmosásnál nincs taps
+  assert.ok(picks.find(p => p.prompt === 'Kinek a kicsinye a csibe?').q.includes('🐥'));
+  assert.ok(!orders.some(o => o.steps.some(s => s.t === '🌰' || s.t === '👏')), 'félrevezető kártyakép');
+});
+
+test('kimondott tények legfeljebb kb. 70 betűsek (a hosszú mondatot a hang levághatja)', () => {
+  for (const it of [...picks, ...orders]) assert.ok(it.fact.length <= 70, `hosszú tény (${it.fact.length}): ${it.fact}`);
 });
 
 test('választós feladat: pontosan egy helyes válasz, nincs ismétlődő válasz, van tény', () => {

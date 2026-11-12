@@ -59,5 +59,6 @@ export function run(container, { word }) {
     } else await say(`Tapsold el a szót: ${word.name}!`);
     locked = false;
     await done;
+    return { wrong: fails };
   })();
 }

@@ -153,6 +153,21 @@ test('visszatöltés: csak ismert mezők kerülnek be, típus és méret szerint
   assert.equal(s.extra, undefined); assert.equal(s.hack, undefined); assert.equal(s.introDone, undefined); assert.equal(s.heardBell, undefined);
 });
 
+test('visszatöltés: az ütemező állása (szintek, ismétlés, előzmények) is ellenőrizve jön át', () => {
+  const st = new FakeStorage(), p = openProfiles(st);
+  const id = p.importData({ app: 'csillagkert', kind: 'profil', profile: {
+    sk: { 'st.szamol': { lv: 9, ok: -3, bad: 'x', n: 12, at: 1700000000000 }, 'szamol.szamlal': { n: 4, at: 5 }, '<x>': { lv: 2 }, 'okos.par': 'nem objektum' },
+    rv: { 'szamol.szamlal:n7': { b: 7, due: 1700000000000 }, rossz: { b: 1, due: 'holnap' }, ['x'.repeat(400)]: { b: 1, due: 1 } },
+    hist: [true, false, 'igen', 1, true, ...Array(30).fill(true)], lastSt: ['forma', '<b>', 'okos', 'szamol'], stAt: { forma: 1700000000000, 'a b': 1, okos: 'tegnap' } } });
+  p.use(id);
+  const s = p.get();
+  assert.deepEqual(s.sk['st.szamol'], { lv: 5, ok: 0, bad: 0, n: 12, at: 1700000000000 });     // a szint 1–5 közé szorítva
+  assert.equal(s.sk['szamol.szamlal'].n, 4); assert.equal(s.sk['<x>'], undefined); assert.equal(s.sk['okos.par'], undefined);
+  assert.deepEqual(s.rv, { 'szamol.szamlal:n7': { b: 4, due: 1700000000000 } });
+  assert.equal(s.hist.length, 20); assert.ok(s.hist.every(x => x === true || x === false));
+  assert.deepEqual(s.lastSt, ['okos', 'szamol']); assert.deepEqual(s.stAt, { forma: 1700000000000 });
+});
+
 test('ha a tároló nem írható (privát mód): a játék megy, csak nem ment', () => {
   const st = new FakeStorage(); st.setItem = () => { throw new Error('QuotaExceeded'); };
   const p = openProfiles(st);

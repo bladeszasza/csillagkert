@@ -15,7 +15,7 @@ export function run(container, { prompt, say: sayText, steps, icon = '🔢', fac
         <div class="answers">${order.map((s, i) => `<button class="answer pic" data-i="${i}">${s.t}${s.name ? `<small>${s.name}</small>` : ''}<b class="badge"></b></button>`).join('')}</div>
       </div>`;
     const btns = [...container.querySelectorAll('.answer')];
-    let next = 0, wrong = 0, locked = false;
+    let next = 0, wrong = 0, total = 0, locked = false;
     const refreshHint = () => { btns.forEach(b => b.classList.remove('glow')); if (wrong >= 3) btns.find((b, i) => order[i] === steps[next] && !b.classList.contains('done'))?.classList.add('glow'); };
 
     btns.forEach((btn, i) => btn.addEventListener('click', async () => {
@@ -23,10 +23,10 @@ export function run(container, { prompt, say: sayText, steps, icon = '🔢', fac
       if (order[i] === steps[next]) {
         btn.classList.add('done'); btn.querySelector('.badge').textContent = String(next + 1);
         next++; wrong = 0; refreshHint();
-        if (next === steps.length) { locked = true; await say(fact || ('Pontosan így van! ' + steps.map(s => s.name || s.t).join(', ') + '.')); resolve(); }
+        if (next === steps.length) { locked = true; await say(fact || ('Pontosan így van! ' + steps.map(s => s.name || s.t).join(', ') + '.')); resolve({ wrong: total }); }
         else say(order[i].name || order[i].t, { remember: false });
       } else {
-        locked = true; wrong++; btn.classList.add('shake');
+        locked = true; wrong++; total++; btn.classList.add('shake');
         const nm = order[i].name || '';
         await say(`${nm ? nm[0].toUpperCase() + nm.slice(1) + '. ' : ''}Ez később jön. Mi van előbb?`, { remember: false });
         btn.classList.remove('shake'); locked = false; refreshHint();

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Csillagkert – feladat-galéria</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+  /* Áttekintő a generált feladatokról: sablononként és szintenként egy minta, kicsinyítve. A helyes válasz zöld keretet kap.
+     Nem játszik hangot és nem ír a mentésbe. Használat: tests/gallery.html?st=forma (állomás azonosítója) */
+  html, body { height: auto !important; overflow: visible !important; position: static !important; }
+  body { touch-action: auto; font-family: system-ui; background: #fff; padding: 12px; }
+  #g { display: grid; grid-template-columns: repeat(auto-fill, 420px); gap: 14px; }
+  .gcard { width: 420px; border: 2px solid #ddd; border-radius: 14px; overflow: hidden; background: #f3ecff; }
+  .gin { zoom: 0.41; width: 1024px; height: 600px; display: flex; justify-content: center; padding-top: 20px; }
+  .gcard p { margin: 0; padding: 4px 8px; font-size: 13px; background: #fff; }
+  .answer.ok-mark { outline: 8px solid #2fa84f; outline-offset: 4px; }
+</style>
+</head>
+<body>
+<h1 id="h">Feladat-galéria</h1>
+<div id="g"></div>
+<script type="module">
+  import { TEMPLATES, targetsOf, build } from '../js/content/engine.js';
+  import { rng } from '../js/content/rng.js';
+  import { markup } from '../js/activities/pick.js';
+  const st = new URLSearchParams(location.search).get('st') || 'szamol';
+  document.getElementById('h').textContent = `Feladat-galéria: ${st}`;
+  const out = document.getElementById('g');
+  for (const t of TEMPLATES.filter(t => t.station === st)) {
+    const byLevel = new Map(); for (const x of targetsOf(t)) if (!byLevel.has(x.level)) byLevel.set(x.level, x);
+    for (const x of byLevel.values()) {
+      const it = build(x.id, rng(x.id + '#galeria'));
+      const card = document.createElement('div'); card.className = 'gcard';
+      const body = it.type === 'pick' ? markup(it, it.options)
+        : it.type === 'memory' ? `<div class="activity"><div class="prompt">memória: ${it.deck.length} pár</div><div class="qbox" style="font-size:60px">${it.deck.map(c => `<span title="${c.n}">${c.e}</span>`).join(' ')}</div><div class="prompt">${it.deck.map(c => c.n).join(', ')}</div></div>`
+        : `<div class="activity"><div class="prompt">${it.type} ${JSON.stringify({ n: it.n, a: it.a, b: it.b, op: it.op })}</div></div>`;
+      card.innerHTML = `<div class="gin">${body}</div><p>${x.id} · ${x.level}. szint</p>`;
+      if (it.type === 'pick') card.querySelectorAll('.answer').forEach(b => { if (it.options[+b.dataset.i].ok) b.classList.add('ok-mark'); });
+      out.appendChild(card);
+    }
+  }
+  window.__ready = true;
+</script>
+</body>
+</html>

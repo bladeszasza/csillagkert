@@ -63,7 +63,7 @@ export function run(container, { kind, animal, name, good, wrong, any }, ctx = {
         live?.thank(); if (!live) bubble.textContent = '😋';
         animalVoice(kind, { happy: true, defer: later });           // jóllakott: csak az állat hangja szól, Rozi hallgat
         await sleep(1900);
-        resolve();
+        resolve({ wrong: wrongs });
       } else {
         wrongs++;
         live?.refuse(); if (!live) { animalEl.classList.add('shake'); bubble.textContent = '🙅'; }

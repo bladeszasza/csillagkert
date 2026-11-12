@@ -17,12 +17,38 @@ Feladatok → csillagok → jutalomjáték. Hibázásért nincs büntetés: szel
 - **A kert a térkép:** az állomások helyek a kertben (ceruzatorony, házikó, almafa, földgömb, robot, festőállvány,
   számolókockák, harangok, piknik…), a jelükre koppintva lehet odamenni. A „Tovább" gomb megmaradt annak, aki nem akar választani.
 - **Rozi, a robot** beszél (böngésző-hang), bemutatkozik, ő osztja a csillagokat; az arca a hangulathoz igazodik.
-- **Feladatok:** vonalkövetés és betűk, számolás 20-ig, összeadás/kivonás, formák, hangok és rímek,
+- **Feladatok:** vonalkövetés és betűk, számolás 20-ig, összeadás/kivonás, formák, színek és téri viszonyok,
+  gondolkodtató feladatok (sorminta, kakukktojás, ellentétek, párok, „Mi tűnt el?", memória), hangok és rímek,
   zene (harangok, szó–mi, mély–magas, halk–hangos, egyforma–különböző, feljebb–lejjebb),
   állatetetés (a kert valódi 3D lakóját etetjük), testünk, időutazás, robotprogramozás (algoritmikus gondolkodás), rajz.
+  A Számoló rét, a Formák és színek és az Okoskodó feladatai sablonokból készülnek, állomásonként több száz (lásd lent).
 - **Jutalomjátékok:** Unikornis-futás, Felhővár-verseny, szabad futás procedurális világban, hami-adagoló (3D cica),
   cica-etetés, Barátom (fésülés, simogatás, labdázás), unikornis-öltöztető (ajándékokkal), buborékpukkasztás.
 - Nincs build lépés: sima HTML + ES modulok + three.js (`vendor/`). GitHub Pages-en fut. A haladás csak az eszközön tárolódik.
+
+## Tananyag és sorrend
+
+Az M4 mérföldkő első harmada kész: **3 állomás generált** (a 8 generálhatóból), a többi az M4 következő részeiben jön.
+
+| Állomás | Önálló feladat | Készség |
+|---|---:|---:|
+| Számoló rét | 758 | 10 |
+| Formák és színek | 304 | 11 |
+| Okoskodó | 407 | 8 |
+
+- **Sablonok** (`js/content/`): egy sablon egy feladatfajta; a „cél" az, ami a választ meghatározza (darabszám, minta,
+  tárgy). Egy önálló feladat egy (sablon, cél) pár: a tárgy fajtája, a színe, a rossz válaszok és a sorrend díszítés,
+  nem új feladat. Minden sablonhoz tartozik egy gépi megoldó, amely a gyerek által látott képből számolja ki a választ.
+- **Ütemező** (`js/scheduler-core.js`, `js/scheduler.js`): állomásonként öt nehézségi szint; 3 elsőre sikerült feladat
+  után feljebb, 2 segítséggel megoldott után lejjebb lép; egy tévedés semleges. A sikerült feladat 1, 3, 7, 14 nap múlva
+  tér vissza, a készségek és az állomások váltakoznak. **Ezek a számok saját kiinduló beállítások**, nem kutatásból
+  átvett értékek; az indoklás és a források: [`docs/pedagogia.md`](docs/pedagogia.md).
+- **Rozi mondatai** (`js/lines.js`): melegebb, kevesebb csillag-emlegetés, több közös felfedezés; a gyerek nevét néha
+  kimondja, ha meg van adva (a név csak az eszközön tárolódik).
+- **A régi feladatok**: a generált állomások régi, kézzel írt feladatai kikerültek; aki azokból sokat megoldott, az új
+  feladatoknál egy szinttel feljebb kezd. A tény-állomások hibás feladatait az átnézés szerint javítottam (például
+  „Mivel hallunk?" került a félreérthető „Mi folyik az ereinkben?" helyére); ezek az állomások az M6-ban kapnak
+  szülő által átnézett ténytáblát.
 
 ## Hang
 
@@ -123,11 +149,20 @@ ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba ment
 - Tartalom-tesztek: `node --test tests/content.test.mjs` (egyedi azonosítók, egy helyes válasz, besorolás, nyelvtan,
   etetési tábla, a barátok érkezése, a virágok helye).
 - Profil- és mentés-tesztek: `node --test tests/profiles.test.mjs` (a régi mentés átvétele, sérült adatok, két gyerek
-  függetlensége, két megnyitott lap, mentés fájlba és visszatöltés, hibás fájl elutasítása).
+  függetlensége, két megnyitott lap, mentés fájlba és visszatöltés, hibás fájl elutasítása, az ütemező állásának ellenőrzése).
+- Generált feladatok: `node --test tests/generated.test.mjs` (állomásonként legalább 250 önálló feladat, szintenként
+  legalább 10; pontosan egy helyes válasz; nincs ismétlődő kép vagy név; a helyes válasz helye egyenletes; minden válasz
+  valahol helyes is; a gépi megoldó mindet megoldja; a kimondott szövegben nincs számjegy, jel vagy emoji, egy mondat
+  legfeljebb 12 szó).
+- Ütemező: `node --test tests/scheduler.test.mjs` (300 feladatos szimuláció ismétlés nélkül, szintlépés és visszalépés,
+  kezdőnek csak a szintjéhez illő készség, ismétlési napok, gyakorló feladatok).
+- Feladat-galéria: `http://localhost:8080/tests/gallery.html?st=okos` (vagy `szamol`, `forma`) – sablononként és
+  szintenként egy minta kicsinyítve, a helyes válasz zöld keretben. Nem szól és nem ír a mentésbe.
 - Böngészős füstteszt: `http://localhost:8080/tests/smoke.html` (hangerő-mérés, a jó válasz helye, megszakítás utáni csend,
   minden feladattípus elindul, a kert lakói és rajzolási terhe, a tópart és a tanya, koppintás minden barátra,
   etetés a 3D állattal minden úton, a tanyáról is). A füstteszt memóriában élő tárolóval fut, a valódi mentéshez nem nyúl.
-  Csak egy részét is lehet futtatni: `?only=games` (szabad futás és jutalomjátékok), vagy `?only=` és egy tesztnév-részlet.
+  Csak egy részét is lehet futtatni: `?only=games` (szabad futás és jutalomjátékok), `?only=generated` (a gépi megoldó
+  minden sablon minden szintjén a valódi feladatot oldja meg), vagy `?only=` és egy tesztnév-részlet.
 - Szabad futás (a füstteszt része): egy futó-robot három különböző világban 2000 egységet tesz meg; nem ragadhat be,
   nem futhat bele fába, a követő barátok nem tűnhetnek el, és a világ széle nem látszhat. Ellenőrzi a koppintást,
   a tartott ujjat, a két ujjat, a tenyeret, az ugrást, a rajzolási terhet és a 3D-jelenet felszabadítását is.

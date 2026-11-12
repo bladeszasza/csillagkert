@@ -7,7 +7,7 @@
 
 const INDEX = 'csillagkert:profiles', DEVICE = 'csillagkert:device', PREFIX = 'csillagkert:p:';
 const OLD = 'csillagkert_v1', OLD_DRESS = 'csillagkert_dress_v1';
-const SCHEMA = 2;
+const SCHEMA = 3;
 export const MARKS = ['⭐', '💖', '🌸', '🦋', '🌈', '🍓', '🐞', '🚀'];     // a gyerek jele a „Ki játszik?" kártyán
 export const AGES = [4, 5, 6, 7];
 
@@ -17,6 +17,7 @@ const fresh = () => ({
   meter: 0,          // csillagok a legutóbbi jutalom óta
   done: {},          // kész feladatok állomásonként (szülői áttekintéshez)
   seen: {},          // megoldott feladatok {azonosító: időbélyeg} – ebből kerüljük az ismétlést
+  sk: {}, rv: {}, hist: [], lastSt: [], stAt: {},   // az ütemező állása (js/scheduler-core.js): készségszintek, ismétlési napló, állomás-váltás
   gifts: [],         // megszerzett ajándékok (öltöztető elemei)
   friends: [],       // akit már megetettek: a csillagoktól függetlenül is a kertben lakik
   rewardsDone: 0,    // hány jutalomjátékot játszott már: minden kör után több csillag kell
@@ -34,6 +35,8 @@ function normalize(raw) {
   if (!s.seen || typeof s.seen !== 'object') s.seen = {};      // nagyon régi mentésben nem volt: üresről indul
   if (!Array.isArray(s.gifts)) s.gifts = [];
   if (!Array.isArray(s.friends)) s.friends = [];
+  for (const k of ['sk', 'rv', 'stAt']) if (!s[k] || typeof s[k] !== 'object' || Array.isArray(s[k])) s[k] = {};
+  for (const k of ['hist', 'lastSt']) if (!Array.isArray(s[k])) s[k] = [];
   for (const k of ['total', 'meter', 'rewardsDone']) s[k] = Math.max(0, Math.floor(+s[k] || 0));
   if (!MARKS.includes(s.mark)) s.mark = MARKS[0];
   if (had && !raw.v2) s.perReward = 10;                         // korábbi mentés: 3 helyett 10 csillag
@@ -59,6 +62,13 @@ function sanitize(raw) {
   if (raw.heardBell === true || raw.heardBell === false) s.heardBell = raw.heardBell;
   if (raw.done && typeof raw.done === 'object') for (const [k, v] of Object.entries(raw.done).slice(0, 60)) if (word(k)) s.done[k] = int(v, 0, 100000, 0);
   if (raw.seen && typeof raw.seen === 'object') for (const [k, v] of Object.entries(raw.seen).slice(0, 20000)) if (k.length <= 300 && Number.isFinite(+v)) s.seen[k] = +v;
+  // az ütemező állása: csak ismert mezők, korlátos méretben
+  const obj = v => v && typeof v === 'object' && !Array.isArray(v);
+  if (obj(raw.sk)) for (const [k, v] of Object.entries(raw.sk).slice(0, 300)) if (/^[a-z0-9._-]{1,60}$/.test(k) && obj(v)) s.sk[k] = { lv: int(v.lv, 1, 5, 1), ok: int(v.ok, 0, 10, 0), bad: int(v.bad, 0, 10, 0), n: int(v.n, 0, 1000000, 0), at: Number.isFinite(+v.at) ? +v.at : 0 };
+  if (obj(raw.rv)) for (const [k, v] of Object.entries(raw.rv).slice(0, 20000)) if (k.length <= 300 && obj(v) && Number.isFinite(+v.due)) s.rv[k] = { b: int(v.b, 0, 4, 0), due: +v.due };
+  if (Array.isArray(raw.hist)) s.hist = raw.hist.slice(-20).map(x => x === true);
+  if (Array.isArray(raw.lastSt)) s.lastSt = raw.lastSt.filter(word).slice(-2);
+  if (obj(raw.stAt)) for (const [k, v] of Object.entries(raw.stAt).slice(0, 60)) if (word(k) && Number.isFinite(+v)) s.stAt[k] = +v;
   if (Array.isArray(raw.gifts)) s.gifts = [...new Set(raw.gifts.filter(word))].slice(0, 200);
   if (Array.isArray(raw.friends)) s.friends = [...new Set(raw.friends.filter(word))].slice(0, 60);
   if (raw.dress && typeof raw.dress === 'object' && !Array.isArray(raw.dress)) {

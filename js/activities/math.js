@@ -59,7 +59,7 @@ export function run(container, { a, b, op }) {
       if (val === result) {
         finished = true; btn.classList.add('win');
         await say(add ? `Igen! ${NUMS[a]} meg ${NUMS[b]} az ${NUMS[result]}.` : `Igen! ${fromNum(NUMS[a])} elveszünk ${ACC_NUM[b]}, marad ${NUMS[result]}.`);
-        resolve();
+        resolve({ wrong });
       } else {
         locked = true; wrong++; btn.classList.add('shake');
         await sleep(700); btn.classList.remove('shake');

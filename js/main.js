@@ -1,6 +1,7 @@
 import { createGarden } from './garden.js';
 import { STATIONS, stationOf, idOf } from './curriculum.js';
-import { nextItem, stationItem, noteRound } from './queue.js';
+import { nextItem, stationItem, noteRound, record } from './scheduler.js';
+import { lineNamed, named, stationLine } from './lines.js';
 import { progress } from './progress.js';
 import { say, repeatLast, hasHungarianVoice, onSpeaking, onMood, stopSpeaking, setMuted, setRepeatHandler } from './voice.js';
 import { setScope } from './scope.js';
@@ -56,7 +57,7 @@ function logError(e, where) {
 }
 window.addEventListener('error', ev => logError(ev.error || ev.message, 'ablak'));
 window.addEventListener('unhandledrejection', ev => logError(ev.reason, 'ígéret'));
-const PRAISE = ['Ügyes vagy!', 'Nagyszerű!', 'Szuper!', 'Csodás!', 'Ez az!'];
+
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const name = () => progress.get().name;
 // Egyre több csillag kell: az alapérték + 2 minden megjátszott jutalomkör után (legfeljebb 30)
@@ -167,7 +168,7 @@ async function begin() {
   const justIntro = !progress.get().introDone;
   if (justIntro) await introduce();                          // Rozi bemutatkozik (egyszer)
   if (!name() && !progress.get().nameAsked) await askName();
-  say(justIntro ? (name() ? `Örülök, ${name()}! Gyűjtsünk együtt csillagokat!` : 'Gyűjtsünk együtt csillagokat!') : (name() ? `Szia ${name()}! Gyűjtsünk csillagokat!` : 'Szia! Gyűjtsünk csillagokat!'), { remember: false });
+  say(justIntro ? named('Örülök, hogy megismertelek{, N}! Gyere, fedezzük fel együtt a világot!', name(), Math.random, 1) : lineNamed('hello', name(), Math.random, 1), { remember: false });
   if (progress.get().meter >= perReward()) openReward(); else $('home').hidden = false;
 }
 
@@ -189,6 +190,7 @@ function askName() {
 
 // 2) Egy feladat lefuttatása: "Tovább" (sorrend) vagy szabadon választott állomás. Az X gombbal kiléphet.
 let currentAbort = null, running = false;
+const invited = new Set();                                   // ebben az ülésben már "meghívott" állomások
 async function runItem(item, station, via) {
   if (running) return;                                       // dupla koppintás ne indítson két feladatot
   running = true;
@@ -200,12 +202,15 @@ async function runItem(item, station, via) {
   if (inGarden) progress.addFriend(item.kind);               // akit etetünk, az mostantól a kertben lakik
   $('home').hidden = true;
   const ac = new AbortController(); setScope(ac.signal);     // a feladat minden várakozása ehhez a jelhez kötött
-  let res = 'error';
+  let res = 'error', outcome = {};
   try {
     const mod = await activities[item.type]();
     $('stage').hidden = false; $('stage-x').hidden = false;
     const aborted = new Promise(r => { currentAbort = () => r('abort'); });
-    res = await Promise.race([Promise.resolve(mod.run($('stage'), item, { signal: ac.signal, garden })).then(() => 'done'), aborted]);
+    // ülésenként egyszer egy-egy állomáson: meleg hívás a felfedezésre (etetésnél nem: ott az állat beszél)
+    let go = 'go';
+    if (!inGarden && !invited.has(station)) { invited.add(station); const t = stationLine(station, name()); if (t) go = await Promise.race([say(t, { remember: false }).then(() => 'go'), aborted]); }
+    res = go === 'abort' ? 'abort' : await Promise.race([Promise.resolve(mod.run($('stage'), item, { signal: ac.signal, garden })).then(r => { outcome = r && typeof r === 'object' ? r : {}; return 'done'; }), aborted]);
   } catch (e) { console.error('Feladat-hiba', e); logError(e, item.type); res = 'error'; }
   currentAbort = null; setRepeatHandler(null);
   if (res !== 'done') { ac.abort(); stopSpeaking(); }        // megszakítás vagy hiba: a feladat azonnal és teljesen megáll
@@ -214,7 +219,7 @@ async function runItem(item, station, via) {
   garden?.endFeed(); garden?.pause(false);                   // kész, megszakítás, hiba: a kamera mindig visszatér a kertre
   running = false;
   if (res !== 'done') {
-    progress.skip(idOf(item)); if (via === 'next') noteRound(item);     // legközelebb más feladat jön
+    progress.skip(idOf(item)); record(item, { aborted: true }); if (via === 'next') noteRound(item);     // legközelebb más feladat jön
     renderAreaButtons();                                     // a félbehagyott első etetés után is ott a gomb az új lakó kertrészéhez
     $('home').hidden = false;
     setTimeout(() => say(res === 'abort' ? 'Semmi baj! Válassz mást, vagy játssz, ha kedved van.' : 'Semmi baj! Válasszunk mást!', { remember: false }), 400);
@@ -222,6 +227,7 @@ async function runItem(item, station, via) {
   }
   const here = new Set(friendsFor(progress.get().total, progress.get().friends));
   const meter = progress.addStar(station, idOf(item));
+  record(item, { wrong: outcome.wrong || 0 });               // az ütemező ebből hangolja a következő feladatot
   if (via === 'next') noteRound(item);
   const arrived = friendsFor(progress.get().total, progress.get().friends).filter(f => !here.has(f));   // ezzel a csillaggal érkezett barát
   garden?.setStars(progress.get().total, progress.get().friends);                 // az új barát besétál, megszólal, szívek szállnak
@@ -235,7 +241,7 @@ async function runItem(item, station, via) {
   } else renderAreaButtons();
   // Új barátnál Rozi egy mondatban bejelenti; etetés után különben hallgat (ott az állat a saját hangján köszöni meg)
   if (arrived.length) say(`Új barát érkezett: ${withArt(friendById(arrived[0]).name)}!`, { remember: false });
-  else if (!inGarden) say(PRAISE[progress.get().total % PRAISE.length] + (name() && meter >= perReward() ? ' ' + name() + '!' : ''), { remember: false });
+  else if (!inGarden) say(lineNamed('star', name(), Math.random, meter >= perReward() ? 1 : 0.3), { remember: false });
   await flyStar(Math.min(meter, perReward()) - 1, Math.min(meter, perReward()));
   await sleep(900);
   if (meter >= perReward()) openReward(); else $('home').hidden = false;
@@ -253,7 +259,7 @@ function openReward() {
 }
 $('reward-x').addEventListener('click', () => {      // ha nem akar játszani: a megszerzett csillagok megmaradnak
   $('reward').hidden = true; $('home').hidden = false;
-  stopSpeaking(); say('Semmi baj! A csillagaid megvannak, játszhatsz később is.', { remember: false });
+  stopSpeaking(); say('Semmi baj! Minden megmarad, játszhatsz később is.', { remember: false });
 });
 let stopGame = null, rewardTimer = null, byeTimer = 0;
 // a játék törzséből minden teszt-kapaszkodót (__ow, __race, __busy…) leveszünk, hogy a lezárt jelenet ne maradjon a memóriában
@@ -295,5 +301,5 @@ function endReward(fromBye = false) {
   progress.completeReward();                       // a következő jutalomhoz több csillag kell
   progress.resetMeter(); renderMeter(0, perReward());
   $('home').hidden = false;
-  say(fromBye ? 'Gyűjtsünk még csillagokat!' : 'Ez nagyon jó volt! Gyűjtsünk még csillagokat!');
+  say(fromBye ? named('Gyere{, N}, fedezzünk fel még valamit együtt!', name(), Math.random, 0.5) : lineNamed('again', name()));
 }
