@@ -128,8 +128,10 @@ async function testGarden() {
   ok('kert: 10 csillagnál a cica, a nyuszi és a kutya lakik itt', d.friends.join() === 'cat,bunny,dog' && d.flowers === 10, `lakók: ${d.friends.join(', ')}; virágok: ${d.flowers}; rajzolási hívások: ${d.calls}`);
   const g0 = soundLog.length;
   garden.setStars(70, []); await wait(2900);                  // az új barátok besétálnak az ösvényen: megvárjuk őket
-  d = garden.debug(); const calls70 = d.calls;
+  garden.debug();                                             // egy lépés: megérkeznek és köszönnek (ritkán frissülő lapon is)
   const greet = soundLog.slice(g0).map(x => x.kind).sort().join(',');
+  await wait(1900);                                           // a köszönés szívecskéi eltűnnek: a rajzolási hívások csak ezután mérhetők
+  d = garden.debug(); const calls70 = d.calls;
   ok('kert: az érkező barát megszólal a saját hangján', greet === [VOICE.fox, VOICE.bear, VOICE.panda].sort().join(','), greet);
   // térkép: az állomások jelei a kerti tereptárgyaikon ülnek, a képen belül, egymást nem takarva
   const pl = garden.places(), ids = Object.keys(pl || {}), near = [];
@@ -142,8 +144,7 @@ async function testGarden() {
   const out = Object.entries(d.screen).filter(([, r]) => r.left < 0 || r.right > 900 || r.top < 0 || r.bottom > 650).map(([k]) => k);
   ok('kert: minden barát a képen van', out.length === 0, out.length ? `kilóg: ${out.join(', ')}` : Object.entries(d.screen).map(([k, r]) => `${k} ${Math.round(r.cx)},${Math.round(r.cy)}`).join(' · '));
   garden.setStars(300, []); d = garden.debug();
-  // (a 70 virágos mérésnél az érkező barátok szívecskéi is látszhatnak, ezért itt kevesebb hívás is lehet – több nem)
-  ok('kert: 300 virág sem kerül több rajzolási hívásba (nincs 70-es plafon)', d.flowers === 300 && d.calls <= calls70, `virágok: ${d.flowers}, hívások: ${d.calls}, háromszögek: ${d.triangles}`);
+  ok('kert: 300 virág sem kerül több rajzolási hívásba (nincs 70-es plafon)', d.flowers === 300 && d.calls === calls70, `virágok: ${d.flowers}, hívások: ${d.calls}, háromszögek: ${d.triangles}`);
 
   const feed = await import('../js/activities/feed.js'), canvases = document.querySelectorAll('canvas').length;
   // a) jó étel a szájához húzva
