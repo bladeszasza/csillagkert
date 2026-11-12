@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Csillagkert – barátok galériája</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #bfefff; font: 14px system-ui, sans-serif; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+  #labels span { position: fixed; transform: translate(-50%, 0); background: rgba(255,255,255,.85); border-radius: 8px; padding: 1px 6px; white-space: nowrap; }
+  #info { position: fixed; left: 8px; bottom: 8px; background: #fff; border-radius: 8px; padding: 4px 8px; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="labels"></div>
+<div id="info"></div>
+<script type="module">
+// Fejlesztői galéria: minden kerti barát egymás mellett, elölről (a kertben használt példányosított rajzolással).
+// ?kind=fox – csak egy barát, közelről;  ?wave=1 – integetés / szárnycsapkodás;  ?side=1 – oldalnézet
+import * as THREE from '../vendor/three.module.js';
+import { CHARACTER_KINDS, makeCharacter, animateCharacter, measureCharacter, createCharacterBatch } from '../js/three/characters.js';
+import { FRIENDS } from '../js/friends.js';
+
+const q = new URLSearchParams(location.search), only = q.get('kind'), wave = q.get('wave') === '1', side = q.get('side') === '1';
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xbfefff);
+scene.add(new THREE.HemisphereLight(0xffffff, 0xcfe8b8, 1.5));
+const sun = new THREE.DirectionalLight(0xfff2d0, 1.6); sun.position.set(4, 8, 5); scene.add(sun);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshLambertMaterial({ color: 0xa8e6a0 })); ground.rotation.x = -Math.PI / 2; scene.add(ground);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+const batch = createCharacterBatch(scene);
+// ?page=0,1,2… – négyesével, közelebbről
+const page = q.get('page'), kinds = only ? [only] : page != null ? CHARACTER_KINDS.slice(+page * 4, +page * 4 + 4) : CHARACTER_KINDS, cols = Math.min(kinds.length, 6);
+const chars = kinds.map((kind, i) => {
+  const g = makeCharacter(kind), x = (i % cols - (cols - 1) / 2) * 2.2, z = Math.floor(i / cols) * 2.6;
+  g.position.set(x, 0, z); g.rotation.y = side ? Math.PI / 2 : Math.PI; scene.add(g); batch.add(g);
+  return { kind, g };
+});
+const rows = Math.ceil(kinds.length / cols);
+const info = document.getElementById('info'), labels = document.getElementById('labels');
+info.textContent = chars.map(({ kind, g }) => { const m = measureCharacter(g), f = FRIENDS.find(x => x.id === kind); return `${kind} ${m.height.toFixed(2)}${f ? ' / ' + f.height : ''}`; }).join(' · ');
+const tags = chars.map(({ kind }) => { const s = document.createElement('span'); s.textContent = kind; labels.appendChild(s); return s; });
+function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+addEventListener('resize', resize); resize();
+const fit = (cols * 2.2 / 2 + 0.5) / (Math.tan(20 * Math.PI / 180) * innerWidth / innerHeight);
+camera.position.set(0, only ? 1.1 : 1.4 + rows * 0.9, (only ? 3.2 : fit) + (rows - 1) * 2.6);
+camera.lookAt(0, only ? 0.7 : 0.75, (rows - 1) * 1.3);
+const v = new THREE.Vector3();
+function frame(now) {
+  const t = now / 1000;
+  for (const { g } of chars) animateCharacter(g, t, 0, wave);
+  batch.update();
+  renderer.render(scene, camera);
+  chars.forEach(({ g }, i) => { v.set(g.position.x, -0.05, g.position.z + 0.6).project(camera); tags[i].style.left = (v.x + 1) / 2 * innerWidth + 'px'; tags[i].style.top = (1 - v.y) / 2 * innerHeight + 'px'; });
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+window.__gallery = { calls: () => renderer.info.render.calls, tris: () => renderer.info.render.triangles };
+</script>
+</body>
+</html>

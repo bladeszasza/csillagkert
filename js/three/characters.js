@@ -1,0 +1,402 @@
+// A kert barátai (saját tervezés, three.js alapformákból). Egy barát = "csontok" (fej, lábak, farok, mancs, szárny,
+// szem, száj – üres Object3D-k, amelyeket a kert animációja mozgat) + alkatrészek listája: melyik csonton ül,
+// milyen alapforma (gömb, kúp, henger, ív), hol, mekkora és milyen színű.
+// A kert az összes barát összes alkatrészét alapformánként EGY példányosított hálóval rajzolja ki
+// (createCharacterBatch), így 19 barát is csak néhány rajzolási hívás. A figurák előre (-z) néznek, a talpuk y = 0-n van.
+import * as THREE from '../../vendor/three.module.js';
+
+const BALL = 0, BEAD = 1, CONE = 2, PYR = 3, CYL = 4, ARC = 5, RING = 6;
+const unitGeometries = () => [
+  new THREE.SphereGeometry(1, 16, 12),             // nagy gömb (test, fej)
+  new THREE.SphereGeometry(1, 8, 6),               // kis gömb (szem, orr, orca, gyapjúpamacs) – kevesebb háromszög
+  new THREE.ConeGeometry(1, 1, 10),                // kúp (szarv, csőr, tüske)
+  new THREE.ConeGeometry(1, 1, 4),                 // gúla (hegyes fül)
+  new THREE.CylinderGeometry(1, 1, 1, 10),         // henger (láb, pata, ormány)
+  new THREE.TorusGeometry(1, 0.17, 6, 14, Math.PI), // félkör (mosoly)
+  new THREE.TorusGeometry(1, 0.3, 6, 16, Math.PI * 1.6), // kunkor (malacfarok)
+];
+
+const INK = 0x3b2a63, CHEEK = 0xffb3d6, NOSE = 0xff6f9f, MOUTH = 0x7a2340, WHITE = 0xffffff;
+const V = a => new THREE.Vector3(...a);
+
+function kit(size = 1) {
+  const root = new THREE.Group(), base = new THREE.Group(), inner = new THREE.Group();
+  base.scale.setScalar(size); root.add(base); base.add(inner);
+  const parts = [];
+  const node = (parent, x = 0, y = 0, z = 0) => { const n = new THREE.Object3D(); n.position.set(x, y, z); parent.add(n); return n; };
+  const put = (n, prim, color, pos, scale, rot) => {
+    const q = rot instanceof THREE.Quaternion ? rot : new THREE.Quaternion().setFromEuler(new THREE.Euler(...(rot || [0, 0, 0])));
+    parts.push({ node: n, prim, color: new THREE.Color(color), m: new THREE.Matrix4().compose(V(pos), q, V(scale)) });
+  };
+  const ball = (n, color, r, pos, s = [1, 1, 1], rot) => put(n, r * Math.max(...s) >= 0.11 ? BALL : BEAD, color, pos, [r * s[0], r * s[1], r * s[2]], rot);
+  const cone = (n, color, r, h, pos, rot, four = false) => put(n, four ? PYR : CONE, color, pos, [r, h, r], rot);
+  const cyl = (n, color, r, h, pos, rot, s = [1, 1]) => put(n, CYL, color, pos, [r * s[0], h, r * s[1]], rot);
+  const arc = (n, color, R, pos, rot = [0, 0, Math.PI]) => put(n, ARC, color, pos, [R, R, R], rot);
+  const ring = (n, color, R, pos, rot) => put(n, RING, color, pos, [R, R, R], rot);
+  return { root, base, inner, parts, node, put, ball, cone, cyl, arc, ring };
+}
+
+// Arc a fej elején: pislogó szemek (saját csonton), orca, orr, mosoly és az evéskor nyíló száj.
+// A helyek a fej gömbjének felszínéből számolódnak (r), vagy kézzel megadhatók (…At: a jobb oldali elem helye).
+function face(k, head, o = {}) {
+  const { r = 0.3, eyeX = 0.12, eyeY = 0.06, eyeR = 0.05, iris = null, cheek = CHEEK, cheekX = 0.2, cheekY = -0.07,
+    nose = NOSE, noseR = 0.045, smile = INK, smileR = 0.09 } = o;
+  const surf = (x, y) => -Math.sqrt(Math.max(0.0001, r * r - x * x - y * y));
+  const eyeAt = o.eyeAt || [eyeX, eyeY, surf(eyeX, eyeY) + eyeR * 0.3];
+  const eyes = [-1, 1].map(sx => {
+    const e = k.node(head, sx * eyeAt[0], eyeAt[1], eyeAt[2]);
+    if (iris) { k.ball(e, iris, eyeR, [0, 0, 0], [1, 1, 0.7]); k.ball(e, INK, eyeR * 0.56, [0, 0, -eyeR * 0.5], [1, 1, 0.6]); }
+    else k.ball(e, INK, eyeR, [0, 0, 0], [1, 1, 0.75]);
+    k.ball(e, WHITE, eyeR * 0.34, [eyeR * 0.3, eyeR * 0.36, -eyeR * (iris ? 0.85 : 0.68)]);
+    return e;
+  });
+  if (cheek != null) {
+    const c = o.cheekAt || [cheekX, cheekY, surf(cheekX, cheekY) + 0.02];
+    for (const sx of [-1, 1]) k.ball(head, cheek, 0.06, [sx * c[0], c[1], c[2]], [1, 0.8, 0.4]);
+  }
+  if (nose != null) k.ball(head, nose, noseR, o.noseAt || [0, -0.02, surf(0, -0.02) - noseR * 0.3]);
+  const sp = o.smileAt || [0, -0.1, surf(0, -0.1) - 0.005];
+  const smileN = k.node(head, sp[0], sp[1], sp[2]);
+  if (smile != null) k.arc(smileN, smile, smileR, [0, 0, 0]);
+  const mouth = k.node(head, sp[0], sp[1] - 0.02, sp[2]);
+  k.ball(mouth, MOUTH, Math.max(0.04, smileR * 0.67), [0, 0, 0], [1.1, 1, 0.5]);
+  mouth.visible = false;
+  return { eyes, smile: smileN, mouth };
+}
+
+// Lábak: csípő-csont (forgáspont) + láb + talp; a talp alja pontosan a földön (y = 0) van
+const FEET = { paw: [0.085, [1, 0.6, 1.25], -0.03], bird: [0.08, [1, 0.25, 1.5], -0.05], stub: [0.06, [1, 0.7, 1.2], -0.01] };
+function legs(k, color, pts, hipY, { r = 0.065, foot = 'paw', footColor = color } = {}) {
+  return pts.map(([x, z]) => {
+    const hip = k.node(k.inner, x, hipY, z);
+    const fh = foot === 'hoof' ? 0.05 : FEET[foot][0] * FEET[foot][1][1], L = hipY - fh;
+    k.cyl(hip, color, r, L, [0, -L / 2, 0]);
+    if (foot === 'hoof') k.cyl(hip, footColor, r * 1.12, 0.1, [0, -L, 0]);
+    else { const [fr, fs, fz] = FEET[foot]; k.ball(hip, footColor, fr, [0, -L, fz], fs); }
+    return hip;
+  });
+}
+const QUAD = (x = 0.18, z = 0.3) => [[-x, -z], [x, -z], [-x, z], [x, z]];
+function arm(k, color, x, y, z) { const a = k.node(k.inner, x, y, z); k.ball(a, color, 0.08, [0, 0.12, 0], [0.8, 2.2, 0.8]); return a; }
+function wings(k, color, x, y, z, r = 0.2, s = [0.33, 0.68, 1.1]) {
+  return [1, -1].map(sx => { const w = k.node(k.inner, sx * x, y, z); k.ball(w, color, r, [sx * r * s[0] * 0.2, -r * s[1] * 0.4, 0], s); return w; });
+}
+function done(k, u) {
+  k.root.userData = { inner: k.inner, parts: k.parts, legs: [], wings: null, arm: null, tail: null, tailWag: 1, ...u, armY: u.arm ? u.arm.position.y : 0 };
+  return k.root;
+}
+
+// --- a kerti barátok ---------------------------------------------------------------------------------------
+const SP = {
+  // 🐰 nyuszi: hosszú, belül rózsaszín fül, pamacsfarok
+  bunny() {
+    const k = kit(), W = 0xffffff, P = 0xffb3d6;
+    const body = k.node(k.inner, 0, 0.58, 0); k.ball(body, W, 0.42, [0, 0, 0], [0.9, 0.8, 1.2]);
+    const head = k.node(k.inner, 0, 1.03, -0.5); k.ball(head, W, 0.3, [0, 0, 0]);
+    for (const sx of [-1, 1]) {
+      k.ball(head, W, 0.09, [sx * 0.12, 0.5, 0], [0.7, 2.6, 0.5], [0, 0, -sx * 0.15]);
+      k.ball(head, P, 0.05, [sx * 0.118, 0.48, -0.035], [0.6, 2.5, 0.3], [0, 0, -sx * 0.15]);
+    }
+    const f = face(k, head);
+    const tail = k.node(k.inner, 0, 0.68, 0.6); k.ball(tail, 0xfff0f6, 0.15, [0, 0, 0]);
+    return done(k, { body, head, ...f, tail, arm: arm(k, W, 0.38, 0.73, -0.2), legs: legs(k, W, QUAD(), 0.43, { footColor: P }) });
+  },
+  // 🐶 kutya: lógó fül, világos pofa, folt a szeme körül
+  dog() {
+    const k = kit(), B = 0xc8895a, A = 0x6b4226, M = 0xf3dcc0;
+    const body = k.node(k.inner, 0, 0.58, 0); k.ball(body, B, 0.42, [0, 0, 0], [0.9, 0.8, 1.2]);
+    const head = k.node(k.inner, 0, 1.03, -0.5); k.ball(head, B, 0.3, [0, 0, 0]);
+    k.ball(head, M, 0.14, [0, -0.07, -0.24], [1.15, 0.85, 0.9]);
+    k.ball(head, A, 0.085, [0.12, 0.08, -0.24], [1, 1, 0.3]);
+    for (const sx of [-1, 1]) k.ball(head, A, 0.1, [sx * 0.3, 0.03, 0], [0.6, 1.6, 0.4], [0, 0, sx * 0.4]);
+    const f = face(k, head, { eyeY: 0.08, cheekX: 0.22, cheekY: -0.03, nose: 0x3b2a2a, noseR: 0.05, noseAt: [0, -0.02, -0.365], smileAt: [0, -0.15, -0.345], smileR: 0.07 });
+    const tail = k.node(k.inner, 0, 0.68, 0.6); k.ball(tail, B, 0.1, [0, 0.1, 0.06], [1, 1, 2.4], [-0.6, 0, 0]);
+    return done(k, { body, head, ...f, tail, arm: arm(k, B, 0.38, 0.73, -0.2), legs: legs(k, B, QUAD(), 0.43, { footColor: A }) });
+  },
+  // 🦊 róka: hegyes fül sötét véggel, fehér pofa és mell, bozontos farok fehér véggel, sötét "zokni"
+  fox() {
+    const k = kit(), B = 0xff8a3d, W = 0xffffff, D = 0x4a2a1a;
+    const body = k.node(k.inner, 0, 0.58, 0); k.ball(body, B, 0.42, [0, 0, 0], [0.9, 0.8, 1.2]);
+    k.ball(body, W, 0.2, [0, 0.06, -0.43], [1, 1.1, 0.5]);
+    const head = k.node(k.inner, 0, 1.03, -0.5); k.ball(head, B, 0.3, [0, 0, 0]);
+    k.ball(head, W, 0.12, [0, -0.07, -0.26], [1, 0.8, 1.3]);
+    for (const sx of [-1, 1]) {
+      k.cone(head, B, 0.1, 0.24, [sx * 0.17, 0.3, 0], [0, 0, -sx * 0.2], true);
+      k.cone(head, D, 0.045, 0.1, [sx * 0.184, 0.369, 0], [0, 0, -sx * 0.2], true);
+    }
+    const f = face(k, head, { nose: INK, noseR: 0.04, noseAt: [0, -0.03, -0.415], smileAt: [0, -0.13, -0.39], smileR: 0.06 });
+    const tail = k.node(k.inner, 0, 0.66, 0.6);
+    k.ball(tail, B, 0.16, [0, 0.06, 0.12], [1, 1, 1.9], [-0.5, 0, 0]); k.ball(tail, W, 0.12, [0, 0.2, 0.38]);
+    return done(k, { body, head, ...f, tail, arm: arm(k, B, 0.38, 0.73, -0.2), legs: legs(k, D, QUAD(), 0.43) });
+  },
+  // 🐻 maci: kerek fül, világos pofa és pocak
+  bear() {
+    const k = kit(), B = 0xb9814f, A = 0xe2c49a, N = 0x3b2a2a;
+    const body = k.node(k.inner, 0, 0.58, 0); k.ball(body, B, 0.42, [0, 0, 0], [0.9, 0.8, 1.2]);
+    k.ball(body, A, 0.26, [0, -0.02, -0.41], [1, 1.1, 0.45]);
+    const head = k.node(k.inner, 0, 1.03, -0.5); k.ball(head, B, 0.3, [0, 0, 0]);
+    k.ball(head, A, 0.13, [0, -0.07, -0.25], [1.1, 0.85, 0.85]);
+    for (const sx of [-1, 1]) { k.ball(head, B, 0.11, [sx * 0.24, 0.27, 0], [1, 1, 0.6]); k.ball(head, A, 0.06, [sx * 0.24, 0.27, -0.05], [1, 1, 0.4]); }
+    const f = face(k, head, { eyeY: 0.08, nose: N, noseR: 0.05, noseAt: [0, -0.03, -0.36], smileAt: [0, -0.14, -0.345], smileR: 0.065 });
+    const tail = k.node(k.inner, 0, 0.66, 0.6); k.ball(tail, A, 0.12, [0, 0, 0]);
+    return done(k, { body, head, ...f, tail, arm: arm(k, B, 0.38, 0.73, -0.2), legs: legs(k, B, QUAD(), 0.43, { footColor: A }) });
+  },
+  // 🐼 panda: fekete fül, szemfolt, lábak és mancs
+  panda() {
+    const k = kit(), W = 0xffffff, K = 0x2b2b3a;
+    const body = k.node(k.inner, 0, 0.58, 0); k.ball(body, W, 0.42, [0, 0, 0], [0.9, 0.8, 1.2]);
+    const head = k.node(k.inner, 0, 1.03, -0.5); k.ball(head, W, 0.3, [0, 0, 0]);
+    for (const sx of [-1, 1]) {
+      k.ball(head, K, 0.085, [sx * 0.12, 0.045, -0.24], [0.95, 1.25, 0.35], [0, 0, sx * 0.45]);
+      k.ball(head, K, 0.11, [sx * 0.24, 0.27, 0], [1, 1, 0.6]);
+    }
+    const f = face(k, head, { nose: K, smile: K });
+    const tail = k.node(k.inner, 0, 0.66, 0.6); k.ball(tail, W, 0.12, [0, 0, 0]);
+    return done(k, { body, head, ...f, tail, arm: arm(k, K, 0.38, 0.73, -0.2), legs: legs(k, K, QUAD(), 0.43) });
+  },
+
+  // 🦆 kacsa: fehér, narancs csőr és úszóhártyás láb, csapkodó szárny
+  duck() {
+    const k = kit(0.85), W = 0xffffff, O = 0xffa726, G = 0xe9ecf4;
+    const body = k.node(k.inner, 0, 0.42, 0); k.ball(body, W, 0.36, [0, 0, 0], [1, 0.8, 1.3]);
+    k.ball(k.inner, W, 0.15, [0, 0.72, -0.27], [1, 1.5, 1]);
+    const head = k.node(k.inner, 0, 0.95, -0.3); k.ball(head, W, 0.24, [0, 0, 0]);
+    k.ball(head, O, 0.12, [0, -0.06, -0.25], [1.15, 0.38, 1.35]);
+    const f = face(k, head, { r: 0.24, eyeX: 0.1, eyeY: 0.07, eyeR: 0.042, cheekX: 0.15, cheekY: -0.03, nose: null, smile: null, smileAt: [0, -0.11, -0.3], smileR: 0.05 });
+    const tail = k.node(k.inner, 0, 0.55, 0.42); k.cone(tail, W, 0.13, 0.28, [0, 0.06, 0.08], [1.1, 0, 0]);
+    return done(k, { body, head, ...f, tail, wings: wings(k, G, 0.33, 0.52, 0.02), legs: legs(k, O, [[-0.12, 0.02], [0.12, 0.02]], 0.2, { r: 0.035, foot: 'bird' }) });
+  },
+  // 🐸 béka: széles száj, a fején ülő nagy szemek, ugrálva halad
+  frog() {
+    const k = kit(0.9), G = 0x7ccf5a, L = 0xd8f5b0, D = 0x5aa83a;
+    const body = k.node(k.inner, 0, 0.3, 0);
+    k.ball(body, G, 0.38, [0, 0, 0.05], [1.1, 0.72, 1.0]); k.ball(body, L, 0.27, [0, -0.06, -0.2], [1, 0.75, 0.55]);
+    for (const sx of [-1, 1]) {
+      k.ball(body, G, 0.15, [sx * 0.33, -0.15, 0.15], [0.75, 0.6, 1.3]); k.ball(body, D, 0.09, [sx * 0.38, -0.27, -0.02], [1.2, 0.3, 1.5]);
+      k.cyl(body, G, 0.045, 0.2, [sx * 0.2, -0.18, -0.26]); k.ball(body, D, 0.06, [sx * 0.21, -0.28, -0.3], [1.3, 0.35, 1.2]);
+    }
+    const head = k.node(k.inner, 0, 0.46, -0.12);
+    k.ball(head, G, 0.3, [0, 0, -0.05], [1.15, 0.7, 0.95]);
+    for (const sx of [-1, 1]) { k.ball(head, G, 0.105, [sx * 0.15, 0.19, -0.07]); k.ball(head, D, 0.016, [sx * 0.05, 0.06, -0.318]); }
+    const f = face(k, head, { eyeAt: [0.15, 0.2, -0.13], eyeR: 0.09, iris: WHITE, cheekAt: [0.22, -0.02, -0.255], nose: null, smileAt: [0, -0.06, -0.33], smileR: 0.16 });
+    return done(k, { body, head, ...f, hopper: true });
+  },
+  // 🦔 sün: tüskés hát, krémszínű arc, hegyes orr
+  hedgehog() {
+    const k = kit(1), S = 0x8a5a3a, T = 0x5e3d26, C = 0xf2d8b0;
+    const body = k.node(k.inner, 0, 0.36, 0); k.ball(body, S, 0.42, [0, 0, 0.04], [1, 0.78, 1.1]);
+    const up = new THREE.Vector3(0, 1, 0), R = [0.42, 0.33, 0.46];
+    for (let i = 0, n = 0; i < 90 && n < 26; i++) {                       // tüskék a hát felszínén, kifelé állva
+      const y = 1 - (i + 0.5) / 45, rad = Math.sqrt(Math.max(0, 1 - y * y)), a = i * 2.39996;
+      const d = new THREE.Vector3(Math.cos(a) * rad, y, Math.sin(a) * rad);
+      if (d.y < 0.05 || d.z < -0.3) continue;
+      n++;
+      k.cone(body, n % 2 ? S : T, 0.055, 0.24, [d.x * R[0], d.y * R[1], 0.04 + d.z * R[2]], new THREE.Quaternion().setFromUnitVectors(up, d));
+    }
+    const head = k.node(k.inner, 0, 0.32, -0.27);
+    k.ball(head, C, 0.3, [0, 0, 0], [0.95, 0.85, 0.75]);
+    k.cone(head, C, 0.1, 0.24, [0, -0.04, -0.27], [-Math.PI / 2, 0, 0]);
+    for (const sx of [-1, 1]) k.ball(head, T, 0.05, [sx * 0.15, 0.19, -0.02], [1, 1, 0.5]);
+    const f = face(k, head, { eyeAt: [0.11, 0.07, -0.19], eyeR: 0.045, cheekAt: [0.17, -0.06, -0.165], nose: INK, noseAt: [0, -0.04, -0.395], smileAt: [0, -0.14, -0.195], smileR: 0.05 });
+    return done(k, { body, head, ...f, legs: legs(k, T, QUAD(0.17, 0.2), 0.13, { r: 0.05, foot: 'stub' }) });
+  },
+  // 🐔 tyúk: piros taréj és lebeny, sárga csőr, legyezős farok
+  hen() {
+    const k = kit(0.85), B = 0xd2894e, D = 0xa8622f, R = 0xf2545b, Y = 0xffc93c;
+    const body = k.node(k.inner, 0, 0.45, 0); k.ball(body, B, 0.36, [0, 0, 0], [1, 0.88, 1.2]);
+    k.ball(k.inner, B, 0.15, [0, 0.74, -0.22], [1, 1.35, 1]);
+    const tail = k.node(k.inner, 0, 0.62, 0.36);
+    for (const [rx, rz] of [[0.55, -0.45], [0.35, 0], [0.55, 0.45]]) k.cone(tail, D, 0.07, 0.34, [-rz * 0.25, 0.12, 0.08], [rx, 0, rz]);
+    const head = k.node(k.inner, 0, 0.98, -0.26); k.ball(head, B, 0.21, [0, 0, 0]);
+    k.ball(head, R, 0.065, [0, 0.2, -0.07]); k.ball(head, R, 0.075, [0, 0.235, 0.01]); k.ball(head, R, 0.06, [0, 0.2, 0.09]);
+    k.ball(head, R, 0.05, [0, -0.15, -0.16], [0.8, 1.3, 0.8]);
+    k.cone(head, Y, 0.05, 0.13, [0, -0.03, -0.25], [-Math.PI / 2, 0, 0]);
+    const f = face(k, head, { r: 0.21, eyeX: 0.09, eyeY: 0.06, eyeR: 0.04, cheekX: 0.14, cheekY: -0.05, nose: null, smile: null, smileAt: [0, -0.09, -0.21], smileR: 0.045 });
+    return done(k, { body, head, ...f, tail, tailWag: 0.4, wings: wings(k, D, 0.33, 0.55, 0.02, 0.2, [0.32, 0.65, 1.05]), legs: legs(k, Y, [[-0.11, 0.02], [0.11, 0.02]], 0.22, { r: 0.03, foot: 'bird' }) });
+  },
+  // 🐿️ mókus: bojtos fül, krémszínű pocak, nagy, felkunkorodó farok
+  squirrel() {
+    const k = kit(0.72), R = 0xd9773a, C = 0xffe7c4, D = 0xa04a1a;
+    const body = k.node(k.inner, 0, 0.6, 0); k.ball(body, R, 0.38, [0, 0, 0], [0.9, 1, 1.05]); k.ball(body, C, 0.24, [0, -0.04, -0.3], [1, 1.2, 0.5]);
+    const head = k.node(k.inner, 0, 1.1, -0.32); k.ball(head, R, 0.3, [0, 0, 0]);
+    k.ball(head, C, 0.11, [0, -0.08, -0.24], [1.15, 0.85, 0.9]);
+    for (const sx of [-1, 1]) { k.cone(head, R, 0.075, 0.2, [sx * 0.16, 0.3, 0.02], [0, 0, -sx * 0.15], true); k.cone(head, D, 0.03, 0.14, [sx * 0.175, 0.44, 0.02], [0, 0, -sx * 0.15]); }
+    const f = face(k, head, { eyeY: 0.07, nose: INK, noseR: 0.035, noseAt: [0, -0.045, -0.345], smileAt: [0, -0.14, -0.33], smileR: 0.055 });
+    const tail = k.node(k.inner, 0, 0.42, 0.4);
+    k.ball(tail, R, 0.2, [0.04, 0.12, 0.14]); k.ball(tail, R, 0.23, [0.12, 0.43, 0.3]); k.ball(tail, R, 0.21, [0.17, 0.73, 0.32]); k.ball(tail, D, 0.15, [0.14, 0.96, 0.22]);
+    return done(k, { body, head, ...f, tail, tailWag: 0.35, arm: arm(k, R, 0.34, 0.72, -0.18), legs: legs(k, R, QUAD(0.16, 0.26), 0.42, { footColor: D }) });
+  },
+  // 🦉 bagoly: nagy borostyán szemek arckorongban, fülpamacs, csőr, pöttyös pocak (nappal szundikál)
+  owl() {
+    const k = kit(0.8), B = 0xa0764e, D = 0x7a5536, C = 0xf5e3c3, L = 0xe8cfa8, A = 0xffb300;
+    const body = k.node(k.inner, 0, 0.55, 0); k.ball(body, B, 0.4, [0, 0, 0], [1, 1.12, 0.95]); k.ball(body, L, 0.3, [0, -0.06, -0.24], [1, 1.15, 0.5]);
+    for (const [x, y] of [[-0.1, 0.06], [0.1, 0.06], [0, -0.06], [-0.13, -0.18], [0.13, -0.18], [0, -0.28]]) k.ball(body, D, 0.03, [x, y - 0.04, -0.375], [1.2, 0.7, 0.5]);
+    const head = k.node(k.inner, 0, 1.08, -0.04); k.ball(head, B, 0.33, [0, 0, 0], [1.05, 0.9, 0.95]);
+    for (const sx of [-1, 1]) { k.ball(head, C, 0.15, [sx * 0.115, 0.01, -0.27], [1, 1, 0.38]); k.cone(head, D, 0.06, 0.18, [sx * 0.22, 0.27, 0], [0, 0, -sx * 0.35], true); }
+    k.cone(head, 0xf0a030, 0.04, 0.11, [0, -0.08, -0.33], [-Math.PI / 2 - 0.5, 0, 0]);
+    const f = face(k, head, { eyeAt: [0.115, 0.02, -0.325], eyeR: 0.085, iris: A, cheekAt: [0.23, -0.1, -0.24], nose: null, smile: null, smileAt: [0, -0.15, -0.3], smileR: 0.05 });
+    for (const sx of [-1, 1]) k.ball(k.inner, A, 0.06, [sx * 0.12, 0.03, -0.18], [1.2, 0.5, 1.4]);
+    return done(k, { body, head, ...f, wings: wings(k, D, 0.39, 0.74, 0.02, 0.22, [0.33, 0.9, 0.9]) });
+  },
+  // 🐭 egér: nagy kerek fül, bajusz, vékony rózsaszín farok
+  mouse() {
+    const k = kit(0.48), G = 0xbcb4cc, P = 0xffb3d6;
+    const body = k.node(k.inner, 0, 0.55, 0); k.ball(body, G, 0.4, [0, 0, 0], [0.9, 0.8, 1.15]);
+    const head = k.node(k.inner, 0, 1.0, -0.45); k.ball(head, G, 0.32, [0, 0, 0]);
+    k.ball(head, G, 0.13, [0, -0.07, -0.25], [0.9, 0.8, 1.15]);
+    for (const sx of [-1, 1]) {
+      k.ball(head, G, 0.17, [sx * 0.23, 0.3, 0.02], [1, 1, 0.3]); k.ball(head, P, 0.115, [sx * 0.23, 0.3, -0.03], [1, 1, 0.3]);
+      for (const dy of [-0.02, 0.03]) k.cyl(head, 0x8a80a0, 0.012, 0.3, [sx * 0.15, -0.06 + dy, -0.33], [0, 0, sx * (Math.PI / 2 - 0.12 + dy * 4)]);
+    }
+    const f = face(k, head, { r: 0.32, eyeX: 0.12, eyeY: 0.08, eyeR: 0.055, nose: P, noseR: 0.05, noseAt: [0, -0.05, -0.41], smileAt: [0, -0.15, -0.355], smileR: 0.06 });
+    const tail = k.node(k.inner, 0, 0.5, 0.45);
+    k.cyl(tail, P, 0.03, 0.5, [0, 0.12, 0.22], [1.15, 0, 0]); k.cyl(tail, P, 0.026, 0.34, [0, 0.42, 0.44], [0.35, 0, 0]);
+    return done(k, { body, head, ...f, tail, arm: arm(k, G, 0.36, 0.7, -0.2), legs: legs(k, G, QUAD(), 0.42, { footColor: P }) });
+  },
+  // 🦄 a saját unikornis (a ló-alakból): fehér, rózsaszín–lila sörény, arany szarv
+  unicorn() { const k = kit(1); return done(k, horse(k, { body: 0xffffff, mane: 0xff5d8f, maneAlt: 0x8e5be8, hoof: 0x8e5be8, horn: 0xffd24d })); },
+  // 🐷 malac: ormány, lekonyuló fül, kunkori farok
+  pig() {
+    const k = kit(0.85), P = 0xffb6c9, D = 0xff8fb0, H = 0x9a5a6a;
+    const body = k.node(k.inner, 0, 0.56, 0); k.ball(body, P, 0.46, [0, 0, 0], [1, 0.85, 1.15]);
+    const head = k.node(k.inner, 0, 0.98, -0.52); k.ball(head, P, 0.31, [0, 0, 0]);
+    k.cyl(head, D, 0.12, 0.12, [0, -0.06, -0.3], [Math.PI / 2, 0, 0]);
+    for (const sx of [-1, 1]) { k.ball(head, 0x8a4a5a, 0.025, [sx * 0.045, -0.06, -0.362], [1, 1.3, 0.5]); k.cone(head, D, 0.1, 0.2, [sx * 0.19, 0.26, -0.04], [-0.6, 0, -sx * 0.5], true); }
+    const f = face(k, head, { r: 0.31, eyeX: 0.13, eyeY: 0.1, cheek: D, cheekX: 0.21, cheekY: -0.08, nose: null, smileAt: [0, -0.2, -0.24], smileR: 0.07 });
+    const tail = k.node(k.inner, 0, 0.62, 0.55); k.ring(tail, D, 0.07, [0, 0, 0.02], [0, Math.PI / 2, 0]);
+    return done(k, { body, head, ...f, tail, legs: legs(k, P, QUAD(0.2, 0.3), 0.38, { r: 0.075, foot: 'hoof', footColor: H }) });
+  },
+  // 🐑 bárány: gyapjúpamacsok, sötét arc, oldalra álló fül
+  sheep() {
+    const k = kit(0.95), W = 0xfbf8f2, F = 0x4a4060, Hf = 0x2b2440;
+    const body = k.node(k.inner, 0, 0.66, 0); k.ball(body, W, 0.4, [0, 0, 0], [1, 0.85, 1.2]);
+    for (const p of [[0, 0.3, -0.1], [0.25, 0.22, -0.25], [-0.25, 0.22, -0.25], [0.3, 0.2, 0.1], [-0.3, 0.2, 0.1], [0, 0.3, 0.3], [0.2, 0.25, 0.35], [-0.2, 0.25, 0.35],
+      [0.34, -0.05, -0.1], [-0.34, -0.05, -0.1], [0.32, -0.05, 0.25], [-0.32, -0.05, 0.25], [0, 0.05, 0.48], [0, 0.12, -0.4]]) k.ball(body, W, 0.17, p);
+    const head = k.node(k.inner, 0, 1.02, -0.5); k.ball(head, F, 0.24, [0, 0, 0], [0.9, 1, 1.05]);
+    k.ball(head, W, 0.11, [-0.08, 0.2, 0.02]); k.ball(head, W, 0.11, [0.08, 0.2, 0.02]); k.ball(head, W, 0.12, [0, 0.24, 0.08]);
+    for (const sx of [-1, 1]) k.ball(head, F, 0.08, [sx * 0.25, 0.05, 0.02], [1.8, 0.6, 0.6], [0, 0, -sx * 0.35]);
+    const f = face(k, head, { r: 0.25, eyeX: 0.09, eyeY: 0.05, eyeR: 0.05, iris: WHITE, cheek: 0xd99ab8, cheekX: 0.15, cheekY: -0.06, nose: 0xffb3c6, noseR: 0.03, smile: 0xffc0d0, smileR: 0.06, smileAt: [0, -0.12, -0.23] });
+    const tail = k.node(k.inner, 0, 0.72, 0.55); k.ball(tail, W, 0.12, [0, 0, 0]);
+    return done(k, { body, head, ...f, tail, legs: legs(k, F, QUAD(0.18, 0.3), 0.4, { r: 0.055, foot: 'hoof', footColor: Hf }) });
+  },
+  // 🐢 teknős: domború páncél világos lapokkal, kidugott fej, tömzsi lábak
+  turtle() {
+    const k = kit(0.9), S = 0x5aa05a, L = 0x8acb6a, K = 0xb8d98a;
+    const body = k.node(k.inner, 0, 0.3, 0);
+    k.ball(body, S, 0.42, [0, 0, 0], [1, 0.62, 1.15]); k.cyl(body, L, 0.44, 0.07, [0, -0.1, 0], [0, 0, 0], [1, 1.15]);
+    k.ball(body, L, 0.13, [0, 0.24, 0], [1, 0.3, 1]);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) k.ball(body, L, 0.1, [sx * 0.2, 0.19, sz * 0.2], [1, 0.32, 1]);
+    const head = k.node(k.inner, 0, 0.28, -0.52); k.ball(head, K, 0.16, [0, 0, 0], [1, 0.9, 1.1]);
+    const f = face(k, head, { r: 0.175, eyeX: 0.07, eyeY: 0.05, eyeR: 0.032, cheekX: 0.1, cheekY: -0.03, nose: null, smileAt: [0, -0.05, -0.17], smileR: 0.045 });
+    const tail = k.node(k.inner, 0, 0.2, 0.48); k.cone(tail, K, 0.05, 0.14, [0, 0, 0.04], [Math.PI / 2, 0, 0]);
+    return done(k, { body, head, ...f, tail, legs: legs(k, K, QUAD(0.27, 0.27), 0.16, { r: 0.065, foot: 'stub' }) });
+  },
+  // 🐴 póni (a ló-alakból): gesztenyebarna, sötét sörény
+  pony() { const k = kit(0.85); return done(k, horse(k, { body: 0xd6a06b, mane: 0x7a4a2a, hoof: 0x5a3a24 })); },
+  // 🐮 tehén: fekete foltok, rózsaszín orr, kis szarv, bojtos farok
+  cow() {
+    const k = kit(1), W = 0xffffff, K = 0x2b2b3a, M = 0xffc2cf, H = 0xfff1c9;
+    const body = k.node(k.inner, 0, 0.82, 0); k.ball(body, W, 0.5, [0, 0, 0], [1, 0.85, 1.25]);
+    k.ball(body, K, 0.16, [0.45, 0.08, 0.1], [0.35, 1, 1.3]); k.ball(body, K, 0.13, [-0.45, -0.02, -0.15], [0.35, 1, 1.2]);
+    k.ball(body, K, 0.14, [0.1, 0.41, 0.25], [1.2, 0.35, 1]); k.ball(body, K, 0.1, [-0.4, 0.1, 0.35], [0.35, 1, 1]);
+    const head = k.node(k.inner, 0, 1.32, -0.62); k.ball(head, W, 0.3, [0, 0, 0], [1, 1, 1.05]);
+    k.ball(head, K, 0.1, [0.13, 0.1, -0.23], [1, 1, 0.35]);
+    k.ball(head, M, 0.17, [0, -0.12, -0.25], [1.2, 0.8, 0.8]);
+    for (const sx of [-1, 1]) {
+      k.ball(head, 0x8a4a5a, 0.025, [sx * 0.06, -0.1, -0.383], [1, 1.2, 0.5]);
+      k.cone(head, H, 0.045, 0.17, [sx * 0.17, 0.29, -0.02], [0, 0, -sx * 0.7]);
+      k.ball(head, W, 0.08, [sx * 0.32, 0.1, 0], [1.8, 0.6, 0.6], [0, 0, -sx * 0.2]); k.ball(head, M, 0.05, [sx * 0.33, 0.1, -0.03], [1.6, 0.5, 0.3], [0, 0, -sx * 0.2]);
+    }
+    const f = face(k, head, { eyeX: 0.13, eyeY: 0.1, cheekAt: [0.24, 0, -0.18], nose: null, smileAt: [0, -0.2, -0.37], smileR: 0.07 });
+    const tail = k.node(k.inner, 0, 0.95, 0.62);
+    k.cyl(tail, W, 0.025, 0.5, [0, -0.2, 0.06], [0.3, 0, 0]); k.ball(tail, K, 0.06, [0, -0.45, 0.13], [1, 1.4, 1]);
+    return done(k, { body, head, ...f, tail, tailWag: 0.5, legs: legs(k, W, QUAD(0.24, 0.38), 0.6, { r: 0.08, foot: 'hoof', footColor: K }) });
+  },
+};
+
+// Ló-alak (póni, unikornis): hosszú nyak, sörény, lófarok, pata; az unikornisnak szarva is van
+function horse(k, { body, mane, maneAlt = mane, hoof, horn = null }) {
+  const bodyN = k.node(k.inner, 0, 0.95, 0); k.ball(bodyN, body, 0.5, [0, 0, 0], [0.75, 0.65, 1.25]);
+  k.ball(k.inner, body, 0.28, [0, 1.3, -0.62], [0.8, 1.3, 0.9], [-0.5, 0, 0]);
+  const head = k.node(k.inner, 0, 1.55, -0.85);
+  k.ball(head, body, 0.27, [0, 0, 0], [0.9, 0.9, 1.15]); k.ball(head, body, 0.16, [0, -0.06, -0.26], [1, 0.9, 1.1]);
+  k.ball(head, 0xff8fc8, 0.04, [0, -0.03, -0.43]);
+  for (const sx of [-1, 1]) k.cone(head, body, 0.07, 0.2, [sx * 0.14, 0.3, 0.02], [0, 0, -sx * 0.25]);
+  k.ball(head, mane, 0.1, [0, 0.25, -0.12], [1, 0.8, 1]);
+  if (horn) k.cone(head, horn, 0.06, 0.38, [0, 0.46, -0.1], [-0.25, 0, 0]);
+  for (let i = 0; i < 5; i++) k.ball(k.inner, i % 2 ? maneAlt : mane, 0.12, [0, 1.78 - i * 0.14, -0.62 + i * 0.16], [0.8, 1, 0.9]);
+  const f = face(k, head, { r: 0.29, eyeX: 0.14, eyeY: 0.07, eyeR: 0.05, cheekX: 0.18, cheekY: -0.06, nose: null, smileAt: [0, -0.15, -0.4], smileR: 0.06 });
+  const tail = k.node(k.inner, 0, 1.0, 0.62);
+  for (let i = 0; i < 4; i++) k.ball(tail, i % 2 ? maneAlt : mane, 0.13 - i * 0.015, [0, -i * 0.13, 0.08 + i * 0.1]);
+  return { body: bodyN, head, ...f, tail, tailWag: 0.6, legs: legs(k, body, QUAD(0.2, 0.38), 0.78, { r: 0.07, foot: 'hoof', footColor: hoof }) };   // a csípő a testben van: nincs rés
+}
+
+export const CHARACTER_KINDS = Object.keys(SP);
+
+// Új barát a kertbe. Ismeretlen fajnál nyuszi (a kert ne álljon le egy elírás miatt).
+export function makeCharacter(kind) {
+  return (SP[kind] || SP.bunny)();
+}
+
+// Mozgás: séta (a lábak felváltva lépnek), ugrálva haladó barát (béka), farokcsóválás, integetés vagy szárnycsapkodás.
+export function animateCharacter(g, t, speed, waving) {
+  const u = g.userData, s = speed > 0.02 ? 1 : 0, f = 4 + speed * 9, amp = 0.2 + speed * 0.6;
+  u.legs.forEach((l, i) => { const ph = (u.legs.length === 2 ? i : (i === 0 || i === 3 ? 0 : 1)) * Math.PI; l.rotation.x = Math.sin(t * f + ph) * amp * s; });
+  u.inner.position.y = u.hopper ? Math.abs(Math.sin(t * f * 0.5)) * 0.22 * s : Math.abs(Math.sin(t * f)) * 0.07 * s;
+  if (u.tail) u.tail.rotation.y = Math.sin(t * 6) * 0.4 * u.tailWag;
+  if (u.arm) { u.arm.rotation.z = waving ? -0.6 + Math.sin(t * 9) * 0.45 : Math.PI + 0.3; u.arm.position.y = u.armY + (waving ? 0.1 : 0); }   // nyugalomban lóg, köszönéskor felemeli és integet
+  if (u.wings) { const a = waving ? 0.55 + Math.sin(t * 16) * 0.45 : 0.04 + Math.sin(t * 1.7) * 0.03; u.wings[0].rotation.z = a; u.wings[1].rotation.z = -a; }
+}
+
+// A barát mérete (a csontok mostani állásában): magasság és szélesség – tesztekhez és a kamera beállításához
+const BOX = [[1, 1, 1], [1, 1, 1], [1, 0.5, 1], [1, 0.5, 1], [1, 0.5, 1], [1.17, 1.17, 0.17], [1.3, 1.3, 0.3]];
+export function measureCharacter(g) {
+  g.updateMatrixWorld(true);
+  const lo = new THREE.Vector3(Infinity, Infinity, Infinity), hi = new THREE.Vector3(-Infinity, -Infinity, -Infinity), m = new THREE.Matrix4(), v = new THREE.Vector3();
+  const inv = new THREE.Matrix4().copy(g.matrixWorld).invert();
+  for (const p of g.userData.parts) {
+    if (!p.node.visible) continue;
+    m.multiplyMatrices(inv, p.node.matrixWorld).multiply(p.m);
+    const [bx, by, bz] = BOX[p.prim];
+    for (let c = 0; c < 8; c++) { v.set(c & 1 ? bx : -bx, c & 2 ? by : -by, c & 4 ? bz : -bz).applyMatrix4(m); lo.min(v); hi.max(v); }
+  }
+  return { height: hi.y, bottom: lo.y, width: hi.x - lo.x, depth: hi.z - lo.z };
+}
+
+// Példányosított rajzolás: alapformánként egy háló, a barátok alkatrészei a hálók egy-egy példányai.
+// update(): minden képkockában a csontok világ-mátrixából számolja az alkatrészek helyét (a rejtett csont alkatrésze eltűnik).
+export function createCharacterBatch(scene) {
+  const geos = unitGeometries(), mat = new THREE.MeshLambertMaterial({ color: 0xffffff }), white = new THREE.Color(0xffffff);
+  const make = (geo, cap) => {
+    const m = new THREE.InstancedMesh(geo, mat, cap);
+    m.count = 0; m.frustumCulled = false; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.setColorAt(0, white);
+    scene.add(m); return m;
+  };
+  const meshes = geos.map(g => make(g, 32));
+  function ensure(i, need) {
+    const old = meshes[i]; let cap = old.instanceMatrix.count; if (need <= cap) return;
+    while (cap < need) cap *= 2;
+    const m = make(old.geometry, cap); m.count = old.count;
+    m.instanceMatrix.array.set(old.instanceMatrix.array); m.instanceColor.array.set(old.instanceColor.array);
+    scene.remove(old); old.dispose(); meshes[i] = m;
+  }
+  const chars = [];
+  function add(g) {
+    const parts = g.userData.parts, need = meshes.map(() => 0);
+    for (const p of parts) need[p.prim]++;
+    need.forEach((n, i) => { if (n) ensure(i, meshes[i].count + n); });
+    for (const p of parts) { const m = meshes[p.prim]; p.slot = m.count++; m.setColorAt(p.slot, p.color); }
+    meshes.forEach(m => { m.instanceColor.needsUpdate = true; });
+    chars.push(g);
+  }
+  const M = new THREE.Matrix4(), ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
+  const shown = (n, root) => { for (let o = n; o; o = o.parent) { if (!o.visible) return false; if (o === root) return true; } return true; };
+  function update() {
+    for (const g of chars) {
+      g.updateMatrixWorld(true);
+      for (const p of g.userData.parts) meshes[p.prim].setMatrixAt(p.slot, g.visible && shown(p.node, g) ? M.multiplyMatrices(p.node.matrixWorld, p.m) : ZERO);
+    }
+    for (const m of meshes) m.instanceMatrix.needsUpdate = true;
+  }
+  return { add, update, get meshes() { return meshes; } };
+}

@@ -3,8 +3,8 @@
 // Etetésnél az éhes barát az etetőhelyre sétál, a kamera ráközelít, és őt magát etetjük (js/activities/feed.js).
 import * as THREE from '../vendor/three.module.js';
 import { makeGardenCat, animateCat } from './rewards/cat3d.js';
-import { makeFriend, animateFriend } from './rewards/creatures.js';
-import { friendById, friendsFor, flowerSpot, MAX_FLOWERS, FEED_SPOT, FEED_GATE, PLACES } from './friends.js';
+import { makeCharacter, animateCharacter, createCharacterBatch } from './three/characters.js';
+import { friendById, friendsFor, flowerSpot, MAX_FLOWERS, FEED_SPOT, FEED_GATE, PLACES, AREAS } from './friends.js';
 import { animalVoice } from './sounds.js';
 import { merge } from './geo.js';
 import { buildPlaces } from './places3d.js';
@@ -29,8 +29,8 @@ export function createGarden(canvas) {
   scene.add(new THREE.HemisphereLight(0xffffff, 0xcfe8b8, 1.5));
   const sun = new THREE.DirectionalLight(0xfff2d0, 1.6); sun.position.set(4, 8, 5); scene.add(sun);
 
-  const ground = new THREE.Mesh(new THREE.CylinderGeometry(14, 14, 0.6, 48), new THREE.MeshLambertMaterial({ color: 0xa8e6a0 }));
-  ground.position.y = -0.3; scene.add(ground);
+  const ground = new THREE.Mesh(new THREE.CylinderGeometry(14, 14, 0.6, 64), new THREE.MeshLambertMaterial({ color: 0xa8e6a0 }));
+  ground.position.y = -0.3; ground.scale.x = 1.9; scene.add(ground);           // széles rét: balra a tópart, jobbra a tanya
 
   // Az állomások helyei (ceruzatorony, házikó, harangos pavilon…) és a háttér fái: egyetlen háló, egyetlen rajzolási hívás
   let placesMesh = null;
@@ -116,18 +116,23 @@ export function createGarden(canvas) {
     }
   }
 
-  // --- a kert lakói ---
-  const actors = new Map();
+  // --- a kert lakói: a cica saját modell, a többi barát alkatrészei közös, példányosított hálókban (pár rajzolási hívás) ---
+  const actors = new Map(), crowd = createCharacterBatch(scene);
   function spawn(id, enter) {
     if (actors.has(id)) return actors.get(id);
     const def = friendById(id); if (!def) return null;
-    const isCat = id === 'cat', g = isCat ? makeGardenCat() : makeFriend(id), size = isCat ? 1 : SCALE;
+    const isCat = id === 'cat', g = isCat ? makeGardenCat() : makeCharacter(id), size = isCat ? 1 : SCALE;
     g.scale.setScalar(size);
+    if (!isCat) crowd.add(g);
     const u = g.userData, now = performance.now();
     const a = { id, def, g, isCat, size, face0: isCat ? 0 : Math.PI, x: def.home[0], z: def.home[1], heading: isCat ? 0 : Math.PI, want: isCat ? 0 : Math.PI,
       state: 'idle', move: null, until: now + rnd(1500, 5000), seed: rnd(0, 9), last: now, hop: 0, chew: 0, nod: 0, turn: 0, turnSide: 1, wave: 0,
-      blink: now + rnd(800, 4000), blinkEnd: 0, belly: 0, bodyBase: u.body.scale.clone() };
-    if (enter) { a.x = def.home[0] < 0 ? -10 : 10; a.z = 1.6; a.greet = true; walk(a, def.home[0], def.home[1], 2600, 'idle', true); }   // érkezés: besétál, aztán köszön
+      blink: now + rnd(800, 4000), blinkEnd: 0, belly: 0, bodyBase: u.body.scale.clone(), awake: 0 };
+    if (enter) {                                                                  // érkezés: kívülről besétál, aztán köszön
+      if (def.area) { a.x = def.home[0] + (def.home[0] < 0 ? -8 : 8); a.z = def.home[1] + 0.8; }
+      else { a.x = def.home[0] < 0 ? -10 : 10; a.z = 1.6; }
+      a.greet = true; walk(a, def.home[0], def.home[1], 2600, 'idle', true);
+    }
     a.heading = a.want;
     scene.add(g); actors.set(id, a);
     return a;
@@ -149,13 +154,17 @@ export function createGarden(canvas) {
       const p0 = m.pts[i - 1], p1 = m.pts[i], u = clamp01((d - m.lens[i - 1]) / ((m.lens[i] - m.lens[i - 1]) || 1));
       a.x = p0[0] + (p1[0] - p0[0]) * u; a.z = p0[1] + (p1[1] - p0[1]) * u; speed = m.run ? 0.85 : 0.25;
       if (!a.isCat && (p1[0] !== p0[0] || p1[1] !== p0[1])) a.want = a.face0 + Math.atan2(p1[0] - p0[0], p1[1] - p0[1]);
-      if (k >= 1) { a.move = null; a.state = m.then; a.until = now + rnd(2500, 6500); speed = 0; if (a.greet) { a.greet = false; poke(a); } }   // megérkezett: ugrik, megszólal, szívek
+      if (k >= 1) {                                                               // megérkezett: ugrik, megszólal, szívek
+        a.move = null; a.until = now + rnd(2500, 6500); speed = 0;
+        if (typeof m.then === 'function') { a.state = 'idle'; m.then(a); } else a.state = m.then;
+        if (a.greet) { a.greet = false; poke(a); }
+      }
     }
     if (!a.move) {
       if (a.state === 'feeding') a.want = a.face0 + Math.atan2(camera.position.x - a.x, camera.position.z - a.z);
       else {
         a.want = a.face0;
-        if (!a.isCat && now > a.until) {                                         // kis séta a saját zugában
+        if (!a.isCat && !a.def.still && now > a.until) {                         // kis séta a saját zugában (a bagoly a helyén szundikál)
           const ang = rnd(0, 6.28), r = rnd(0.15, 0.4), x = a.def.home[0] + Math.cos(ang) * r, z = a.def.home[1] + Math.sin(ang) * r;
           walk(a, x, z, Math.hypot(x - a.x, z - a.z) / 0.55 * 1000, 'idle', false);
           if (Math.random() < 0.3) a.wave = now + 1600;
@@ -170,7 +179,7 @@ export function createGarden(canvas) {
     a.g.position.set(a.x, hopK > 0 ? Math.abs(Math.sin(hopK * Math.PI * 2)) * 0.55 * a.size : skip, a.z);
     a.g.rotation.y = a.heading;
     if (a.isCat) animateCat(a.g, t, { cheer: hopK > 0 });
-    else animateFriend(a.g, t + a.seed, speed, a.wave > now || hopK > 0);
+    else animateCharacter(a.g, t + a.seed, speed, a.wave > now || hopK > 0);
 
     const u = a.g.userData, sign = a.isCat ? 1 : -1;                              // a cica +z, a többiek -z felé néznek
     const chewing = a.chew > now, nodK = a.nod > now ? 1 - (a.nod - now) / 800 : 0, turnK = a.turn > now ? 1 - (a.turn - now) / 1000 : 0;
@@ -178,7 +187,9 @@ export function createGarden(canvas) {
     u.head.rotation.y = turnK > 0 ? Math.sin(turnK * Math.PI) * 0.8 * a.turnSide : 0;   // udvariasan elfordítja a fejét
     u.mouth.visible = chewing; u.smile.visible = !chewing;
     if (chewing) u.mouth.scale.y = 0.35 + Math.abs(Math.sin(t * 9)) * 0.75;
-    const shut = now < a.blinkEnd; u.eyes.forEach(e => { e.scale.y = shut ? 0.12 : 1; });
+    // a bagoly nappal szundikál: csukott szemmel ül, koppintásra, érkezéskor és etetéskor felébred egy kicsit
+    const dozing = a.def.sleepy && now > a.awake && a.state !== 'feeding' && !a.move;
+    const shut = now < a.blinkEnd || dozing; u.eyes.forEach(e => { e.scale.y = shut ? 0.12 : 1; });
     if (now > a.blink) { a.blinkEnd = now + 130; a.blink = now + rnd(2200, 6000); }
     const b = a.belly, bb = a.bodyBase; u.body.scale.set(bb.x * (1 + 0.16 * b), bb.y * (1 + 0.07 * b), bb.z * (1 + 0.12 * b));
   }
@@ -189,6 +200,17 @@ export function createGarden(canvas) {
   const zoom = { from: 0, to: 0, t0: 0, dur: 1 };
   let feeding = null;
   const zoomAt = now => zoom.from + (zoom.to - zoom.from) * ease(clamp01((now - zoom.t0) / zoom.dur));
+  // vízszintes átsiklás a kert széleire (tópart, tanya): az óra szerint, így lassú képfrissítésnél is időre odaér
+  const pan = { from: 0, to: 0, t0: 0, dur: 1, area: null };
+  const panAt = now => pan.from + (pan.to - pan.from) * ease(clamp01((now - pan.t0) / pan.dur));
+  function goTo(areaId = null) {
+    const now = performance.now(), x = AREAS.find(r => r.id === areaId)?.x ?? 0, from = panAt(now);
+    pan.area = x ? areaId : null;
+    if (Math.abs(from - x) < 0.01 && Math.abs(pan.to - x) < 0.01) return 0;
+    pan.from = from; pan.to = x; pan.t0 = now; pan.dur = Math.max(500, Math.min(1500, Math.abs(x - from) * 75));
+    if (paused) draw(now);
+    return pan.dur;
+  }
   function computeHome() {
     const portrait = H > W, small = H < 640 && W > H;
     // álló képernyőn a kamera messzebbről és magasabbról néz, hogy minden barát elférjen egymás mellett
@@ -211,10 +233,12 @@ export function createGarden(canvas) {
     close.pos.set(feeding.x - xc, hA / 2 - yc * Math.cos(p) + d * Math.sin(p), feeding.z + yc * Math.sin(p) + d * Math.cos(p));
     close.quat.setFromEuler(new THREE.Euler(-p, 0, 0)); close.d = d;
   }
+  const homeAt = new THREE.Vector3();
   function applyCamera(now) {
     const k = zoomAt(now);
     if (k > 0) computeClose();
-    camera.position.lerpVectors(home.pos, close.pos, k); camera.quaternion.slerpQuaternions(home.quat, close.quat, k);
+    homeAt.copy(home.pos); homeAt.x += panAt(now);
+    camera.position.lerpVectors(homeAt, close.pos, k); camera.quaternion.slerpQuaternions(home.quat, close.quat, k);
     // etetésnél a háttér (a többi barát) elhalványul, hogy az éhes állat legyen a főszereplő
     scene.fog.near = fogHome[0] + (close.d + 0.6 - fogHome[0]) * k; scene.fog.far = fogHome[1] + (close.d + 9 - fogHome[1]) * k;
     camera.updateMatrixWorld();
@@ -233,6 +257,7 @@ export function createGarden(canvas) {
     const t = (now - t0) / 1000;
     applyCamera(now);
     actors.forEach(a => stepActor(a, now, t));
+    crowd.update();
     return t;
   }
   function draw(now) {
@@ -269,12 +294,12 @@ export function createGarden(canvas) {
     const depth = v3.set(a.x, hA / 2, a.z).sub(camera.position).dot(s3.set(0, 0, -1).applyQuaternion(camera.quaternion));
     const ppu = r.height / (2 * TAN * Math.max(0.5, depth));                       // képpont / egység ebben a mélységben
     const c = px(new THREE.Vector3(a.x, a.g.position.y + hA / 2, a.z)), mouth = px(a.g.userData.mouth.getWorldPosition(new THREE.Vector3()));
-    const hw = hA * 0.36 * ppu, hh = hA * 0.52 * ppu;
+    const hw = Math.max(28, hA * 0.36 * ppu), hh = Math.max(28, hA * 0.52 * ppu);   // a kicsiket (egér, teknős) is könnyű eltalálni: legalább 56 képpont
     return { left: c.x - hw, right: c.x + hw, top: c.y - hh, bottom: c.y + hh, cx: c.x, cy: c.y, mouth, visible: depth > 0.5 };
   }
 
   // koppintás a kertben: a barát ugrik egyet, megszólal a saját hangján, szívek szállnak
-  function poke(a) { const now = performance.now(); a.hop = now + 900; heartsAt(a, 2); animalVoice(a.id); }
+  function poke(a) { const now = performance.now(); a.hop = now + 900; a.awake = now + 4500; heartsAt(a, 2); animalVoice(a.id); }
   canvas.addEventListener('pointerdown', e => {
     if (paused || feeding) return;
     let hit = null, best = Infinity;
@@ -286,7 +311,10 @@ export function createGarden(canvas) {
     const first = flowerCount === 0, target = Math.min(total, MAX_FLOWERS);
     while (flowerCount < target) { addFlower(flowerCount, !first && flowerCount >= target - 1); flowerCount++; }
     const had = actors.size > 0;
-    for (const id of friendsFor(total, fed)) if (!actors.has(id)) spawn(id, had && animate);   // új barát: besétál az ösvényen
+    for (const id of friendsFor(total, fed)) {                                    // új barát: besétál az ösvényen
+      if (actors.has(id)) continue;
+      try { spawn(id, had && animate); } catch (e) { console.warn('Egy barát nem érkezett meg', id, e); }   // egy hibás modell ne állítsa le a kertet
+    }
   }
 
   // Etetés: az éhes barát az etetőhelyre megy, a kamera ráközelít. frame(): a képernyő-téglalap, ahová az állat kerüljön.
@@ -294,8 +322,10 @@ export function createGarden(canvas) {
     endFeed();
     const fresh = !actors.has(id), a = spawn(id, false); if (!a) return null;
     const now = performance.now(), sx = FEED_SPOT[0], sz = FEED_SPOT[1];
-    if (fresh) { a.x = 10; a.z = sz + 0.6; }                                              // új barát: oldalról sétál be
-    const via = fresh ? [] : [FEED_GATE];                                                 // a kertből a tereptárgyak közti résen át jön ki
+    goTo(null);                                                                           // a kamera a kert közepére siklik vissza
+    const far = fresh || !!a.def.area;
+    if (far) { a.x = 10; a.z = sz + 0.6; a.move = null; }                                 // új barát, vagy a tópartról / tanyáról jön: oldalról sétál be
+    const via = far ? [] : [FEED_GATE];                                                   // a kertből a tereptárgyak közti résen át jön ki
     const dur = Math.max(500, Math.min(2600, pathLen(a, sx, sz, via) / 3.6 * 1000));
     walk(a, sx, sz, dur, 'feeding', true, via);
     a.belly = 0;
@@ -316,8 +346,13 @@ export function createGarden(canvas) {
     feeding = { ...feeding, done: true };
     zoom.from = zoomAt(now); zoom.to = 0; zoom.t0 = now; zoom.dur = 900;
     a.chew = 0;
-    const via = a.z > FEED_GATE[1] + 0.3 ? [FEED_GATE] : [];                             // hazafelé is a résen át megy
-    walk(a, a.def.home[0], a.def.home[1], Math.max(600, pathLen(a, a.def.home[0], a.def.home[1], via) / 3.2 * 1000), 'idle', true, via);
+    if (a.def.area) {                                                                     // a tópartra / tanyára: kisétál oldalt, és otthon bukkan fel
+      const [hx, hz] = a.def.home;
+      walk(a, 10.5, FEED_SPOT[1] + 0.6, 1600, b => { b.x = hx; b.z = hz; b.heading = b.want = b.face0; }, true);
+    } else {
+      const via = a.z > FEED_GATE[1] + 0.3 ? [FEED_GATE] : [];                           // hazafelé is a résen át megy
+      walk(a, a.def.home[0], a.def.home[1], Math.max(600, pathLen(a, a.def.home[0], a.def.home[1], via) / 3.2 * 1000), 'idle', true, via);
+    }
     setTimeout(() => { if (feeding?.done && feeding.a === a) feeding = null; }, 950);
     setTimeout(() => { a.belly = 0; }, 6000);
   }
@@ -333,14 +368,21 @@ export function createGarden(canvas) {
     return out;
   }
 
+  // A kert szélső részei, ahol már lakik valaki: [{ id, x, friends: [azonosítók] }] – ehhez jelennek meg az átsikló gombok
+  function areas() {
+    return AREAS.map(r => ({ id: r.id, x: r.x, friends: [...actors.values()].filter(a => a.def.area === r.id).map(a => a.id) })).filter(r => r.friends.length);
+  }
+
   return {
-    setStars, beginFeed, endFeed, places, setDay,
+    setStars, beginFeed, endFeed, places, setDay, goTo, areas,
+    area: () => pan.area,
     cheer() { const now = performance.now(); let k = 0; actors.forEach(a => { a.hop = now + 900 + (k++ % 3) * 70; }); },   // új csillag: mindenki ugrik egyet
     pause(p) { paused = !!p; if (!paused && !raf) raf = requestAnimationFrame(loop); },
     // tesztekhez és hibakereséshez: rajzolási hívások, lakók, virágok, a barátok helye a képernyőn
     debug() {
       draw(performance.now());
-      return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, flowers: flowerCount, friends: [...actors.keys()], zoom: zoomAt(performance.now()), feeding: feeding && !feeding.done ? feeding.a.id : null,
+      return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, flowers: flowerCount, friends: [...actors.keys()], zoom: zoomAt(performance.now()), pan: panAt(performance.now()), feeding: feeding && !feeding.done ? feeding.a.id : null,
+        awake: Object.fromEntries([...actors.values()].filter(a => a.def.sleepy).map(a => [a.id, a.g.userData.eyes[0].scale.y > 0.5])),
         screen: Object.fromEntries([...actors.values()].map(a => [a.id, screenOf(a)])) };
     },
   };

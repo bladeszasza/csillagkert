@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CURRICULUM, STATIONS, stationOf, idOf, BASE_ITEMS, FEED_ITEMS } from '../js/curriculum.js';
 import { art, withArt, artLetter, ACC_NUM, numAttr, fromNum } from '../js/hu.js';
-import { FRIENDS, FOODS, MEALS, ANY, friendById, friendsFor, flowerSpot, MAX_FLOWERS, FEED_SPOT, FEED_GATE, PLACES } from '../js/friends.js';
+import { FRIENDS, FOODS, MEALS, ANY, friendById, friendsFor, flowerSpot, MAX_FLOWERS, FEED_SPOT, FEED_GATE, PLACES, AREAS } from '../js/friends.js';
 import { progress } from '../js/progress.js';
 
 const flat = CURRICULUM.flatMap(i => (i.type === 'seq' ? [i, ...i.steps] : [i]));
@@ -89,7 +89,9 @@ test('etetés: csak a kert 3D lakóit etetjük, a jó étel igaz, a rossz étel 
   for (const w of new Set(quiz.flatMap(m => m.slice(2)))) assert.ok(goods.has(w), `soha nem helyes étel: ${w}`);
   // a feladatsorban az etetésnek saját kulcsa van (állat + jó étel, a mindenevőnél "mind"), és minden barátot lehet etetni
   assert.deepEqual(FEED_ITEMS.map(idOf), MEALS.map(m => `feed-${m[0]}-${m[1] === ANY ? 'mind' : m[1]}`));
-  for (const f of FRIENDS) assert.ok(MEALS.some(m => m[0] === f.id), `nincs etetős feladata: ${f.name}`);
+  // akinek az étrendjét forrással rögzítettük (eats nem üres), annak van etetős feladata; akinek nem, azt nem etetjük (nincs kitalált tény)
+  for (const f of FRIENDS) assert.equal(MEALS.some(m => m[0] === f.id), f.eats.length > 0, `etetés és étrend nem egyezik: ${f.name}`);
+  for (const id of ['duck', 'hedgehog', 'hen']) assert.ok(MEALS.some(m => m[0] === id && m[1] === ANY), `mindenevő sor hiányzik: ${id}`);
   // a maci mindenevő: nála nincs rossz válasz (a szülő döntése), a kvíz-sorokban ezért nem szerepel
   assert.deepEqual(MEALS.filter(m => m[0] === 'bear').map(m => m[1]), [ANY]);
   const bear = FEED_ITEMS.find(i => i.kind === 'bear');
@@ -100,9 +102,48 @@ test('kert: a barátok a csillagokkal érkeznek, etetéssel hamarabb is', () => 
   assert.deepEqual(friendsFor(0), ['cat']);
   assert.deepEqual(friendsFor(3), ['cat', 'bunny']);
   assert.deepEqual(friendsFor(10), ['cat', 'bunny', 'dog']);
-  assert.deepEqual(friendsFor(29), ['cat', 'bunny', 'dog', 'fox']);
-  assert.deepEqual(friendsFor(60), ['cat', 'bunny', 'dog', 'fox', 'bear', 'panda']);
+  assert.deepEqual(friendsFor(29), ['cat', 'bunny', 'dog', 'fox', 'duck']);
+  assert.deepEqual(friendsFor(60), ['cat', 'bunny', 'dog', 'fox', 'duck', 'bear', 'frog', 'hedgehog', 'hen', 'panda']);
   assert.deepEqual(friendsFor(0, ['panda']), ['cat', 'panda']);
+  assert.deepEqual(friendsFor(150), FRIENDS.map(f => f.id));
+  // a terv rögzített érkezési pontjai (a többi küszöb saját beállítás, lásd README)
+  const at = { bunny: 3, dog: 8, fox: 15, duck: 25, bear: 30, hedgehog: 40, panda: 55, owl: 70, unicorn: 90 };
+  for (const [id, s] of Object.entries(at)) assert.equal(friendById(id).stars, s, id);
+  for (let i = 1; i < FRIENDS.length; i++) assert.ok(FRIENDS[i].stars > FRIENDS[i - 1].stars, 'a tábla érkezési sorrendben áll, egy csillagszámra egy barát');
+});
+
+test('kertrészek: a tóparti és a tanyasi barátok a virágkörön kívül, egymástól távol laknak', () => {
+  const ids = new Set(AREAS.map(a => a.id));
+  for (const f of FRIENDS) {
+    const [x, z] = f.home;
+    assert.ok(f.height > 0.3 && f.height < 3.5, `hiányzó vagy furcsa magasság: ${f.name}`);
+    if (!f.area) { assert.ok(Math.hypot(x, z) < 6, `${f.name} a kert közepén lakik`); continue; }
+    assert.ok(ids.has(f.area), `ismeretlen kertrész: ${f.area}`);
+    const a = AREAS.find(r => r.id === f.area);
+    assert.ok(Math.abs(x - a.x) <= 4 && Math.abs(z) <= 3.2, `${f.name} kilóg a(z) ${a.name} képéből`);
+    assert.ok(Math.hypot(x, z) > 13.3, `${f.name} a virágok közé lóg`);
+    assert.ok((x / (14 * 1.9)) ** 2 + (z / 14) ** 2 < 0.8, `${f.name} a kert szélén túl`);
+  }
+  const side = FRIENDS.filter(f => f.area);
+  for (let i = 0; i < side.length; i++) for (let j = 0; j < i; j++) {
+    const a = side[i], b = side[j];
+    if (a.area === b.area) assert.ok(Math.hypot(a.home[0] - b.home[0], a.home[1] - b.home[1]) >= 1.6, `túl közel: ${a.name}, ${b.name}`);
+  }
+  assert.ok(AREAS.every(a => FRIENDS.some(f => f.area === a.id)), 'üres kertrész');
+});
+
+test('ételek: mindnek van tárgyesete és képe; az új ételek saját rajzot kapnak, ha nincs jó emoji', () => {
+  for (const [k, f] of Object.entries(FOODS)) { assert.ok(f.acc, `hiányzó tárgyeset: ${k}`); assert.ok(f.t || f.svg, `hiányzó kép: ${k}`); }
+  for (const k of ['búza', 'zab', 'mogyoró', 'dió', 'makk', 'fű', 'vízinövény']) assert.ok(FOODS[k]?.svg, `saját rajz kell: ${k}`);
+  // minden étel, ami az étrendekben szerepel, létezik a FOODS-ban (a maybe listák elírását is megfogja)
+  for (const f of FRIENDS) for (const x of [...f.eats, ...f.maybe]) assert.ok(FOODS[x], `ismeretlen étel: ${f.name} – ${x}`);
+});
+
+test('állathangok: minden barátnak saját, a többiekétől különböző hangja van', async () => {
+  const { VOICE, SOUND_KINDS } = await import('../js/sounds.js');
+  const ids = FRIENDS.map(f => f.id);
+  for (const id of ids) assert.ok(VOICE[id] && SOUND_KINDS.includes(VOICE[id]), `hiányzó hang: ${id}`);
+  assert.equal(new Set(ids.map(id => VOICE[id])).size, ids.length, 'két barátnak ugyanaz a hangja');
 });
 
 test('kert: a virágok nem ülnek egymásra, a barátok zugában és az etetőhely előtt nincs virág', () => {

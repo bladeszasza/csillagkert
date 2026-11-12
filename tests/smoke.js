@@ -5,8 +5,8 @@ import { setScope } from '../js/scope.js';
 import { stopSpeaking } from '../js/voice.js';
 import { CURRICULUM } from '../js/curriculum.js';
 import { createGarden } from '../js/garden.js';
-import { soundLog, VOICE } from '../js/sounds.js';
-import { MEALS, ANY, friendById } from '../js/friends.js';
+import { soundLog, soundMark, VOICE } from '../js/sounds.js';
+import { MEALS, ANY, friendById, FRIENDS, AREAS } from '../js/friends.js';
 
 const results = [];
 const ok = (name, pass, info = '') => { results.push({ name, pass: !!pass, info: String(info) }); };
@@ -118,7 +118,8 @@ const tap = el => { const [x, y] = mid(el); pev(el, 'pointerdown', x, y); pev(el
 const dragTo = (el, tx, ty) => { const [x, y] = mid(el); pev(el, 'pointerdown', x, y); for (let k = 1; k <= 5; k++) pev(el, 'pointermove', x + (tx - x) * k / 5, y + (ty - y) * k / 5); pev(el, 'pointerup', tx, ty); };
 const foodBtn = (d, n) => [...d.querySelectorAll('.food')].find(b => b.getAttribute('aria-label') === n);
 const feedItem = (kind, good) => { const m = MEALS.find(x => x[0] === kind && x[1] === good), f = friendById(kind), base = { type: 'feed', kind, animal: f.emoji, name: f.name }; return good === ANY ? { ...base, any: m.slice(2) } : { ...base, good, wrong: m.slice(2) }; };
-const kindsSince = n => soundLog.slice(n).map(x => x.kind).join(',');
+const since = n => soundLog.filter(x => x.n > n);
+const kindsSince = n => since(n).map(x => x.kind).join(',');
 
 async function testGarden() {
   const canvas = document.createElement('canvas'); canvas.style.cssText = 'position:fixed;left:0;top:0;width:900px;height:650px;opacity:0;pointer-events:none'; document.body.appendChild(canvas);
@@ -126,30 +127,58 @@ async function testGarden() {
   garden.setStars(10, []);
   let d = garden.debug();
   ok('kert: 10 csillagnál a cica, a nyuszi és a kutya lakik itt', d.friends.join() === 'cat,bunny,dog' && d.flowers === 10, `lakók: ${d.friends.join(', ')}; virágok: ${d.flowers}; rajzolási hívások: ${d.calls}`);
-  const g0 = soundLog.length;
+  const g0 = soundMark();
   garden.setStars(70, []); await wait(2900);                  // az új barátok besétálnak az ösvényen: megvárjuk őket
   garden.debug();                                             // egy lépés: megérkeznek és köszönnek (ritkán frissülő lapon is)
-  const greet = soundLog.slice(g0).map(x => x.kind).sort().join(',');
+  const greet = since(g0).map(x => x.kind).sort().join(',');
   await wait(1900);                                           // a köszönés szívecskéi eltűnnek: a rajzolási hívások csak ezután mérhetők
   d = garden.debug(); const calls70 = d.calls;
-  ok('kert: az érkező barát megszólal a saját hangján', greet === [VOICE.fox, VOICE.bear, VOICE.panda].sort().join(','), greet);
+  const came70 = ['fox', 'duck', 'bear', 'frog', 'hedgehog', 'hen', 'panda', 'squirrel', 'owl'];
+  ok('kert: az érkező barát megszólal a saját hangján (a tóparton és a tanyán is)', greet === came70.map(id => VOICE[id]).sort().join(','), greet);
+  const center = Object.fromEntries(Object.entries(d.screen).filter(([k]) => !friendById(k).area));   // a kert közepén lakók (a kezdő képen)
   // térkép: az állomások jelei a kerti tereptárgyaikon ülnek, a képen belül, egymást nem takarva
   const pl = garden.places(), ids = Object.keys(pl || {}), near = [];
   for (let i = 0; i < ids.length; i++) for (let j = 0; j < i; j++) if (Math.abs(pl[ids[i]].x - pl[ids[j]].x) < 70 && Math.abs(pl[ids[i]].y - pl[ids[j]].y) < 70) near.push(`${ids[i]}~${ids[j]}`);
   const off = ids.filter(k => pl[k].x < 33 || pl[k].x > 867 || pl[k].y < 80 || pl[k].y > 617);
-  const onFriend = ids.filter(k => Object.values(d.screen).some(r => pl[k].x > r.left + 10 && pl[k].x < r.right - 10 && pl[k].y > r.top + 10 && pl[k].y < r.bottom - 10));
+  const onFriend = ids.filter(k => Object.values(center).some(r => pl[k].x > r.left + 10 && pl[k].x < r.right - 10 && pl[k].y > r.top + 10 && pl[k].y < r.bottom - 10));
   ok('térkép: mind a 13 állomásnak van megkoppintható helye a kertben', ids.length === 13 && !near.length && !off.length && !onFriend.length, `jelek: ${ids.length}; egymáson: ${near.join(' ') || '–'}; képen kívül: ${off.join(' ') || '–'}; baráton: ${onFriend.join(' ') || '–'}`);
-  ok('kert: 70 csillagnál mind a hat barát itt van', d.friends.length === 6 && d.flowers === 70, `lakók: ${d.friends.join(', ')}`);
+  ok('kert: 70 csillagnál tizenkét barát lakik itt', d.friends.join() === ['cat', 'bunny', 'dog', 'fox', 'duck', 'bear', 'frog', 'hedgehog', 'hen', 'panda', 'squirrel', 'owl'].join() && d.flowers === 70, `lakók: ${d.friends.join(', ')}`);
   ok('kert: legfeljebb 150 rajzolási hívás (régen 70 virággal kb. 600 volt)', d.calls <= 150, `hívások: ${d.calls}, háromszögek: ${d.triangles}`);
-  const out = Object.entries(d.screen).filter(([, r]) => r.left < 0 || r.right > 900 || r.top < 0 || r.bottom > 650).map(([k]) => k);
-  ok('kert: minden barát a képen van', out.length === 0, out.length ? `kilóg: ${out.join(', ')}` : Object.entries(d.screen).map(([k, r]) => `${k} ${Math.round(r.cx)},${Math.round(r.cy)}`).join(' · '));
-  garden.setStars(300, []); d = garden.debug();
-  ok('kert: 300 virág sem kerül több rajzolási hívásba (nincs 70-es plafon)', d.flowers === 300 && d.calls === calls70, `virágok: ${d.flowers}, hívások: ${d.calls}, háromszögek: ${d.triangles}`);
+  const out = Object.entries(center).filter(([, r]) => r.left < 0 || r.right > 900 || r.top < 0 || r.bottom > 650).map(([k]) => k);
+  ok('kert: a kert közepén lakó minden barát a kezdő képen van', out.length === 0 && Object.keys(center).length === 6, out.length ? `kilóg: ${out.join(', ')}` : Object.entries(center).map(([k, r]) => `${k} ${Math.round(r.cx)},${Math.round(r.cy)}`).join(' · '));
+  garden.setStars(70 + 230, []); await wait(2900); garden.debug(); await wait(1900); d = garden.debug();
+  ok('kert: 300 csillagnál mind a 19 barát itt van, és a 300 virág sem kerül több rajzolási hívásba', d.friends.length === 19 && d.flowers === 300 && d.calls <= calls70 + 2 && d.calls <= 150, `virágok: ${d.flowers}, hívások: ${d.calls} (70 csillagnál ${calls70}), háromszögek: ${d.triangles}`);
+  ok('kert: a háromszögek száma a teljes kerttel is kordában marad (saját határ: 250 ezer)', d.triangles <= 250000, `háromszögek: ${d.triangles}`);
+
+  // kertrészek: a kamera átsiklik, ott minden lakó a képen van (a gombsor fölött), és koppintásra a saját hangján szól
+  {
+    const { measureCharacter, makeCharacter } = await import('../js/three/characters.js');
+    const tall = FRIENDS.filter(f => f.id !== 'cat').map(f => [f.id, measureCharacter(makeCharacter(f.id)).height / f.height]).filter(([, q]) => q < 0.9 || q > 1.1);
+    ok('kert: a táblázatban álló magasság a modell valódi magassága (±10%)', tall.length === 0, tall.map(([k, q]) => `${k} ${q.toFixed(2)}`).join(', ') || 'mind egyezik');
+    const owlBefore = garden.debug().awake.owl;
+    for (const area of garden.areas()) {
+      const ms = garden.goTo(area.id); await wait(ms + 250);
+      const g = garden.debug(), bad = [], mute = [];
+      ok(`kertrész (${area.id}): a kamera odaért`, Math.abs(g.pan - AREAS.find(a => a.id === area.id).x) < 0.01 && garden.area() === area.id, `pan: ${g.pan}`);
+      for (const id of area.friends) {
+        const r = g.screen[id];
+        if (!r.visible || r.left < 0 || r.right > 900 || r.top < 80 || r.bottom > 650 - 90) { bad.push(`${id} ${Math.round(r.left)}–${Math.round(r.right)} × ${Math.round(r.top)}–${Math.round(r.bottom)}`); continue; }
+        const n = soundMark(); pev(canvas, 'pointerdown', r.cx, r.cy); await wait(60);
+        if (!since(n).some(x => x.kind === VOICE[id])) mute.push(id);
+      }
+      ok(`kertrész (${area.id}): minden lakó a képen van, a gombsor fölött`, bad.length === 0 && area.friends.length >= 6, bad.join(' · ') || area.friends.join(', '));
+      ok(`kertrész (${area.id}): koppintásra mindenki a saját hangján szól`, mute.length === 0, mute.length ? `néma: ${mute.join(', ')}` : 'mind megszólalt');
+    }
+    const owlAfter = garden.debug().awake.owl;
+    ok('bagoly: nappal szundikál, koppintásra felébred', owlBefore === false && owlAfter === true, `előtte ébren: ${owlBefore}, koppintás után: ${owlAfter}`);
+    garden.goTo(null); await wait(1600);
+    ok('kertrész: vissza a kert közepére', garden.debug().pan === 0 && garden.area() === null, `pan: ${garden.debug().pan}`);
+  }
 
   const feed = await import('../js/activities/feed.js'), canvases = document.querySelectorAll('canvas').length;
   // a) jó étel a szájához húzva
   {
-    const ac = new AbortController(), h = host(), s0 = spoken(), l0 = soundLog.length; let done = false; setScope(ac.signal);
+    const ac = new AbortController(), h = host(), s0 = spoken(), l0 = soundMark(); let done = false; setScope(ac.signal);
     feed.run(h, feedItem('fox', 'hús'), { garden }).then(() => { done = true; });
     await wait(2800);
     const g = garden.debug(), r = g.screen.fox, w = h.querySelector('#feed-win').getBoundingClientRect();
@@ -165,7 +194,7 @@ async function testGarden() {
   }
   // b) két tévedés: az első szó nélkül, a második után egy tanító mondat; aztán koppintással a jó étel
   {
-    const ac = new AbortController(), h = host(), s0 = spoken(), l0 = soundLog.length; let done = false; setScope(ac.signal);
+    const ac = new AbortController(), h = host(), s0 = spoken(), l0 = soundMark(); let done = false; setScope(ac.signal);
     feed.run(h, feedItem('dog', 'csont'), { garden }).then(() => { done = true; });
     await wait(2800);
     tap(foodBtn(h, 'bambusz')); await wait(1800);
@@ -182,24 +211,43 @@ async function testGarden() {
   {
     const ac = new AbortController(), h = host(), s0 = spoken(); setScope(ac.signal);
     feed.run(h, feedItem('panda', 'bambusz'), { garden });
-    await wait(2800); tap(foodBtn(h, 'hal')); await wait(300);
+    await wait(2800); tap(foodBtn(h, 'mogyoró')); await wait(300);
     ac.abort(); stopSpeaking(); garden.endFeed(); setScope(null); h.remove();
-    const before = spoken(), l0 = soundLog.length; await wait(2600);
+    const before = spoken(), l0 = soundMark(); await wait(2600);
     const e = garden.debug();
-    ok('feed: megszakítás után csend, a kamera visszatér', spoken() === before && before > s0 && soundLog.length === l0 && e.feeding === null && e.zoom === 0, `előtte ${before - s0} mondat, utána ${spoken() - before}; hangok utána: ${soundLog.length - l0}`);
+    ok('feed: megszakítás után csend, a kamera visszatér', spoken() === before && before > s0 && soundMark() === l0 && e.feeding === null && e.zoom === 0, `előtte ${before - s0} mondat, utána ${spoken() - before}; hangok utána: ${soundMark() - l0}`);
   }
   // e) a maci mindenevő: bármelyik felkínált ételt megeszi, tévedés nincs
   for (const pick of feedItem('bear', ANY).any) {
-    const ac = new AbortController(), h = host(), s0 = spoken(), l0 = soundLog.length; let done = false; setScope(ac.signal);
+    const ac = new AbortController(), h = host(), s0 = spoken(), l0 = soundMark(); let done = false; setScope(ac.signal);
     feed.run(h, feedItem('bear', ANY), { garden }).then(() => { done = true; });
     await wait(2800); tap(foodBtn(h, pick)); await wait(4300);
     const said = window.__spoken.slice(s0);
     ok(`maci: ${pick} – ez is jó neki (nincs rossz válasz)`, done && said.length === 1 && /sokfélét eszik/.test(said[0]) && kindsSince(l0) === `munch,munch,munch,${VOICE.bear}` && !h.querySelector('.food.gone, .food.glow'), `${said.join(' | ')} · ${kindsSince(l0)}`);
     garden.endFeed(); setScope(null); h.remove(); await wait(300);
   }
+  // f) a tanyáról jön enni: a tyúk (mindenevő, saját rajzú búza) és a tehén (új étel: fű) – a kamera a kert közepéről közelít, utána a barát hazatalál
+  garden.goTo('tanya'); await wait(1700);
+  for (const [kind, good, pick] of [['hen', ANY, 'búza'], ['cow', 'fű', 'fű']]) {
+    const ac = new AbortController(), h = host(), s0 = spoken(), l0 = soundMark(); let done = false; setScope(ac.signal);
+    feed.run(h, feedItem(kind, good), { garden }).then(() => { done = true; });
+    await wait(2800);
+    const g = garden.debug(), r = g.screen[kind], w = h.querySelector('#feed-win').getBoundingClientRect();
+    const there = g.feeding === kind && g.zoom > 0.99 && g.pan === 0 && r.top > w.top - 10 && r.bottom < w.bottom + 10;
+    if (good === ANY) tap(foodBtn(h, pick)); else dragTo(foodBtn(h, pick), r.mouth.x, r.mouth.y);
+    await wait(4300);
+    ok(`etetés a tanyáról: ${friendById(kind).name} – ${pick}`, there && done && kindsSince(l0) === `munch,munch,munch,${VOICE[kind]}` && spoken() - s0 === 1, `a kert közepén, közelről: ${there}; ${window.__spoken.slice(s0).join(' | ')} · ${kindsSince(l0)}`);
+    garden.endFeed(); setScope(null); h.remove(); await wait(1900);
+  }
+  {
+    const ms = garden.goTo('tanya'); await wait(ms + 250);
+    const g = garden.debug(), off = ['hen', 'cow'].filter(k => { const r = g.screen[k]; return !r.visible || r.left < 0 || r.right > 900 || r.bottom > 650; });
+    ok('etetés után a tyúk és a tehén hazament a tanyára', off.length === 0, off.length ? `nincs otthon: ${off.join(', ')}` : 'mindkettő otthon');
+    garden.goTo(null); await wait(1600);
+  }
   // d) 3D kert nélkül is megoldható (az állat képével)
   {
-    const ac = new AbortController(), h = host(), s0 = spoken(), l0 = soundLog.length; let done = false; setScope(ac.signal);
+    const ac = new AbortController(), h = host(), s0 = spoken(), l0 = soundMark(); let done = false; setScope(ac.signal);
     feed.run(h, feedItem('bunny', 'répa')).then(() => { done = true; });
     await wait(300); tap(foodBtn(h, 'répa')); await wait(4300);
     ok('etetés 3D kert nélkül is megoldható', done && spoken() - s0 === 1 && kindsSince(l0).endsWith(VOICE.bunny), `${window.__spoken.slice(s0).join(' | ')} · ${kindsSince(l0)}`);

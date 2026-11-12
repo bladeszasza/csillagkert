@@ -8,7 +8,7 @@ import { unlock as unlockAudio } from './audio.js';
 import { emote, moodFor, introduce } from './robot.js';
 import { renderMeter, flyStar } from './stars.js';
 import { setupParent } from './parent.js';
-import { friendsFor, friendById } from './friends.js';
+import { friendsFor, friendById, AREAS } from './friends.js';
 import { withArt } from './hu.js';
 
 const $ = id => document.getElementById(id);
@@ -76,7 +76,31 @@ function fillFor() {
   garden?.setDay(progress.get().meter / perReward());        // a nap a csillagmérővel együtt halad a naplemente felé
   const many = progress.list().length > 1;
   $('switch').hidden = !many; $('switch').textContent = progress.get().mark;
+  renderAreaButtons();
 }
+// --- Kertrészek: a tópart (balra) és a tanya (jobbra) lakóihoz egy-egy gomb visz, a kamera átsiklik ---
+// A gombon az ottani első barát képe van (olvasni nem kell); a szélső részen a másik oldali 🐱 gomb visz vissza a kert közepére.
+let areaTimer = 0, awayTimer = 0;
+function goArea(id = null) {
+  clearTimeout(areaTimer); clearTimeout(awayTimer);
+  const ms = garden?.goTo(id) || 0;
+  // a térkép jelei induláskor eltűnnek, visszafelé csak a siklás végén jönnek elő (ne lebegjenek rossz tárgyak fölött)
+  if (garden?.area?.()) $('home').classList.add('away');
+  else awayTimer = setTimeout(() => $('home').classList.remove('away'), Math.max(0, ms - 300));
+  renderAreaButtons();
+}
+function renderAreaButtons() {
+  const here = garden?.area?.() || null, list = garden?.areas?.() || [];
+  const hereX = AREAS.find(r => r.id === here)?.x || 0;
+  for (const [btn, side] of [[$('go-left'), -1], [$('go-right'), 1]]) {
+    let to, icon = '', label = '';
+    if (here) { if (Math.sign(hereX) !== side) { to = ''; icon = '🐱'; label = 'Vissza a kert közepére'; } }
+    else { const a = list.find(r => Math.sign(r.x) === side); if (a) { to = a.id; icon = friendById(a.friends[0]).emoji; label = AREAS.find(r => r.id === a.id).name; } }
+    btn.hidden = to === undefined;
+    if (to !== undefined) { btn.dataset.to = to; btn.querySelector('span').textContent = icon; btn.setAttribute('aria-label', label); }
+  }
+}
+for (const id of ['go-left', 'go-right']) $(id).addEventListener('click', e => { unlockAudio(); goArea(e.currentTarget.dataset.to || null); });
 if (progress.ready()) fillFor();
 setupParent(restart);
 $('switch').addEventListener('click', () => restart());      // a „Ki játszik?" képernyőre visz
@@ -167,6 +191,7 @@ async function runItem(item, station, via) {
   if (running) return;                                       // dupla koppintás ne indítson két feladatot
   running = true;
   const inGarden = item.type === 'feed';                     // az etetés a kertben zajlik: ott a kert nem áll meg
+  goArea(null);                                              // minden feladat a kert közepéről indul (a tópartról / tanyáról is)
   setMuted(false); garden?.pause(!inGarden);
   if (inGarden) progress.addFriend(item.kind);               // akit etetünk, az mostantól a kertben lakik
   $('home').hidden = true;
@@ -197,6 +222,12 @@ async function runItem(item, station, via) {
   garden?.setStars(progress.get().total, progress.get().friends);                 // az új barát besétál, megszólal, szívek szállnak
   garden?.setDay(Math.min(meter, perReward()) / perReward());
   garden?.cheer();
+  // A tópartra / tanyára érkező új barátot megnézzük: a kamera odasiklik, kicsivel később vissza (ha a gyerek közben nem választott mást)
+  const newcomer = arrived.map(friendById).find(f => f.area);
+  if (newcomer && garden) {
+    goArea(newcomer.area);
+    areaTimer = setTimeout(() => { if (!running && garden.area() === newcomer.area) goArea(null); }, 6500);
+  } else renderAreaButtons();
   // Új barátnál Rozi egy mondatban bejelenti; etetés után különben hallgat (ott az állat a saját hangján köszöni meg)
   if (arrived.length) say(`Új barát érkezett: ${withArt(friendById(arrived[0]).name)}!`, { remember: false });
   else if (!inGarden) say(PRAISE[progress.get().total % PRAISE.length] + (name() && meter >= perReward() ? ' ' + name() + '!' : ''), { remember: false });
