@@ -1,6 +1,7 @@
 // Robotpálya: generált programozós feladatok. Abszolút irányok (fel, le, balra, jobbra), nem fordulás: így 5 évesen is követhető.
 // Sorrend: egyenes út → egy forduló → kerülő a virágok körül → ismétlés (×2, ×3); mellette előrejelzés ("Hová ér?"),
-// programok összevetése, hibakeresés és ha–akkor szabály. A szintek beosztása saját döntés.
+// programok összevetése, hibakeresés és ha–akkor szabály. A szintek beosztása saját döntés: a hibakeresés, az összevetés és a
+// ha–akkor a 3. szinten indul, hogy a gyerek előbb maga építsen programot (friss profilnál az építés és a "Hová ér?" jön).
 // Kulcs-szabály: a kulcs a helyes program (betűjellel: f fel, l le, b balra, j jobbra; j3 = jobbra háromszor).
 // Az eltolt vagy nagyobb pályán ugyanaz a program NEM új feladat; két pálya, amelyiknek ugyanaz a legegyszerűbb megoldása, egy feladat.
 // A pályákat rögzített magból sorsoljuk (az azonosítók így minden betöltéskor ugyanazok), a megoldást a robot-path.js számolja.
@@ -152,7 +153,7 @@ function faultTargets() {
     if (b.kind === 'egyenes' && p.length < 2) continue;
     let prefill, key, level;
     if (b.kind === 'egyenes' || (b.kind === 'fordulo' && p.length <= 3)) {
-      prefill = p.slice(0, -1); key = `${keyOf(prefill)}-p${LETTER[p[p.length - 1]]}`; level = 2;
+      prefill = p.slice(0, -1); key = `${keyOf(prefill)}-p${LETTER[p[p.length - 1]]}`; level = 3;
     } else {
       // a beszúrt lépés falnak vagy a pálya szélének megy: a robot ennél a lépésnél akad el, ezt jelöli meg
       const pos = simulate(b.lv, p).cells, cand = [];
@@ -234,11 +235,11 @@ const LV_PROGS = (() => {
 })();
 const lev = (a, b) => { const d = Array.from({ length: a.length + 1 }, (_, i) => [i]); for (let j = 1; j <= b.length; j++) d[0][j] = j; for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); return d[a.length][b.length]; };
 const MELYIK = { ...S, id: 'algo.melyik', skill: 'algo.melyik',
-  targets: () => Object.entries(LV_PROGS).flatMap(([level, list]) => list.map(toks => ({ key: keyOf(toks), level: +level, toks }))),
+  targets: () => Object.entries(LV_PROGS).flatMap(([g, list]) => list.map(toks => ({ key: keyOf(toks), level: Math.max(3, +g), g: +g, toks }))),
   make: (t, r) => {
     const toks = t.toks, lv = openBoard(expand(toks), r);
     const passes = s => s.cells.some(c => same(c, lv.goal));
-    const cands = LV_PROGS[t.level].filter(o => keyOf(o) !== t.key).map(o => ({ o, s: simulate(lv, o) })).filter(c => !c.s.ok && !passes(c.s));
+    const cands = LV_PROGS[t.g].filter(o => keyOf(o) !== t.key).map(o => ({ o, s: simulate(lv, o) })).filter(c => !c.s.ok && !passes(c.s));
     // a hasonló, pályán maradó programok az igazi csalogatók; a falnak menő csak tartalék
     const ranked = r.shuffle(cands).sort((a, b) => (a.s.why === 'edge') - (b.s.why === 'edge') || lev(keyOf(a.o), t.key) - lev(keyOf(b.o), t.key));
     const wrong = r.sample(ranked.slice(0, 5), 2);
@@ -260,7 +261,7 @@ const readRules = html => Object.fromEntries([...html.matchAll(/<span class="rul
 const readSeen = html => [...(/<div class="rsee">(.*?)<\/div>/.exec(html)?.[1] || '').matchAll(/<span class="rsign">([^<]+)<\/span>/g)].map(m => m[1]);
 const HAAKKOR = { ...S, id: 'algo.haakkor', skill: 'algo.haakkor',
   targets: () => [
-    ...[2, 3, 4].flatMap(k => ORDER.map(d => ({ key: `szabaly${k}-${LETTER[d]}`, level: k, k, dirs: [d] }))),
+    ...[2, 3, 4].flatMap(k => ORDER.map(d => ({ key: `szabaly${k}-${LETTER[d]}`, level: Math.max(3, k), k, dirs: [d] }))),
     ...ORDER.flatMap(a => ORDER.filter(b => b !== a).map(b => ({ key: `ket-${LETTER[a]}${LETTER[b]}`, level: 5, k: 3, dirs: [a, b] }))),
   ],
   make: (t, r) => {

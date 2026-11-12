@@ -39,6 +39,20 @@ test('300 feladat: a generált feladatok nem ismétlődnek, az állomások vált
   assert.ok(stations.size >= 12, `csak ${stations.size} állomás került sorra`);
 });
 
+test('sok szimulált gyerek (5–7 év, gyenge–erős, 10 mag): 300 körön belül nincs ismétlés, egy állomás a bevezető készséggel kezd', () => {
+  const low = {};
+  for (const e of POOL) if (!e.item) low[e.station] = Math.min(low[e.station] ?? 9, e.level);
+  const minOf = {}; for (const e of POOL) if (!e.item) minOf[e.skill] = Math.min(minOf[e.skill] ?? 9, e.level);
+  for (const age of [5, 6, 7]) for (const ability of [0, 3, 9]) for (let seed = 1; seed <= 10; seed++) {
+    const log = play({ age, seen: {}, feedGap: 2, sinceFeed: 0 }, 300, { ability, seed: seed * 101 + age * 7 + ability });
+    const gen = log.filter(e => !e.item).map(e => e.id), where = `${age} év, képesség ${ability}, mag ${seed}`;
+    assert.equal(new Set(gen).size, gen.length, `ismétlődő generált feladat (${where})`);
+    const first = {};
+    for (const e of log) if (!e.item) (first[e.station] ??= []).length < 2 && first[e.station].push(e);
+    for (const [st, es] of Object.entries(first)) for (const e of es) assert.equal(minOf[e.skill], low[st], `${st}: nem bevezető készséggel kezd (${e.id}, ${where})`);
+  }
+});
+
 test('szintlépés: aki elsőre megoldja, feljebb lép; aki sokat téved, visszalép', () => {
   const strong = { age: 5, seen: {} }; play(strong, 300, { ability: 9, seed: 3 });
   const weak = { age: 7, seen: {} }; play(weak, 300, { ability: 0, seed: 4 });

@@ -7,7 +7,7 @@ import { rng } from '../js/content/rng.js';
 import { pickSpeech, resetLines } from '../js/lines.js';
 import { STATIONS } from '../js/curriculum.js';
 import { NOTES } from '../js/notes.js';
-import { simulate, solve as robotSolve, compress } from '../js/robot-path.js';
+import { simulate, solve as robotSolve, compress, keyOf } from '../js/robot-path.js';
 
 const SEEDS = [1, 2, 3];
 const answerOf = o => o.n ?? (o.name || o.key);
@@ -100,6 +100,8 @@ test('minden feladat megoldható: a független megoldó ugyanazt a választ tal�
       assert.ok(help && compress(help, !!it.loops).length <= it.max, `a segítség nem fér el: ${where}`);
       if (it.loops) assert.ok(help.length > it.max, `ismétlés nélkül is elférne: ${where}`);
       else assert.ok(ans.length <= it.max, `a megoldás nem fér el: ${where}`);
+      // építésnél és ismétlésnél a kulcs maga a legegyszerűbb program: két különböző kulcs nem lehet ugyanaz a feladat
+      if (!it.prefill?.length) assert.equal(keyOf(compress(help, !!it.loops)), x.id.split(':')[1], `a kulcs nem a legegyszerűbb program: ${where}`);
       if (it.prefill?.length) {
         const f = simulate(it, it.prefill);
         assert.ok(!f.ok && it.prefill.length <= it.max, `a hibás program nem hibás: ${where}`);

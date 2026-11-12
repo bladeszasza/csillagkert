@@ -77,8 +77,10 @@ export function run(container, level) {
       const res = await exec();
       if (res.ok === null) return;
       if (res.ok) { finished = true; gridEl.classList.add('win'); happy('🦄'); await say('A robot odaért a csillaghoz! Szuper programozó vagy!'); resolve({ wrong: fails }); return; }
-      fails++; robot = { x: start[0], y: start[1] }; place(); render(res.step);
-      if (fails === 1) say(`Majdnem! ${res.why === 'short' ? 'A robot megállt, de nem ért el a csillagig.' : `A robot elakadt ${res.why}.`} Nézd meg a megjelölt lépést, és javítsd ki! Koppints egy lépésre, ha ki akarod venni.`, { remember: false });
+      // ütközésnél az ütköző lépés kap jelet; ha a robot csak megállt a csillag előtt, nincs hibás lépés, nem jelölünk meg semmit
+      fails++; robot = { x: start[0], y: start[1] }; place(); render(res.why === 'short' ? -1 : res.step);
+      if (fails === 1) say(res.why === 'short' ? 'Majdnem! A robot megállt, de nem ért el a csillagig. Nézd meg, merre kell még mennie!'
+        : `Majdnem! A robot elakadt ${res.why}. Nézd meg a megjelölt lépést, és javítsd ki! Koppints egy lépésre, ha ki akarod venni.`, { remember: false });
       else if (fails === 2) {
         say('Segítek! Nézd meg ezt a sort, ez vezet el a csillaghoz.', { remember: false });
         const tk = compress(solution, loops); const hint = document.createElement('div'); hint.className = 'ahint'; hint.innerHTML = '<span>Segítség:</span>' + tk.map((t, i) => tokenHtml(t, i, 'ghost')).join(''); progEl.after(hint);

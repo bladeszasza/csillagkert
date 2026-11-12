@@ -65,10 +65,26 @@ export function chooseInStation(state, list, rand, now, legacySolved = () => 0) 
   const minLv = new Map();
   for (const e of list) minLv.set(e.skill, Math.min(minLv.get(e.skill) ?? 9, e.level || 0));
   const gen = list.find(e => !isLegacy(e.skill)), here = gen && levelOf(state, gen.station, legacySolved(gen.station)).lv;
-  const all = [...minLv.keys()], fit = gen ? all.filter(k => isLegacy(k) || minLv.get(k) <= here + 1) : all;
-  const skill = shuffled(fit.length ? fit : all, rand).sort((a, b) => (state.sk[a]?.at || 0) - (state.sk[b]?.at || 0))[0];
-  const mine = list.filter(e => e.skill === skill);
-  if (isLegacy(skill)) return freshest(mine, state, rand);
+  const all = [...minLv.keys()];
+  let fit = gen ? all.filter(k => isLegacy(k) || minLv.get(k) <= here + 1) : all;
+  // az első két feladat egy generált állomáson a bevezető készségekből jön (amelyik a legkönnyebb szinten kezdődik):
+  // a Robotpályán így előbb programot épít vagy előrejelez a gyerek, és csak utána jön hibakeresés vagy ismétlés – idősebbnek is
+  if (gen && list.filter(e => state.seen[e.id] !== undefined).length < 2) {
+    const g = all.filter(k => !isLegacy(k)), low = Math.min(...g.map(k => minLv.get(k)));
+    fit = g.filter(k => minLv.get(k) === low);
+  }
+  // a legrégebben gyakorolt készség jön; ha annak a gyerek szintje körül már nincs új feladata, a következő készség
+  let spare = null;
+  for (const skill of shuffled(fit.length ? fit : all, rand).sort((a, b) => (state.sk[a]?.at || 0) - (state.sk[b]?.at || 0))) {
+    const mine = list.filter(e => e.skill === skill);
+    if (isLegacy(skill)) return freshest(mine, state, rand);
+    const e = inSkill(state, mine, rand, legacySolved);
+    if (state.seen[e.id] === undefined) return e;
+    spare ??= e;
+  }
+  return spare;
+}
+function inSkill(state, mine, rand, legacySolved) {
   const s = levelOf(state, mine[0].station, legacySolved(mine[0].station));
   const r = rate(state), challenge = r > 0.9 ? 0.35 : r < 0.7 ? 0 : 0.2, warm = r < 0.7 ? 0.4 : 0.15;
   const x = rand();
@@ -76,10 +92,11 @@ export function chooseInStation(state, list, rand, now, legacySolved = () => 0) 
   const levels = [...new Set(mine.map(e => e.level))].sort((a, b) => a - b);
   const below = levels.filter(l => l <= want);
   const lv = below.length ? below[below.length - 1] : levels[0];
-  // ha ezen a szinten már mindet látta, a legközelebbi szint (legfeljebb eggyel a kívánt fölött) még nem látott feladata jön
+  // ha ezen a szinten már mindet látta, a legközelebbi szint (legfeljebb eggyel a kívánt vagy a választott fölött) még nem látott feladata jön
+  // (bemelegítéskor a kívánt szint a választott alatt is lehet: ilyenkor is szabad egy szinttel feljebb nézni)
   const atLv = mine.filter(e => e.level === lv);
   if (!atLv.some(e => state.seen[e.id] === undefined)) {
-    const near = levels.filter(l => l !== lv && l <= want + 1).sort((a, b) => Math.abs(a - lv) - Math.abs(b - lv) || a - b);
+    const near = levels.filter(l => l !== lv && l <= Math.max(want, lv) + 1).sort((a, b) => Math.abs(a - lv) - Math.abs(b - lv) || a - b);
     for (const l of near) { const fresh = mine.filter(e => e.level === l && state.seen[e.id] === undefined); if (fresh.length) return pickRand(fresh, rand); }
   }
   return freshest(atLv, state, rand);

@@ -84,6 +84,9 @@ async function testAbort() {
     ['math', { a: 4, b: 2, op: '+' }, d => [...d.querySelectorAll('.answer')].find(b => +b.dataset.n !== 6).click()],
     ['clap', { word: { t: '🍎', name: 'alma', parts: ['al', 'ma'] } }, d => d.querySelector('.clap').click()],
     ['echo', { melody: ['szo', 'mi', 'szo'], bells: ['mi', 'szo'] }, d => d.querySelector('[data-h="1"]')?.click()],
+    // a robot öt lépést indul (kb. 2,5 mp); a megszakítás menet közben jön, utána nem szólhat a "odaért" mondat
+    ['algo', { type: 'algo', w: 6, h: 2, start: [0, 0], goal: [5, 0], walls: [], max: 7, say: 'Vezesd a robotot a csillaghoz!' },
+      d => { for (let k = 0; k < 5; k++) d.querySelector('.acmd[data-d="right"]').click(); d.querySelector('#arun').click(); }],
     ['pick', { type: 'pick', prompt: 'Merre ment a hang?', fact: 'A második hang magasabb volt.', hint: 'Figyeld!', sound: { events: [{ n: 'do', dur: 0.8, gap: 0.3 }, { n: 'szo', dur: 0.8 }] },
       options: [{ key: 'fel', t: '⬆️', name: 'feljebb', ok: true }, { key: 'le', t: '⬇️', name: 'lejjebb', ok: false, said: 'Ez lejjebb.' }, { key: 'u', t: '➡️', name: 'ugyanaz', ok: false, said: 'Ez ugyanaz.' }] }, () => {}],
   ]) {

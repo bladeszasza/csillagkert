@@ -73,9 +73,9 @@ A szabályok a `js/scheduler-core.js` fájlban vannak, Node-tesztekkel (`tests/s
 | Ismétlés | elsőre sikerült: 1, 3, 7, 14 nap múlva; tévedés után: másnap | Saját beállítás a Cepeda-féle elv alapján (a konkrét napok nem a tanulmányból vannak). |
 | Ismétlések aránya | 30%, ha a sikerarány legalább 70%; különben 45% | Saját beállítás. |
 | Kihívás és bemelegítés | 90% fölött 35% eséllyel egy szinttel nehezebb; 70–90% között 20% nehezebb, 15% könnyebb; 70% alatt nincs nehezebb, 40% könnyebb | Saját beállítás. A sikerarányt az utolsó 20 értékelt feladatból számolja (5 alatt 80%-ot feltételez). |
-| Melyik készség jöhet | csak az, amelyiknek a legkönnyebb feladata legfeljebb egy szinttel van a gyerek szintje fölött | Saját beállítás: kezdőnek így nem jön bontás vagy sorszám, amíg a számolás alapjai nem mennek. |
-| Készség-választás | a szintjéhez illők közül a legrégebben gyakorolt | Kevert gyakorlás. |
-| Feladat-választás | a még nem látott közül véletlenszerűen; ha a gyerek szintjén mindet látta, a legközelebbi szint (legfeljebb eggyel nehezebb) még nem látott feladata; különben a legrégebben látott | Egy 300 feladatos szimulációban nincs ismétlődő feladat (teszt). |
+| Melyik készség jöhet | csak az, amelyiknek a legkönnyebb feladata legfeljebb egy szinttel van a gyerek szintje fölött; egy állomás első két feladata a bevezető készségekből jön (amelyik a legkönnyebb szinten kezdődik) | Saját beállítás: kezdőnek így nem jön bontás vagy sorszám, amíg a számolás alapjai nem mennek, és a Robotpályán a gyerek (idősebb is) előbb maga épít programot vagy előrejelez, csak utána jön hibakeresés vagy ismétlés. |
+| Készség-választás | a szintjéhez illők közül a legrégebben gyakorolt; ha annak a gyerek szintje körül már nincs új feladata, a következő | Kevert gyakorlás. |
+| Feladat-választás | a még nem látott közül véletlenszerűen; ha a gyerek szintjén mindet látta, a legközelebbi szint (legfeljebb eggyel nehezebb) még nem látott feladata; különben a legrégebben látott | Teszt: 90 szimulált gyerek (5, 6 és 7 évesek, gyenge, közepes és erős játékos, 10 véletlen kezdés) 300 feladatában nincs ismétlődő feladat. Egy 270 futásos próbán is 0 volt az ismétlés. A javítás előtt 20 futásban akadt, gyenge ötéveseknél, olyan készségeknél, amelyeknek a legkönnyebb szintjén kevés feladat van. |
 | Állomás-váltás | nem az utolsó kettő közül, a három legrégebben látogatott egyike | Saját beállítás. |
 | Etetés | minden 2–3. feladat | Az 1.0-ból megtartva. |
 
@@ -218,10 +218,13 @@ le, balra, jobbra), nem fordul el, így egy ötéves a képernyőn követheti.
 |---|---|---|
 | programépítés | 1–5 | egyenes út → egy forduló → virágok kerülgetése (legalább két forduló vagy kerülő), legfeljebb nyolc lépés |
 | ismétlés (×2, ×3) | 3–5 | kevesebb hely van a programban, mint ahány lépés kell, ezért az ismétlés gomb kell; egyenes → forduló → virágok közt |
-| hibakeresés | 2–5 | hiányzik az utolsó lépés → egy fölösleges lépés; a robot épp a hibás lépésnél ütközik meg, és az a lépés kap jelet |
+| hibakeresés | 3–5 | hiányzik az utolsó lépés → egy fölösleges lépés; a robot épp a hibás lépésnél ütközik meg, és az a lépés kap jelet |
 | hová ér a robot? | 1–5 | egy-két nyíl → forduló → négy nyíl → ismétléses program. A többi gyümölcs nem esik a robot útjába, így nem kétértelmű, hol áll meg |
-| melyik program jó? | 2–5 | három program, pontosan egy ér a csillaghoz; a többi máshová ér, és a csillagon át sem megy |
-| ha–akkor | 2–5 | két, három, négy szabálykártya (szín → nyíl); az 5. szinten két jel egymás után |
+| melyik program jó? | 3–5 | három program, pontosan egy ér a csillaghoz; a többi máshová ér, és a csillagon át sem megy |
+| ha–akkor | 3–5 | két, három, négy szabálykártya (szín → nyíl); az 5. szinten két jel egymás után |
+
+A hibakeresés, a programok összevetése és a ha–akkor a 3. szinten indul: a gyerek előbb maga épít programot, így egy
+friss profil a Robotpályán építéssel és a „Hová ér?" kérdéssel kezd.
 
 A pályákat rögzített magból sorsolja a program (minden betöltéskor ugyanazok), és egy teszt minden pályát megold. A
 2. tévedés után megmutatott és a 3. után együtt megépített program a legegyszerűbb megoldás (a legkevesebb

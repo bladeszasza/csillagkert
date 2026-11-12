@@ -160,9 +160,10 @@ ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba ment
   legalább 10; pontosan egy helyes válasz; nincs ismétlődő kép vagy név; a helyes válasz helye egyenletes; minden válasz
   valahol helyes is; a gépi megoldó mindet megoldja; a kimondott szövegben nincs számjegy, jel vagy emoji, egy mondat
   legfeljebb 12 szó).
-- Ütemező: `node --test tests/scheduler.test.mjs` (300 feladatos szimuláció ismétlés nélkül, szintlépés és visszalépés,
-  kezdőnek csak a szintjéhez illő készség, ismétlési napok, gyakorló feladatok).
-- Feladat-galéria: `http://localhost:8080/tests/gallery.html?st=okos` (vagy `szamol`, `forma`) – sablononként és
+- Ütemező: `node --test tests/scheduler.test.mjs` (300 feladatos szimuláció ismétlés nélkül, 90 szimulált
+  gyereknél is: 5–7 évesek, gyenge–erős; szintlépés és visszalépés; kezdőnek csak a szintjéhez illő készség, egy állomás
+  a bevezető készséggel kezd; ismétlési napok; gyakorló feladatok).
+- Feladat-galéria: `http://localhost:8080/tests/gallery.html?st=okos` (vagy `szamol`, `forma`, `hang`, `zene`, `algo`) – sablononként és
   szintenként egy minta kicsinyítve, a helyes válasz zöld keretben. Nem szól és nem ír a mentésbe.
 - Böngészős füstteszt: `http://localhost:8080/tests/smoke.html` (hangerő-mérés, a jó válasz helye, megszakítás utáni csend,
   minden feladattípus elindul, a kert lakói és rajzolási terhe, a tópart és a tanya, koppintás minden barátra,
