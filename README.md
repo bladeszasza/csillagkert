@@ -43,8 +43,10 @@ Feladatok → csillagok → jutalomjáték. Hibázásért nincs büntetés: szel
 - **Hangok:** patadobogás, ugrás, érkezés, koccanás; a versenyben visszaszámlálás, rajt és ujjongás. A verseny végén a két
   unikornis egymás felé fordul és együtt ugrál, akárki nyert; aki másodiknak ér be, az is dicséretet kap.
 - **A jutalomidő vége szelíd:** egy perccel előtte 🌅 jelzés és egy mondat („Még egy kicsit játszunk…"). Ha épp fut egy
-  verseny, megvárja a végét (legfeljebb 45 mp-ig), aztán egy búcsúkártya jön, és a kert magától visszatér.
+  verseny vagy egy unikornis-futás kör, megvárja a végét (legfeljebb 45 mp-ig), aztán egy búcsúkártya jön, és a kert magától visszatér.
 - **Unikornis-futás (Sparkhorn):** amíg tölt, „Töltődik…" kártya látszik; ha nincs internet, Rozi szól, és van „Újra" gomb.
+  A játék a saját repójában él (`sparkhorn-sprint`): a three.js helyben van, a kezdőképernyőn és a kör végén magyarul
+  beszél, a hangjai a Csillagkert hangjaihoz mérve szólnak, és követik a szülői hangerőt.
 
 ## Etetés
 

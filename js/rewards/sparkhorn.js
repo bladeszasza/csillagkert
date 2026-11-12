@@ -29,6 +29,8 @@ export function run(container, { src = SPARKHORN_URL, wait = WAIT_MS } = {}) {
     timer = setTimeout(fail, wait);
   }
   load();
+  // a jutalomidő vége kivárja a futó kört (a Sparkhorn ugyanarról a címről jön, ezért belelátunk)
+  container.__busy = () => { try { return !!container.querySelector('iframe')?.contentWindow?.__sparkhorn?.busy?.(); } catch (e) { return false; } };
   container.__spark = { state: () => { const c = container.querySelector('.spark-load'); return !c ? 'none' : c.hidden ? 'loaded' : c.classList.contains('bad') ? 'error' : 'loading'; }, reload: load };
   return () => { alive = false; clearTimeout(timer); container.innerHTML = ''; };
 }

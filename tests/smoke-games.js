@@ -237,6 +237,12 @@ export async function testMinigames(ok) {
       opts: { src: './blank.html', wait: 3000 }, settle: 800,
       during: async h => {
         const st = h.__spark.state();
+        // a jutalomidő vége kivárja a futó kört: a keretben futó játék busy() jelzését olvassuk
+        const fw = h.querySelector('iframe').contentWindow, idle = h.__busy();
+        fw.__sparkhorn = { busy: () => true }; const running = h.__busy();
+        fw.__sparkhorn = { busy: () => { throw new Error('teszt'); } }; const broken = h.__busy();
+        delete fw.__sparkhorn;
+        ok('Sparkhorn-keret: a jutalomidő vége kivárja a futó kört', idle === false && running === true && broken === false, `nincs kör: ${idle}, fut: ${running}, hibás jelzés: ${broken}`);
         Object.defineProperty(navigator, 'onLine', { get: () => false, configurable: true });
         const s0 = spoken(); h.__spark.reload(); await wait(100);
         const st2 = h.__spark.state(), retry = !h.querySelector('.spark-retry').hidden;
