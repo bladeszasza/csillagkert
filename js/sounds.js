@@ -76,10 +76,10 @@ export function play(kind) { note(kind); if (!unlockAudio()) return; try { SOUND
 // Az állat saját hangja (a kert lakóinak azonosítójával): a cica nyávog, a kutya ugat, a róka csahol,
 // a nyuszi nyüszög, a maci brummog, a panda mekeg. happy: a cica utána dorombol is.
 export const VOICE = { cat: 'meow', bunny: 'squeak', dog: 'woof', fox: 'foxyip', bear: 'brumm', panda: 'bleat' };
-export function animalVoice(id, { happy: glad = false } = {}) {
+export function animalVoice(id, { happy: glad = false, defer = setTimeout } = {}) {
   const kind = VOICE[id] || 'yay';
   play(kind);
-  if (glad && id === 'cat') setTimeout(() => play('purr'), 520);
+  if (glad && id === 'cat') defer(() => play('purr'), 520);   // defer: a feladat saját időzítője (megszakítás után nem szól)
   return kind;
 }
 export const munch = () => play('munch');

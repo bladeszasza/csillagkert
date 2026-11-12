@@ -38,8 +38,8 @@ Ki mit eszik (`js/friends.js`): rossz válasz csak olyan étel lehet, amit az á
 | cica | hal, hús | jóváhagyott terv |
 | kutya | csont, hús | jóváhagyott terv |
 | panda | bambusz | jóváhagyott terv |
-| róka | hús, tojás | [Wildlife Online: Red Fox Diet](https://www.wildlifeonline.me.uk/animals/article/red-fox-diet-what-foxes-eat) – szülői átnézésre vár |
-| maci | hal, áfonya | [US National Park Service: Brown Bears](https://www.nps.gov/subjects/bears/brown-bears.htm) – szülői átnézésre vár |
+| róka | hús, tojás | [Wildlife Online: Red Fox Diet](https://www.wildlifeonline.me.uk/animals/article/red-fox-diet-what-foxes-eat) (kisemlősök, tojás, bogyók) – szülői átnézésre vár |
+| maci | egyelőre nincs feladata | A barnamedve mindenevő: növények, bogyók, hal, kisemlősök, fű, gyökér ([US National Park Service](https://www.nps.gov/subjects/bears/brown-bears.htm)), ezért a „mit eszik?” kérdéshez nincs két biztosan rossz válasz. A kertben lakik; a feladatáról a szülő dönt. |
 
 ## Telepítés a főképernyőre
 

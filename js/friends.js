@@ -8,8 +8,8 @@ export const FRIENDS = [
   { id: 'cat', emoji: '🐱', name: 'cica', stars: 0, home: [0, 1], height: 3.1, eats: ['hal', 'hús'], maybe: ['tojás', 'csont'] },
   { id: 'bunny', emoji: '🐰', name: 'nyuszi', stars: 3, home: [-2.5, 1.2], height: 1.9, eats: ['répa', 'saláta', 'széna'], maybe: ['áfonya', 'bambusz'] },
   { id: 'dog', emoji: '🐶', name: 'kutya', stars: 8, home: [2.4, 1.2], height: 1.55, eats: ['hús', 'csont'], maybe: ['répa', 'saláta', 'tojás', 'hal', 'áfonya'] },
-  { id: 'fox', emoji: '🦊', name: 'róka', stars: 15, home: [-4.75, -0.6], height: 1.55, eats: ['hús', 'tojás'], maybe: ['áfonya', 'hal', 'csont'] },
-  { id: 'bear', emoji: '🐻', name: 'maci', stars: 30, home: [4.65, -0.6], height: 1.55, eats: ['hal', 'áfonya'], maybe: ['hús', 'tojás', 'répa', 'saláta', 'csont'] },
+  { id: 'fox', emoji: '🦊', name: 'róka', stars: 15, home: [-4.75, -0.6], height: 1.55, eats: ['hús', 'tojás'], maybe: ['áfonya', 'hal', 'csont', 'széna'] },
+  { id: 'bear', emoji: '🐻', name: 'maci', stars: 30, home: [4.65, -0.6], height: 1.55, eats: ['hal', 'áfonya'], maybe: ['hús', 'tojás', 'répa', 'saláta', 'csont', 'széna'] },
   { id: 'panda', emoji: '🐼', name: 'panda', stars: 55, home: [2.2, -3.6], height: 1.55, eats: ['bambusz'], maybe: ['répa', 'saláta', 'áfonya'] },
 ];
 export const friendById = id => FRIENDS.find(f => f.id === id);
@@ -36,20 +36,20 @@ export const FOODS = {
 };
 
 // Etetős feladatok: [állat, jó étel, rossz étel, rossz étel]. Egymás után más-más állat jön.
-// A nyuszi, a cica, a kutya és a panda párjai a jóváhagyott tervből valók; a rókáé és a macié forrásból
-// (lásd README: „Etetés"), a szülő átnézi őket. Rossz válasz csak olyan étel lehet, amit az állat biztosan nem eszik.
+// A nyuszi, a cica, a kutya és a panda párjai a jóváhagyott tervből valók; a rókáé forrásból (lásd README: „Etetés"),
+// a szülő átnézi. Rossz válasz csak olyan étel lehet, amit az állat biztosan nem eszik.
+// A macinak egyelőre NINCS etetős feladata: a barnamedve mindenevő (hal, bogyó, fű, gyökér, hús), ezért a
+// „mit eszik?” kérdéshez nincs két biztosan rossz válasz. A kertben lakik, koppintásra brummog; a feladatáról a szülő dönt.
 export const MEALS = [
   ['bunny', 'répa', 'hús', 'hal'],
   ['cat', 'hal', 'répa', 'széna'],
   ['dog', 'csont', 'széna', 'bambusz'],
   ['panda', 'bambusz', 'hal', 'csont'],
-  ['fox', 'hús', 'saláta', 'széna'],
-  ['bear', 'hal', 'bambusz', 'széna'],
+  ['fox', 'hús', 'saláta', 'bambusz'],
   ['bunny', 'saláta', 'csont', 'tojás'],
   ['cat', 'hús', 'saláta', 'bambusz'],
   ['dog', 'hús', 'bambusz', 'széna'],
-  ['fox', 'tojás', 'bambusz', 'széna'],
-  ['bear', 'áfonya', 'széna', 'bambusz'],
+  ['fox', 'tojás', 'bambusz', 'saláta'],
   ['bunny', 'széna', 'hal', 'hús'],
 ];
 

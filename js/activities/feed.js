@@ -7,7 +7,7 @@ import { say } from '../voice.js';
 import { animalVoice, munch } from '../sounds.js';
 import { ding } from '../audio.js';
 import { withArt } from '../hu.js';
-import { sleep } from '../scope.js';
+import { sleep, later } from '../scope.js';
 import { FOODS } from '../friends.js';
 
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -58,7 +58,7 @@ export function run(container, { kind, animal, name, good, wrong }, ctx = {}) {
         }
         btn.style.opacity = 0;
         live?.thank(); if (!live) bubble.textContent = '😋';
-        animalVoice(kind, { happy: true });           // jóllakott: csak az állat hangja szól, Rozi hallgat
+        animalVoice(kind, { happy: true, defer: later });           // jóllakott: csak az állat hangja szól, Rozi hallgat
         await sleep(1900);
         resolve();
       } else {

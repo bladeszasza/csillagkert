@@ -83,7 +83,8 @@ test('etetés: csak a kert 3D lakóit etetjük, a jó étel igaz, a rossz étel 
   for (const w of new Set(MEALS.flatMap(m => m.slice(2)))) assert.ok(goods.has(w), `soha nem helyes étel: ${w}`);
   // a feladatsorban az etetésnek saját kulcsa van (állat + jó étel), és minden barátot lehet etetni
   assert.deepEqual(FEED_ITEMS.map(idOf), MEALS.map(m => `feed-${m[0]}-${m[1]}`));
-  for (const f of FRIENDS) assert.ok(MEALS.some(m => m[0] === f.id), `nincs etetős feladata: ${f.name}`);
+  // a maci kivétel: mindenevő, nincs két biztosan rossz válasza (lásd js/friends.js) – ha mégis kap feladatot, ez a teszt szóljon
+  for (const f of FRIENDS) assert.equal(MEALS.some(m => m[0] === f.id), f.id !== 'bear', `etetős feladat: ${f.name}`);
 });
 
 test('kert: a barátok a csillagokkal érkeznek, etetéssel hamarabb is', () => {

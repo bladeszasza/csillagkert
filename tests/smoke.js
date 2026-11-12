@@ -154,16 +154,16 @@ async function testGarden() {
   // b) két tévedés: az első szó nélkül, a második után egy tanító mondat; aztán koppintással a jó étel
   {
     const ac = new AbortController(), h = host(), s0 = spoken(), l0 = soundLog.length; let done = false; setScope(ac.signal);
-    feed.run(h, feedItem('bear', 'hal'), { garden }).then(() => { done = true; });
+    feed.run(h, feedItem('dog', 'csont'), { garden }).then(() => { done = true; });
     await wait(2800);
     tap(foodBtn(h, 'bambusz')); await wait(1800);
     const afterFirst = spoken() - s0;
     tap(foodBtn(h, 'széna')); await wait(2100);
     const said = window.__spoken.slice(s0), gone = h.querySelectorAll('.food.gone').length, glow = h.querySelector('.food.glow')?.getAttribute('aria-label');
-    ok('etetés: az első tévedésnél Rozi nem szól, a másodiknál megtanítja', afterFirst === 1 && said.length === 2 && said[1] === 'A maci halat eszik.' && gone === 1 && glow === 'hal', said.join(' | '));
+    ok('etetés: az első tévedésnél Rozi nem szól, a másodiknál megtanítja', afterFirst === 1 && said.length === 2 && said[1] === 'A kutya csontot eszik.' && gone === 1 && glow === 'csont', said.join(' | '));
     ok('etetés: tévedésnél nem szól az állat öröm-hangja', kindsSince(l0) === '', kindsSince(l0) || 'nincs állathang');
-    tap(foodBtn(h, 'hal')); await wait(4300);
-    ok('etetés (koppintás): két tévedés után is befejezhető, összesen két Rozi-mondattal', done && spoken() - s0 === 2 && kindsSince(l0).endsWith(VOICE.bear), `${window.__spoken.slice(s0).join(' | ')} · ${kindsSince(l0)}`);
+    tap(foodBtn(h, 'csont')); await wait(4300);
+    ok('etetés (koppintás): két tévedés után is befejezhető, összesen két Rozi-mondattal', done && spoken() - s0 === 2 && kindsSince(l0).endsWith(VOICE.dog), `${window.__spoken.slice(s0).join(' | ')} · ${kindsSince(l0)}`);
     garden.endFeed(); setScope(null); h.remove(); await wait(300);
   }
   // c) megszakítás (X) etetés közben: csend, és a kert visszaáll
