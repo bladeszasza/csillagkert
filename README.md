@@ -9,6 +9,9 @@ Feladatok → csillagok → jutalomjáték. Hibázásért nincs büntetés: szel
 
 - **A kert él:** a cica mellett a csillagokkal sorban megérkezik a nyuszi, a kutya, a róka, a maci és a panda.
   Pislognak, sétálnak a zugukban, koppintásra megszólalnak a saját hangjukon. Minden csillag egy virág.
+  Az új barát besétál, megszólal, és Rozi egy mondatban bejelenti. A nap a csillagmérővel együtt halad a naplemente felé.
+- **A kert a térkép:** az állomások helyek a kertben (ceruzatorony, házikó, almafa, földgömb, robot, festőállvány,
+  számolókockák, harangok, piknik…), a jelükre koppintva lehet odamenni. A „Tovább" gomb megmaradt annak, aki nem akar választani.
 - **Rozi, a robot** beszél (böngésző-hang), bemutatkozik, ő osztja a csillagokat; az arca a hangulathoz igazodik.
 - **Feladatok:** vonalkövetés és betűk, számolás 20-ig, összeadás/kivonás, formák, hangok és rímek,
   zene (harangok, szó–mi, mély–magas, halk–hangos, egyforma–különböző, feljebb–lejjebb),

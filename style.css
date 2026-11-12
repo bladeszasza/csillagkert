@@ -405,3 +405,11 @@ button { touch-action: none; }
 .small.kid.on { background: var(--gold); }
 #parent.nochild .child { display: none; }
 #p-new { background: #fff; border-radius: 14px; padding: 8px 12px; }
+
+/* --- M2b: térképes főképernyő – az állomások jelei a kerti tereptárgyaikon ülnek (3D nélkül alul, sorban maradnak) --- */
+#home.map #stations { position: fixed; inset: 0; max-width: none; display: block; pointer-events: none; }
+#home.map .station { position: absolute; width: 66px; height: 66px; aspect-ratio: auto; padding: 0; border-radius: 50%; transform: translate(-50%, -50%); justify-content: center; background: rgba(255,255,255,.95); box-shadow: 0 4px 0 #cdb8f2, 0 8px 14px rgba(60,20,120,.25); }
+#home.map .station:active { transform: translate(-50%, -46%); box-shadow: 0 1px 0 #cdb8f2; }
+#home.map .station span { font-size: 36px; line-height: 1; }
+#home.map .station small { display: none; }
+#switch { top: auto; right: 16px; bottom: 16px; }

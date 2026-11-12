@@ -55,14 +55,36 @@ export const MEALS = [
   ['bunny', 'széna', 'hal', 'hús'],
 ];
 
-// Az etetőhely: ide jön az éhes barát, a kamera ide közelít. A kutya zuga előtt van, így a közelképen
-// a kutya takarásban marad, a cica pedig oldalt, halványan látszik: az éhes állat a főszereplő.
-export const FEED_SPOT = [2.4, 5.0];
+// Az etetőhely: ide jön az éhes barát, a kamera ide közelít; a többi barát a háttérben halványul.
+// FEED_GATE: az első sor tereptárgyai mellett (jobbról) megy ki a barát az etetőhelyre, nem a tárgyakon keresztül.
+export const FEED_SPOT = [4.7, 5.0];
+export const FEED_GATE = [4.7, 2.3];
 
-// --- virágok helye: determinisztikus, a barátok zugait és az etetőhely előtti sávot szabadon hagyja ---
+// Az állomások HELYEK a kertben (id = az állomás azonosítója). Hátul a magas tereptárgyak (a cica mögött üres a hely,
+// hogy semmi ne bújjon el mögötte), elöl, a barátok előtt az alacsonyak.
+// x, z: a tereptárgy helye;  scale: méret;  sign: [magasság, előre-tolás] – ide kerül a megkoppintható jel a képernyőn.
+// A két sor fekvő és álló képernyőn is elfér úgy, hogy a jelek nem takarják sem egymást, sem a barátokat, sem a gombokat.
+const BACK_Z = -7, FRONT_Z = 3.2;
+export const PLACES = [
+  { id: 'ido', x: -6.9, z: BACK_Z, r: 1.2, sign: [2.75, 0] },
+  { id: 'hang', x: -4.9, z: BACK_Z, r: 1.2, sign: [2.75, 0] },
+  { id: 'ceruza', x: -2.9, z: BACK_Z, r: 1.2, sign: [2.75, 0] },
+  { id: 'egeszseg', x: 2.9, z: BACK_Z, r: 1.2, sign: [2.75, 0] },
+  { id: 'vilag', x: 4.9, z: BACK_Z, r: 1.2, sign: [2.75, 0] },
+  { id: 'algo', x: 6.9, z: BACK_Z, r: 1.2, sign: [2.75, 0] },
+  { id: 'rajz', x: -3.45, z: FRONT_Z, r: 0.7, sign: [0, 0.3] },
+  { id: 'szamol', x: -2.3, z: FRONT_Z, r: 0.7, sign: [0, 0.3] },
+  { id: 'forma', x: -1.15, z: FRONT_Z, r: 0.7, sign: [0, 0.3] },
+  { id: 'okos', x: 0, z: FRONT_Z, r: 0.7, sign: [0, 0.3] },
+  { id: 'zene', x: 1.15, z: FRONT_Z, r: 0.7, scale: 0.44, sign: [0, 0.3] },
+  { id: 'test', x: 2.3, z: FRONT_Z, r: 0.7, sign: [0, 0.3] },
+  { id: 'allat', x: 3.45, z: FRONT_Z, r: 0.7, sign: [0, 0.3] },
+];
+
+// --- virágok helye: determinisztikus; szabadon hagyja a barátok zugait, a tereptárgyakat és az etetőhely előtti sávot ---
 export const MAX_FLOWERS = 420;
-const ZONES = FRIENDS.map(f => ({ x: f.home[0], z: f.home[1], r: f.id === 'cat' ? 1.7 : 1.35 }));
-const isFree = (x, z) => !(Math.abs(x - FEED_SPOT[0]) < 1.7 && z > 2.3) && z < 6 && Math.hypot(x, z) < 12.6
+const ZONES = [...FRIENDS.map(f => ({ x: f.home[0], z: f.home[1], r: f.id === 'cat' ? 1.7 : 1.35 })), ...PLACES.filter(p => p.z < 0).map(p => ({ x: p.x, z: p.z, r: p.r }))];
+const isFree = (x, z) => !(Math.abs(x - FEED_SPOT[0]) < 1.7 && z > 1.6) && !(z > 2.4 && z < 4.3 && Math.abs(x) < 4.3) && z < 6 && Math.hypot(x, z) < 12.6
   && ZONES.every(o => Math.hypot(x - o.x, z - o.z) > o.r);
 const spots = [];
 let cand = 0;

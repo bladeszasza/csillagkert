@@ -126,8 +126,17 @@ async function testGarden() {
   garden.setStars(10, []);
   let d = garden.debug();
   ok('kert: 10 csillagnál a cica, a nyuszi és a kutya lakik itt', d.friends.join() === 'cat,bunny,dog' && d.flowers === 10, `lakók: ${d.friends.join(', ')}; virágok: ${d.flowers}; rajzolási hívások: ${d.calls}`);
+  const g0 = soundLog.length;
   garden.setStars(70, []); await wait(2900);                  // az új barátok besétálnak az ösvényen: megvárjuk őket
   d = garden.debug(); const calls70 = d.calls;
+  const greet = soundLog.slice(g0).map(x => x.kind).sort().join(',');
+  ok('kert: az érkező barát megszólal a saját hangján', greet === [VOICE.fox, VOICE.bear, VOICE.panda].sort().join(','), greet);
+  // térkép: az állomások jelei a kerti tereptárgyaikon ülnek, a képen belül, egymást nem takarva
+  const pl = garden.places(), ids = Object.keys(pl || {}), near = [];
+  for (let i = 0; i < ids.length; i++) for (let j = 0; j < i; j++) if (Math.abs(pl[ids[i]].x - pl[ids[j]].x) < 70 && Math.abs(pl[ids[i]].y - pl[ids[j]].y) < 70) near.push(`${ids[i]}~${ids[j]}`);
+  const off = ids.filter(k => pl[k].x < 33 || pl[k].x > 867 || pl[k].y < 80 || pl[k].y > 617);
+  const onFriend = ids.filter(k => Object.values(d.screen).some(r => pl[k].x > r.left + 10 && pl[k].x < r.right - 10 && pl[k].y > r.top + 10 && pl[k].y < r.bottom - 10));
+  ok('térkép: mind a 13 állomásnak van megkoppintható helye a kertben', ids.length === 13 && !near.length && !off.length && !onFriend.length, `jelek: ${ids.length}; egymáson: ${near.join(' ') || '–'}; képen kívül: ${off.join(' ') || '–'}; baráton: ${onFriend.join(' ') || '–'}`);
   ok('kert: 70 csillagnál mind a hat barát itt van', d.friends.length === 6 && d.flowers === 70, `lakók: ${d.friends.join(', ')}`);
   ok('kert: legfeljebb 150 rajzolási hívás (régen 70 virággal kb. 600 volt)', d.calls <= 150, `hívások: ${d.calls}, háromszögek: ${d.triangles}`);
   const out = Object.entries(d.screen).filter(([, r]) => r.left < 0 || r.right > 900 || r.top < 0 || r.bottom > 650).map(([k]) => k);

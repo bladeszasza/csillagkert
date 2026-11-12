@@ -4,8 +4,10 @@
 import * as THREE from '../vendor/three.module.js';
 import { makeGardenCat, animateCat } from './rewards/cat3d.js';
 import { makeFriend, animateFriend } from './rewards/creatures.js';
-import { friendById, friendsFor, flowerSpot, MAX_FLOWERS, FEED_SPOT } from './friends.js';
+import { friendById, friendsFor, flowerSpot, MAX_FLOWERS, FEED_SPOT, FEED_GATE, PLACES } from './friends.js';
 import { animalVoice } from './sounds.js';
+import { merge } from './geo.js';
+import { buildPlaces } from './places3d.js';
 
 const FOV = 50, TAN = Math.tan(FOV * Math.PI / 360);
 const SCALE = 1.35;                                  // a barátok mérete a kertben
@@ -14,23 +16,6 @@ const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp01 = v => Math.max(0, Math.min(1, v));
 const ease = k => k * k * (3 - 2 * k);
 const angDiff = (to, from) => { let d = (to - from) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d; };
-
-// Több test egyetlen geometriává (pozíció + normál + csúcsszín), hogy egy virág egy rajzolási hívás legyen
-function merge(parts) {
-  const pos = [], nor = [], col = [];
-  for (const { geo, matrix, color } of parts) {
-    const g = geo.index ? geo.toNonIndexed() : geo.clone();
-    if (matrix) g.applyMatrix4(matrix);
-    const p = g.attributes.position, n = g.attributes.normal, c = new THREE.Color(color ?? 0xffffff);
-    for (let i = 0; i < p.count; i++) { pos.push(p.getX(i), p.getY(i), p.getZ(i)); nor.push(n.getX(i), n.getY(i), n.getZ(i)); col.push(c.r, c.g, c.b); }
-    g.dispose(); geo.dispose();
-  }
-  const out = new THREE.BufferGeometry();
-  out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-  out.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
-  out.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-  return out;
-}
 
 export function createGarden(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
@@ -46,6 +31,18 @@ export function createGarden(canvas) {
 
   const ground = new THREE.Mesh(new THREE.CylinderGeometry(14, 14, 0.6, 48), new THREE.MeshLambertMaterial({ color: 0xa8e6a0 }));
   ground.position.y = -0.3; scene.add(ground);
+
+  // Az állomások helyei (ceruzatorony, házikó, harangos pavilon…) és a háttér fái: egyetlen háló, egyetlen rajzolási hívás
+  let placesMesh = null;
+  try { placesMesh = buildPlaces(); scene.add(placesMesh); } catch (e) { console.warn('A kerti tereptárgyak nem épültek fel', e); }
+
+  // Napszak: a csillagmérővel együtt a reggeli égből naplementés aranyóra lesz (k: 0..1)
+  const skyA = new THREE.Color(SKY), skyB = new THREE.Color(0xffd9b8), sunA = new THREE.Color(0xfff2d0), sunB = new THREE.Color(0xffb870);
+  function setDay(k) {
+    k = clamp01(k);
+    scene.background.lerpColors(skyA, skyB, k * k); scene.fog.color.copy(scene.background);
+    sun.color.lerpColors(sunA, sunB, k); sun.position.set(4 + k * 5, 8 - k * 3.5, 5);
+  }
 
   const m4 = new THREE.Matrix4(), v3 = new THREE.Vector3(), q4 = new THREE.Quaternion(), s3 = new THREE.Vector3();
 
@@ -130,23 +127,29 @@ export function createGarden(canvas) {
     const a = { id, def, g, isCat, size, face0: isCat ? 0 : Math.PI, x: def.home[0], z: def.home[1], heading: isCat ? 0 : Math.PI, want: isCat ? 0 : Math.PI,
       state: 'idle', move: null, until: now + rnd(1500, 5000), seed: rnd(0, 9), last: now, hop: 0, chew: 0, nod: 0, turn: 0, turnSide: 1, wave: 0,
       blink: now + rnd(800, 4000), blinkEnd: 0, belly: 0, bodyBase: u.body.scale.clone() };
-    if (enter) { a.x = def.home[0] < 0 ? -10 : 10; a.z = 3.2; walk(a, def.home[0], def.home[1], 2600, 'idle', true); }
+    if (enter) { a.x = def.home[0] < 0 ? -10 : 10; a.z = 1.6; a.greet = true; walk(a, def.home[0], def.home[1], 2600, 'idle', true); }   // érkezés: besétál, aztán köszön
     a.heading = a.want;
     scene.add(g); actors.set(id, a);
     return a;
   }
   // Egyenes vonalú séta az óra szerint (nem képkockánként), így lassú megjelenítés mellett is időre odaér
-  function walk(a, x, z, dur, then, run) {
-    a.move = { x0: a.x, z0: a.z, x1: x, z1: z, t0: performance.now(), dur: Math.max(1, dur), then, run: !!run };
-    if (!a.isCat && (x !== a.x || z !== a.z)) a.want = a.face0 + Math.atan2(x - a.x, z - a.z);
+  // via: közbülső pontok (pl. a tereptárgyak közti rés), hogy a barát ne a tárgyakon sétáljon át
+  function walk(a, x, z, dur, then, run, via = []) {
+    const pts = [[a.x, a.z], ...via, [x, z]], lens = [0];
+    for (let i = 1; i < pts.length; i++) lens.push(lens[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    a.move = { pts, lens, t0: performance.now(), dur: Math.max(1, dur), then, run: !!run };
     a.state = 'walk';
   }
+  const pathLen = (a, x, z, via = []) => { let l = 0, p = [a.x, a.z]; for (const q of [...via, [x, z]]) { l += Math.hypot(q[0] - p[0], q[1] - p[1]); p = q; } return l; };
   function stepActor(a, now, t) {
     let speed = 0;
     if (a.move) {
-      const m = a.move, k = clamp01((now - m.t0) / m.dur);
-      a.x = m.x0 + (m.x1 - m.x0) * k; a.z = m.z0 + (m.z1 - m.z0) * k; speed = m.run ? 0.85 : 0.25;
-      if (k >= 1) { a.move = null; a.state = m.then; a.until = now + rnd(2500, 6500); speed = 0; }
+      const m = a.move, k = clamp01((now - m.t0) / m.dur), d = k * m.lens[m.lens.length - 1];
+      let i = 1; while (i < m.pts.length - 1 && m.lens[i] < d) i++;
+      const p0 = m.pts[i - 1], p1 = m.pts[i], u = clamp01((d - m.lens[i - 1]) / ((m.lens[i] - m.lens[i - 1]) || 1));
+      a.x = p0[0] + (p1[0] - p0[0]) * u; a.z = p0[1] + (p1[1] - p0[1]) * u; speed = m.run ? 0.85 : 0.25;
+      if (!a.isCat && (p1[0] !== p0[0] || p1[1] !== p0[1])) a.want = a.face0 + Math.atan2(p1[0] - p0[0], p1[1] - p0[1]);
+      if (k >= 1) { a.move = null; a.state = m.then; a.until = now + rnd(2500, 6500); speed = 0; if (a.greet) { a.greet = false; poke(a); } }   // megérkezett: ugrik, megszólal, szívek
     }
     if (!a.move) {
       if (a.state === 'feeding') a.want = a.face0 + Math.atan2(camera.position.x - a.x, camera.position.z - a.z);
@@ -292,8 +295,9 @@ export function createGarden(canvas) {
     const fresh = !actors.has(id), a = spawn(id, false); if (!a) return null;
     const now = performance.now(), sx = FEED_SPOT[0], sz = FEED_SPOT[1];
     if (fresh) { a.x = 10; a.z = sz + 0.6; }                                              // új barát: oldalról sétál be
-    const dur = Math.max(500, Math.min(2400, Math.hypot(sx - a.x, sz - a.z) / 3.6 * 1000));
-    walk(a, sx, sz, dur, 'feeding', true);
+    const via = fresh ? [] : [FEED_GATE];                                                 // a kertből a tereptárgyak közti résen át jön ki
+    const dur = Math.max(500, Math.min(2600, pathLen(a, sx, sz, via) / 3.6 * 1000));
+    walk(a, sx, sz, dur, 'feeding', true, via);
     a.belly = 0;
     feeding = { a, frame, x: sx, z: sz };
     zoom.from = zoomAt(now); zoom.to = 1; zoom.t0 = now; zoom.dur = 1100;
@@ -312,13 +316,25 @@ export function createGarden(canvas) {
     feeding = { ...feeding, done: true };
     zoom.from = zoomAt(now); zoom.to = 0; zoom.t0 = now; zoom.dur = 900;
     a.chew = 0;
-    walk(a, a.def.home[0], a.def.home[1], Math.max(600, Math.hypot(a.def.home[0] - a.x, a.def.home[1] - a.z) / 3 * 1000), 'idle', true);
+    const via = a.z > FEED_GATE[1] + 0.3 ? [FEED_GATE] : [];                             // hazafelé is a résen át megy
+    walk(a, a.def.home[0], a.def.home[1], Math.max(600, pathLen(a, a.def.home[0], a.def.home[1], via) / 3.2 * 1000), 'idle', true, via);
     setTimeout(() => { if (feeding?.done && feeding.a === a) feeding = null; }, 950);
     setTimeout(() => { a.belly = 0; }, 6000);
   }
 
+  // Hol vannak az állomások jelei a képernyőn (az alaphelyzetű kamerából nézve)? { állomás: {x, y} }, vagy null, ha nincs térkép
+  const homeCam = new THREE.PerspectiveCamera(FOV, 1, 0.1, 100);
+  function places() {
+    if (!placesMesh) return null;
+    homeCam.aspect = W / H; homeCam.updateProjectionMatrix();
+    homeCam.position.copy(home.pos); homeCam.quaternion.copy(home.quat); homeCam.updateMatrixWorld();
+    const r = canvas.getBoundingClientRect(), out = {};
+    for (const p of PLACES) { v3.set(p.x, p.sign[0], p.z + p.sign[1]).project(homeCam); out[p.id] = { x: r.left + (v3.x + 1) / 2 * r.width, y: r.top + (1 - v3.y) / 2 * r.height }; }
+    return out;
+  }
+
   return {
-    setStars, beginFeed, endFeed,
+    setStars, beginFeed, endFeed, places, setDay,
     cheer() { const now = performance.now(); let k = 0; actors.forEach(a => { a.hop = now + 900 + (k++ % 3) * 70; }); },   // új csillag: mindenki ugrik egyet
     pause(p) { paused = !!p; if (!paused && !raf) raf = requestAnimationFrame(loop); },
     // tesztekhez és hibakereséshez: rajzolási hívások, lakók, virágok, a barátok helye a képernyőn

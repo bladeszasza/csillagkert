@@ -9,6 +9,7 @@ import { emote, moodFor, introduce } from './robot.js';
 import { renderMeter, flyStar } from './stars.js';
 import { setupParent } from './parent.js';
 import { friendsFor, friendById } from './friends.js';
+import { withArt } from './hu.js';
 
 const $ = id => document.getElementById(id);
 
@@ -72,6 +73,7 @@ try { const pick = sessionStorage.getItem(PICK); sessionStorage.removeItem(PICK)
 function fillFor() {
   garden?.setStars(progress.get().total, progress.get().friends);
   renderMeter(Math.min(progress.get().meter, perReward()), perReward());
+  garden?.setDay(progress.get().meter / perReward());        // a nap a csillagmérővel együtt halad a naplemente felé
   const many = progress.list().length > 1;
   $('switch').hidden = !many; $('switch').textContent = progress.get().mark;
 }
@@ -86,6 +88,17 @@ $('stations').addEventListener('click', e => {
   const item = stationItem(b.dataset.st); if (!item) return;
   runItem(item, b.dataset.st, 'station');
 });
+// Térkép: ha van 3D kert, az állomások jelei a kerti tereptárgyaikra kerülnek (ceruzatorony, házikó, almafa…).
+// 3D nélkül a jelek alul, egy sorban maradnak.
+function layoutPlaces() {
+  const pts = garden?.places?.() || null;
+  $('home').classList.toggle('map', !!pts);
+  for (const b of $('stations').children) { const p = pts?.[b.dataset.st]; b.style.left = p ? p.x + 'px' : ''; b.style.top = p ? p.y + 'px' : ''; }
+}
+layoutPlaces();
+window.addEventListener('resize', () => requestAnimationFrame(layoutPlaces));
+window.addEventListener('orientationchange', () => setTimeout(layoutPlaces, 350));
+window.visualViewport?.addEventListener('resize', () => requestAnimationFrame(layoutPlaces));
 
 // Ha nincs magyar hang, azt már az indulóképernyőn jelezzük (a szülőnek)
 const checkVoice = () => { $('voice-warn').hidden = hasHungarianVoice(); };
@@ -177,12 +190,16 @@ async function runItem(item, station, via) {
     setTimeout(() => say(res === 'abort' ? 'Semmi baj! Válassz mást, vagy játssz, ha kedved van.' : 'Semmi baj! Válasszunk mást!', { remember: false }), 400);
     return;
   }
+  const here = new Set(friendsFor(progress.get().total, progress.get().friends));
   const meter = progress.addStar(station, idOf(item));
   if (via === 'next') noteRound(item);
-  garden?.setStars(progress.get().total, progress.get().friends);
+  const arrived = friendsFor(progress.get().total, progress.get().friends).filter(f => !here.has(f));   // ezzel a csillaggal érkezett barát
+  garden?.setStars(progress.get().total, progress.get().friends);                 // az új barát besétál, megszólal, szívek szállnak
+  garden?.setDay(Math.min(meter, perReward()) / perReward());
   garden?.cheer();
-  // etetés után Rozi hallgat: ott az állat a saját hangján köszöni meg
-  if (!inGarden) say(PRAISE[progress.get().total % PRAISE.length] + (name() && meter >= perReward() ? ' ' + name() + '!' : ''), { remember: false });
+  // Új barátnál Rozi egy mondatban bejelenti; etetés után különben hallgat (ott az állat a saját hangján köszöni meg)
+  if (arrived.length) say(`Új barát érkezett: ${withArt(friendById(arrived[0]).name)}!`, { remember: false });
+  else if (!inGarden) say(PRAISE[progress.get().total % PRAISE.length] + (name() && meter >= perReward() ? ' ' + name() + '!' : ''), { remember: false });
   await flyStar(Math.min(meter, perReward()) - 1, Math.min(meter, perReward()));
   await sleep(900);
   if (meter >= perReward()) openReward(); else $('home').hidden = false;

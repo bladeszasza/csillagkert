@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CURRICULUM, STATIONS, stationOf, idOf, BASE_ITEMS, FEED_ITEMS } from '../js/curriculum.js';
 import { art, withArt, artLetter, ACC_NUM, numAttr, fromNum } from '../js/hu.js';
-import { FRIENDS, FOODS, MEALS, ANY, friendById, friendsFor, flowerSpot, MAX_FLOWERS, FEED_SPOT } from '../js/friends.js';
+import { FRIENDS, FOODS, MEALS, ANY, friendById, friendsFor, flowerSpot, MAX_FLOWERS, FEED_SPOT, FEED_GATE, PLACES } from '../js/friends.js';
 import { progress } from '../js/progress.js';
 
 const flat = CURRICULUM.flatMap(i => (i.type === 'seq' ? [i, ...i.steps] : [i]));
@@ -122,4 +122,14 @@ test('mentés: régi mentésben nincs "friends" mező – üresről indul, bőv�
   assert.deepEqual(progress.get().friends, ['panda', 'fox']);
   progress.reset();
   assert.deepEqual(progress.get().friends, []);
+});
+
+test('térkép: minden állomásnak van helye a kertben, a tereptárgyak nem ülnek egymáson, virág és barát nem nő rájuk', () => {
+  assert.deepEqual(PLACES.map(p => p.id).sort(), STATIONS.map(s => s.id).sort());
+  for (let i = 0; i < PLACES.length; i++) for (let j = 0; j < i; j++) assert.ok(Math.hypot(PLACES[i].x - PLACES[j].x, PLACES[i].z - PLACES[j].z) >= 1.1, `túl közeli tereptárgyak: ${PLACES[i].id}, ${PLACES[j].id}`);
+  for (const p of PLACES) for (const f of FRIENDS) assert.ok(Math.hypot(p.x - f.home[0], p.z - f.home[1]) > 1.6, `${p.id} a(z) ${f.name} zugában áll`);
+  const pts = Array.from({ length: MAX_FLOWERS }, (_, i) => flowerSpot(i));
+  for (const q of pts) for (const p of PLACES) assert.ok(Math.hypot(q.x - p.x, q.z - p.z) > 0.7, `virág a(z) ${p.id} tereptárgyon`);
+  // az etetőhelyre vezető kapu a tereptárgyak sora mellett van, nem rajtuk keresztül
+  for (const p of PLACES) assert.ok(Math.hypot(FEED_GATE[0] - p.x, FEED_GATE[1] - p.z) > 1 && Math.hypot(FEED_SPOT[0] - p.x, FEED_SPOT[1] - p.z) > 1, `az etetés útja a(z) ${p.id} tárgyon megy át`);
 });
