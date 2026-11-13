@@ -8,7 +8,7 @@ Feladatok → csillagok → jutalomjáték. Hibázásért nincs büntetés: szel
 **Amire épül:** okosítás · erények · tisztelet · kedvesség · törődés · tudás.
 
 - **A kert él:** a cica mellett a csillagokkal sorban 18 barát érkezik, 150 csillag után pedig jutalomkörönként egy újdonság:
-  új barát vagy új fa (lásd lent). Pislognak, sétálnak a zugukban,
+  új barát vagy új fa (lásd lent). A tóparton túl egy egész új kertrész, **Ausztrália** népesül be nyolc állattal. Pislognak, sétálnak a zugukban,
   koppintásra megszólalnak a saját hangjukon (mindegyiknek más). Minden csillag egy virág, de egyszerre legfeljebb 71 nyílik
   (a szülő kérésére, hogy ne nője be a kertet): ha már 71 van, a legrégebbi elhervad, és a helyén új, más színű virág nő.
   A 71 azért ennyi, mert a 72. hely már az alsó feladatjelek elé, a képernyő aljára esne (teszt: `tests/content.test.mjs`).
@@ -122,7 +122,8 @@ Ki mit eszik (`js/friends.js`): rossz válasz csak olyan étel lehet, amit az á
 
 - **A sün és az alma:** a mesékben a sün almát visz a tüskéin, a valóságban rovarokat, gilisztát, csigát eszik.
   Az alma ezért nála se jó, se rossz válasz nem lehet.
-- **Akit (még) nem etetünk:** béka, bagoly, egér, unikornis, malac, bárány, teknős. Ők a kertben élnek és megszólalnak,
+- **Akit (még) nem etetünk:** béka, bagoly, egér, unikornis, malac, bárány, teknős, és a távoli földek (Ausztrália, később Afrika)
+  minden lakója: náluk `eats: []` és `maybe: []` áll a táblában, így etetős feladat nem készül velük. Ők a kertben élnek és megszólalnak,
   de etetős feladatuk csak akkor lesz, ha az étrendjüket forrásból ellenőriztük (vagy a szülő jóváhagyja).
 - A „rossz" ételek is ellenőrzöttek: amit az állat néha megeszik (pl. a panda ritkán halat), az nem lehet rossz válasz.
 
@@ -168,10 +169,37 @@ A rend rögzített (az én beállításom, a `js/friends.js` elején):
 | 720 | szomorúfűz 🌳 | tópart (a virágkapu mögött) |
 | 750 · 780 · 810 · 840 · 870 | víziló · szurikáta · pálmafa · flamingó · majom | Afrika |
 
-Ausztrália és Afrika még készül; a táblázat a végleges rendet mutatja, de a kódba egy jövevény csak a kész modelljével
-kerül be (a három régi kertrész fái már ott vannak). Egy 30 csillagos körrel számolva Afrika kb. 13 körrel a tehén után
-nyílik, az utolsó jövevény 24 körrel utána jön. A fák a barátok mögött, a hátsó sorban nőnek, így senkit nem takarnak el;
-amikor egy fa kinő, Rozi bejelenti („Új fa nőtt a kertben: …"), és ha a tóparton vagy a tanyán nőtt, a kamera odasiklik.
+Ausztrália kész; Afrika még készül. A táblázat a végleges rendet mutatja, de a kódba egy jövevény csak a kész modelljével
+kerül be. Egy 30 csillagos körrel számolva Afrika kb. 13 körrel a tehén után nyílik, az utolsó jövevény 24 körrel utána jön.
+A fák a barátok mögött, a hátsó sorban nőnek, így senkit nem takarnak el; amikor egy fa kinő, Rozi bejelenti
+(„Új fa nőtt a kertben: …"), és ha egy szélső kertrészben nőtt, a kamera odasiklik.
+
+### Ausztrália (a tóparton túl, balra)
+
+Saját, homokszínű talaj a kert bal végén túl: hátul vörös sziklahegy, egy kis billabong (tavacska) a kacsacsőrű emlősnek,
+termeszvár, tüskés spinifex-fűcsomók, vörös kövek, szürkészöld sóbokrok és piros sivatagi virágok. Nyolc saját tervezésű
+lakó, mindegyik saját hanggal (szintetizált, nem felvétel):
+
+| Állat | Mi teszi felismerhetővé | Hangja |
+|---|---|---|
+| kenguru 🦘 | felegyenesedve áll, a zsebéből kikandikál a kicsinye; ugrálva halad | puha horkantás |
+| koala 🐨 | szürke, nagy pamacsos fül, nagy sötét orr | mély, reszelős bőgés |
+| kakadu 🦜 | fehér, sárga bóbita | éles rikoltás |
+| vombat | zömök, szürkésbarna, széles orr | rövid röffenés |
+| emu | magas, bozontos tollú madár, hosszú kékes nyak | mély dobolás |
+| kacsacsőrű emlős | lapos test, kacsacsőr, lapát farok; a tavacskában lakik | halk morgás |
+| kvokka | kicsi, kerek, mindig mosolyog; ugrálva halad | lefelé csúszó cippantás |
+| hangyászsün | krémszínű, sötét hegyű tüskék, hosszú cső orr (nem sün!) | mély fújtatás |
+
+- **Odajutás:** a kert alsó sarkaiban lévő gombok mindig a szomszédos részre visznek: középről balra a tópart, onnan tovább
+  Ausztrália; visszafelé a tópart, aztán a 🐱 gomb a kert közepére. A gombon az ottani első barát képe van.
+- **Elrendezés:** a zugokat fekvő és álló képernyőn (900×650, 650×900, 1024×768, 768×1024) kiszámoltam és a füstteszt
+  is méri: mindenki a képen van, a gombsor fölött, és a térkép jelei egyiküket sem takarják 15%-nál jobban. A legkisebb
+  (kacsacsőrű emlős) ezért nem középen, hanem bal elöl lakik, mert középen az alsó jelsor eltakarná.
+- **Rajzolási teher:** a távoli föld tájelemei, fái és lakói csak akkor rajzolódnak, ha a kamera látja őket (a befoglaló
+  gömbjeiket a kamera látóterével vetjük össze, így semmi nem „pattan be" a kép szélén). Ausztráliában a kert közepe nem
+  rajzolódik: ott kb. 74 ezer háromszög és 15 rajzolási hívás; a tóparton a szomszéd föld tája (a lakói nélkül) kb. 140 ezer,
+  a kert közepén 420 csillagnál változatlanul kb. 134 ezer.
 
 ## Ajándékok és szívek
 
@@ -348,7 +376,7 @@ ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba ment
 - Állatgaléria: `http://localhost:8080/tests/characters.html` (`?kind=cow`, `?page=2`, `?wave=1`, `?side=1`) – minden faj
   egyenként, a mért és a táblázatban álló magassággal.
 - A barátok egyetlen közös, példányosított hálócsomagból rajzolódnak (`js/three/characters.js`): a teljes kert
-  19 baráttal 12–31 rajzolási hívás. Mivel egyszerre legfeljebb 71 virág nyílik, a háromszögek száma 71 csillag után már
+  19 baráttal 12–31 rajzolási hívás. A távoli földek lakói saját csomagban vannak (lásd Ausztrália). Mivel egyszerre legfeljebb 71 virág nyílik, a háromszögek száma 71 csillag után már
   csak a barátokkal nő: 300 és 420 csillagnál is kb. 130 ezer (a korlátozás előtt 300 csillagnál 194 ezer volt), így a kert
   a tervben szereplő kb. 150 ezres kereten belül marad. A teljes kert minden kerti dísszel, a Barátság fájával, aranyvirágokkal
   és a saját unikornis legnehezebb öltözetével kb. 144 ezer háromszög és 46 rajzolási hívás (ebből egy a foltárnyékoké).

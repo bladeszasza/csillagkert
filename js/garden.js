@@ -7,7 +7,7 @@ import { makeCharacter, animateCharacter, createCharacterBatch } from './three/c
 import { friendById, friendsFor, flowerSpot, MAX_FLOWERS, GOLD_MAX, goldSpot, FEED_SPOT, FEED_GATE, PLACES, AREAS, floraFor, floraById } from './friends.js';
 import { animalVoice } from './sounds.js';
 import { merge } from './geo.js';
-import { buildPlaces } from './places3d.js';
+import { buildPlaces, buildLand } from './places3d.js';
 import { DECOR, giftById } from './gifts.js';
 import { buildDecorGeo, createFriendTree } from './decor3d.js';
 import { buildFloraGeo } from './flora3d.js';
@@ -57,8 +57,8 @@ export function createGarden(canvas) {
   }
   const clouds = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 12, 10), lookMat({ color: 0xffffff }), puffs.length);
   clouds.frustumCulled = false; scene.add(clouds);
-  function placeClouds() {
-    puffs.forEach((p, k) => { m4.makeScale(p.r, p.r, p.r).setPosition(cloudX[p.c] + p.ox, cloudY[p.c] + p.oy, cloudZ[p.c]); clouds.setMatrixAt(k, m4); });
+  function placeClouds(px = 0) {                         // px: a kamera vízszintes helye – a felhők messze vannak, vele tartanak
+    puffs.forEach((p, k) => { m4.makeScale(p.r, p.r, p.r).setPosition(px + cloudX[p.c] + p.ox, cloudY[p.c] + p.oy, cloudZ[p.c]); clouds.setMatrixAt(k, m4); });
     clouds.instanceMatrix.needsUpdate = true;
   }
   placeClouds();
@@ -82,9 +82,10 @@ export function createGarden(canvas) {
     };
     return mat;
   };
+  const mainGroup = new THREE.Group(); scene.add(mainGroup);
   const stems = new THREE.InstancedMesh(stemGeo, swaying(lookMat({ vertexColors: true })), MAX_FLOWERS);
   const petals = new THREE.InstancedMesh(petalGeo, swaying(lookMat({ color: 0xffffff })), MAX_FLOWERS);
-  stems.count = petals.count = 0; stems.frustumCulled = petals.frustumCulled = false; scene.add(stems, petals);
+  stems.count = petals.count = 0; stems.frustumCulled = petals.frustumCulled = false; mainGroup.add(stems, petals);
   const colors = [0xff8fc8, 0xffcf3f, 0x8e5be8, 0x7fe0c0, 0xff9f6b].map(c => new THREE.Color(c));
   const faded = new THREE.Color(0xc9a46a), tint = new THREE.Color();
   // A j. virág (j = hányadik csillag) a j % MAX_FLOWERS helyen nyílik; ha a hely foglalt, a régi virág előbb elhervad.
@@ -138,7 +139,7 @@ export function createGarden(canvas) {
   const tree = createFriendTree(scene);
   const goldStems = new THREE.InstancedMesh(stemGeo, swaying(lookMat({ vertexColors: true })), GOLD_MAX);
   const goldPetals = new THREE.InstancedMesh(petalGeo, swaying(lookMat({ color: 0xffc21a, emissive: 0x6a4300 })), GOLD_MAX);
-  goldStems.count = goldPetals.count = 0; goldStems.frustumCulled = goldPetals.frustumCulled = false; scene.add(goldStems, goldPetals);
+  goldStems.count = goldPetals.count = 0; goldStems.frustumCulled = goldPetals.frustumCulled = false; mainGroup.add(goldStems, goldPetals);
   function addDecor(id, animate) {
     const g = giftById(id); if (!g?.spot || decor.has(id)) return;
     const geo = buildDecorGeo(id); if (!geo) return;
@@ -147,6 +148,18 @@ export function createGarden(canvas) {
     m.scale.setScalar(animate ? 0.01 : k); scene.add(m); decor.set(id, m);
     if (animate) popping.push({ m, t0: performance.now() + 500 });
   }
+  // --- távoli földek (js/friends.js AREAS, land): saját tájelemek és fák egy csoportban, a lakóik saját kötegben ---
+  // Mindkettőt csak akkor rajzoljuk, ha a kamera látja valamelyik részét (lásd cull), így a háromszögek száma kordában marad.
+  const lands = new Map();
+  for (const r of AREAS.filter(a => a.land)) {
+    const group = new THREE.Group(), crowdGroup = new THREE.Group(); scene.add(group, crowdGroup);
+    let spheres = [];
+    try { const b = buildLand(r.id); if (b) { group.add(b.mesh); spheres = b.spheres.map(([x, y, z, s]) => new THREE.Sphere(new THREE.Vector3(x, y, z), s)); } }
+    catch (e) { console.warn('Egy távoli föld tájelemei nem épültek fel', r.id, e); }
+    lands.set(r.id, { group, crowdGroup, crowd: createCharacterBatch(crowdGroup, { shadows: true }), spheres });
+  }
+  const landOf = def => (def?.area && lands.get(def.area)) || null;
+
   // A kertrészek saját növényei (js/friends.js FLORA): a csillagokkal nőnek, mint a barátok; saját tárban, nem az ajándékok között
   const flora = new Map();
   function addFlora(id, animate) {
@@ -154,7 +167,9 @@ export function createGarden(canvas) {
     const geo = buildFloraGeo(id); if (!geo) return;
     const m = new THREE.Mesh(geo, decorMat), [x, z, rot = 0, k = 1] = f.spot;
     m.position.set(x, 0, z); m.rotation.y = rot; m.frustumCulled = false; m.userData.k = k;
-    m.scale.setScalar(animate ? 0.01 : k); scene.add(m); flora.set(id, m);
+    const land = landOf(f);
+    m.scale.setScalar(animate ? 0.01 : k); (land?.group || scene).add(m); flora.set(id, m);
+    land?.spheres.push(new THREE.Sphere(new THREE.Vector3(x, 2 * k, z), 2.4 * k));
     if (animate) popping.push({ m, t0: performance.now() + 500 });
   }
   // owned: a megszerzett ajándékok; hearts: szívek; gold: aranyvirágok; animate: az új díszek és szívek kipattannak
@@ -188,14 +203,14 @@ export function createGarden(canvas) {
   }
 
   // --- a kert lakói: a cica saját modell, a többi barát alkatrészei közös, példányosított hálókban (pár rajzolási hívás) ---
-  const actors = new Map(), crowd = createCharacterBatch(scene, { shadows: true });
+  const actors = new Map(), crowd = createCharacterBatch(mainGroup, { shadows: true });
   let avatarCfg = null;                                 // a saját unikornis ruhája (js/avatar.js); setAvatar() állítja
   function spawn(id, enter) {
     if (actors.has(id)) return actors.get(id);
     const def = friendById(id); if (!def) return null;
     const isCat = id === 'cat', g = isCat ? makeGardenCat() : makeCharacter(id, id === 'unicorn' ? avatarCfg : undefined), size = isCat ? 1 : SCALE;
     g.scale.setScalar(size);
-    if (!isCat) crowd.add(g); else crowd.shadow(g, 0.8, 0.66);
+    if (!isCat) (landOf(def)?.crowd || crowd).add(g); else crowd.shadow(g, 0.8, 0.66);
     const u = g.userData, now = performance.now();
     const a = { id, def, g, isCat, size, face0: isCat ? 0 : Math.PI, x: def.home[0], z: def.home[1], heading: isCat ? 0 : Math.PI, want: isCat ? 0 : Math.PI,
       state: 'idle', move: null, until: now + rnd(1500, 5000), seed: rnd(0, 9), last: now, hop: 0, chew: 0, nod: 0, turn: 0, turnSide: 1, wave: 0,
@@ -325,21 +340,39 @@ export function createGarden(canvas) {
     if (paused) draw(performance.now());                // szünetben is igazodjon a kép az új mérethez
   }
 
+  // --- mit lát a kamera? A kert közepe (virágmező + lakók) és a távoli földek (tájelemek, fák, lakók) csak akkor rajzolódik,
+  // ha valamelyik befoglaló gömbjük a látótérbe esik. A gömbök bőven fedik a tárgyakat, így semmi nem „pattan be" a kép szélén.
+  const frustum = new THREE.Frustum(), pv = new THREE.Matrix4(), probeS = new THREE.Sphere(), FIELD = new THREE.Sphere(new THREE.Vector3(0, 0.5, -1), 13.2);
+  const sees = (x, z, h) => { probeS.center.set(x, h / 2, z); probeS.radius = Math.max(0.6, h * 0.8); return frustum.intersectsSphere(probeS); };
+  function cull() {
+    pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); frustum.setFromProjectionMatrix(pv);
+    let main = frustum.intersectsSphere(FIELD);
+    const seen = new Set();
+    actors.forEach(a => {
+      const L = landOf(a.def);
+      if (L ? seen.has(L) : main) return;
+      if (sees(a.x, a.z, a.def.height * a.size)) { if (L) seen.add(L); else main = true; }
+    });
+    mainGroup.visible = main;
+    for (const L of lands.values()) { L.crowdGroup.visible = seen.has(L); L.group.visible = L.spheres.some(s => frustum.intersectsSphere(s)); }
+  }
+
   // --- egy lépés: minden az óra szerint mozog, így a lassan frissülő képernyőn is jó helyen áll ---
   const t0 = performance.now();
   let lastCloud = t0;
   function step(now) {
     const t = (now - t0) / 1000;
-    applyCamera(now);
+    applyCamera(now); cull();
     actors.forEach(a => stepActor(a, now, t));
-    crowd.update();
+    if (mainGroup.visible) crowd.update();                                         // amit nem lát a kamera, annak a kötegét nem frissítjük
+    for (const L of lands.values()) if (L.crowdGroup.visible) L.crowd.update();
     return t;
   }
   function draw(now) {
     const t = step(now), dt = Math.min(0.1, (now - lastCloud) / 1000); lastCloud = now;
     sway.value = t;
     for (let i = 0; i < 6; i++) { cloudX[i] += 0.24 * (1 + i * 0.1) * dt; if (cloudX[i] > 16) cloudX[i] = -16; }
-    placeClouds();
+    placeClouds(panAt(now));
     stepFlowers(now);
     for (let k = popping.length - 1; k >= 0; k--) {                // új kerti dísz: kipattan a helyén
       const p = popping[k], a = (now - p.t0) / 700;
@@ -462,7 +495,7 @@ export function createGarden(canvas) {
     return out;
   }
 
-  // A kert szélső részei, ahol már lakik valaki: [{ id, x, friends: [azonosítók], decor, flora }] – ehhez jelennek meg az átsikló gombok
+  // A kert szélső részei (a távoli földekkel együtt), ahol már lakik valaki: [{ id, x, friends: [azonosítók], decor, flora }] – ehhez jelennek meg az átsikló gombok
   function areas() {
     return AREAS.map(r => ({ id: r.id, x: r.x, friends: [...actors.values()].filter(a => a.def.area === r.id).map(a => a.id), decor: [...decor.keys()].filter(id => giftById(id).spot[0] === r.id),
       flora: [...flora.keys()].filter(id => floraById(id).area === r.id) }))
@@ -478,7 +511,8 @@ export function createGarden(canvas) {
     qualityTick: ms => { quality.tick(ms); return { ...quality.state(), buffer: [renderer.domElement.width, renderer.domElement.height] }; },   // teszthez: egy képkocka adott idővel    // tesztekhez és hibakereséshez: rajzolási hívások, lakók, virágok, a barátok helye a képernyőn
     debug() {
       draw(performance.now());
-      return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, shadows: crowd.shadows, quality: quality.state(), flowers: stems.count, bloomed, decor: [...decor.keys()], flora: [...flora.keys()], treeHearts: tree.count(), treeScale: tree.group.scale.x, gold: goldPetals.count,
+      return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, shadows: crowd.shadows + [...lands.values()].reduce((s, L) => s + L.crowd.shadows, 0), quality: quality.state(),
+        drawn: { main: mainGroup.visible, ...Object.fromEntries([...lands].map(([id, L]) => [id, L.group.visible || L.crowdGroup.visible])), ...Object.fromEntries([...lands].map(([id, L]) => [id + 'Friends', L.crowdGroup.visible])) }, flowers: stems.count, bloomed, decor: [...decor.keys()], flora: [...flora.keys()], treeHearts: tree.count(), treeScale: tree.group.scale.x, gold: goldPetals.count,
         decorScreen: Object.fromEntries([...decor].map(([id, m]) => { v3.set(m.position.x, 0.8, m.position.z).project(camera); return [id, { x: (v3.x + 1) / 2 * W, y: (1 - v3.y) / 2 * H }]; })),
         floraScreen: Object.fromEntries([...flora].map(([id, m]) => { v3.set(m.position.x, 1.6 * m.userData.k, m.position.z).project(camera); return [id, { x: (v3.x + 1) / 2 * W, y: (1 - v3.y) / 2 * H, scale: m.scale.x / m.userData.k }]; })), friends: [...actors.keys()], zoom: zoomAt(performance.now()), pan: panAt(performance.now()), feeding: feeding && !feeding.done ? feeding.a.id : null,
         awake: Object.fromEntries([...actors.values()].filter(a => a.def.sleepy).map(a => [a.id, a.g.userData.eyes[0].scale.y > 0.5])),

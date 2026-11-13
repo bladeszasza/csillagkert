@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CURRICULUM, STATIONS, stationOf, idOf, BASE_ITEMS, FEED_ITEMS } from '../js/curriculum.js';
 import { art, withArt, artLetter, ACC_NUM, numAttr, fromNum } from '../js/hu.js';
-import { FRIENDS, FOODS, MEALS, ANY, friendById, friendsFor, flowerSpot, MAX_FLOWERS, GOLD_MAX, goldSpot, FEED_SPOT, FEED_GATE, PLACES, AREAS, FLORA, floraFor, NEWCOMER_FROM, NEWCOMER_STEP } from '../js/friends.js';
+import { FRIENDS, FOODS, MEALS, ANY, friendById, friendsFor, flowerSpot, MAX_FLOWERS, GOLD_MAX, goldSpot, FEED_SPOT, FEED_GATE, PLACES, AREAS, FLORA, floraFor, NEWCOMER_FROM, NEWCOMER_STEP, groundK } from '../js/friends.js';
 import { roundStars } from '../js/economy.js';
 import { progress } from '../js/progress.js';
 
@@ -135,7 +135,8 @@ test('kert: a barátok a csillagokkal érkeznek, etetéssel hamarabb is', () => 
   assert.deepEqual(friendsFor(29), ['cat', 'bunny', 'dog', 'fox', 'duck']);
   assert.deepEqual(friendsFor(60), ['cat', 'bunny', 'dog', 'fox', 'duck', 'bear', 'frog', 'hedgehog', 'hen', 'panda']);
   assert.deepEqual(friendsFor(0, ['panda']), ['cat', 'panda']);
-  assert.deepEqual(friendsFor(150), FRIENDS.map(f => f.id));
+  assert.deepEqual(friendsFor(150), FRIENDS.filter(f => f.stars <= 150).map(f => f.id));
+  assert.deepEqual(friendsFor(900), FRIENDS.map(f => f.id));
   // a terv rögzített érkezési pontjai (a többi küszöb saját beállítás, lásd README)
   const at = { bunny: 3, dog: 8, fox: 15, duck: 25, bear: 30, hedgehog: 40, panda: 55, owl: 70, unicorn: 90 };
   for (const [id, s] of Object.entries(at)) assert.equal(friendById(id).stars, s, id);
@@ -172,6 +173,7 @@ test('kertrészek növényei: van modelljük, a saját kertrészükben, a barát
   const { buildFloraGeo } = await import('../js/flora3d.js');
   const { DECOR } = await import('../js/gifts.js');
   assert.equal(new Set(FLORA.map(f => f.id)).size, FLORA.length);
+  for (let i = 1; i < FLORA.length; i++) assert.ok(FLORA[i].stars > FLORA[i - 1].stars, 'a fák táblája érkezési sorrendben áll');
   for (const f of FLORA) {
     const [x, z, , k = 1] = f.spot;
     assert.ok(f.name && f.emoji, `${f.id}: név és kép kell`);
@@ -191,7 +193,7 @@ test('kertrészek növényei: van modelljük, a saját kertrészükben, a barát
   }
 });
 
-test('kertrészek: a tóparti és a tanyasi barátok a virágkörön kívül, egymástól távol laknak', () => {
+test('kertrészek: a tóparti, a tanyasi és a távoli földek barátai a virágkörön kívül, a saját talajukon, egymástól távol laknak', () => {
   const ids = new Set(AREAS.map(a => a.id));
   for (const f of FRIENDS) {
     const [x, z] = f.home;
@@ -201,7 +203,7 @@ test('kertrészek: a tóparti és a tanyasi barátok a virágkörön kívül, eg
     const a = AREAS.find(r => r.id === f.area);
     assert.ok(Math.abs(x - a.x) <= 4 && Math.abs(z) <= 3.2, `${f.name} kilóg a(z) ${a.name} képéből`);
     assert.ok(Math.hypot(x, z) > 13.3, `${f.name} a virágok közé lóg`);
-    assert.ok((x / (14 * 1.9)) ** 2 + (z / 14) ** 2 < 0.8, `${f.name} a kert szélén túl`);
+    assert.ok(groundK(f.area, x, z) < 0.8, `${f.name} a kert szélén túl`);
   }
   const side = FRIENDS.filter(f => f.area);
   for (let i = 0; i < side.length; i++) for (let j = 0; j < i; j++) {
@@ -209,6 +211,12 @@ test('kertrészek: a tóparti és a tanyasi barátok a virágkörön kívül, eg
     if (a.area === b.area) assert.ok(Math.hypot(a.home[0] - b.home[0], a.home[1] - b.home[1]) >= 1.6, `túl közel: ${a.name}, ${b.name}`);
   }
   assert.ok(AREAS.every(a => FRIENDS.some(f => f.area === a.id)), 'üres kertrész');
+  // a távoli föld talaja a fő rét végénél kezdődik (nincs rés a kettő között), de a tópart barátainak zugáig nem ér el
+  for (const a of AREAS.filter(r => r.land)) {
+    const [cx, , r, sx] = a.ground, inner = cx - Math.sign(cx) * r * sx;
+    assert.ok(Math.abs(inner) < 14 * 1.9 - 3, `${a.name}: a talaja nem ér össze a fő réttel`);
+    for (const f of FRIENDS.filter(g => g.area && g.area !== a.id)) assert.ok(groundK(a.id, f.home[0], f.home[1]) > 1, `${a.name} talaja ${f.name} zugáig ér`);
+  }
 });
 
 test('ételek: mindnek van tárgyesete és képe; az új ételek saját rajzot kapnak, ha nincs jó emoji', () => {

@@ -86,6 +86,23 @@ const SOUNDS = {
   neigh() { const t = actx.currentTime; voice(t, { f0: 880, f1: 520, dur: 0.7, vol: 0.2, form: 1500, q: 3, vib: 11 }); voice(t + 0.72, { f0: 520, f1: 600, dur: 0.12, vol: 0.14, form: 1300, q: 3 }); },
   // bőgés (tehén): mély, hosszú "múúú"
   moo() { const t = actx.currentTime; voice(t, { f0: 120, f1: 150, dur: 0.18, vol: 0.2, form: 380, q: 1.8 }); voice(t + 0.16, { f0: 150, f1: 128, dur: 1.0, vol: 0.32, form: 520, q: 1.8, vib: 4 }); },
+  // --- Ausztrália ---
+  // horkantás (kenguru): puha, szuszogó "csh-csh" és egy halk, mély morranás
+  chuff() { const t = actx.currentTime; for (let i = 0; i < 3; i++) hiss(t + i * 0.13, 0.07, r(800, 1000), 1.5, 0.2); voice(t + 0.42, { f0: 170, f1: 135, dur: 0.12, vol: 0.2, form: 520, q: 2 }); },
+  // bőgés (koala): mély, reszelős, horkolásszerű "hrrr-öööh" (be- és kilégzés)
+  snore() { const t = actx.currentTime; voice(t, { f0: 85, f1: 120, dur: 0.38, vol: 0.3, form: 420, q: 1.5, vib: 26 }); voice(t + 0.4, { f0: 125, f1: 80, dur: 0.42, vol: 0.32, form: 380, q: 1.5, vib: 24 }); },
+  // rikoltás (kakadu): éles, reszelős, fel-le csúszó kiáltás
+  screech() { const t = actx.currentTime, a = r(1000, 1150); voice(t, { f0: a, f1: a * 1.45, dur: 0.22, vol: 0.2, form: 2400, q: 2, vib: 32 }); voice(t + 0.22, { f0: a * 1.45, f1: a * 0.8, dur: 0.3, vol: 0.18, form: 2200, q: 2, vib: 32 }); },
+  // röffenés (vombat): két rövid, mély, orrhangú "hrm" és egy szusszanás
+  grunt() { const t = actx.currentTime; for (let i = 0; i < 2; i++) voice(t + i * 0.18, { f0: r(150, 160), f1: 105, dur: 0.1, vol: 0.27, form: 560, q: 3 }); hiss(t + 0.4, 0.12, 650, 1.2, 0.16); },
+  // dobolás (emu): mély, tompa "dum-dum-dum-dum", lassuló ütemben
+  boom() { const t = actx.currentTime; [0, 0.17, 0.36, 0.58, 0.82].forEach((dt, i) => voice(t + dt, { f0: 118 - i * 4, f1: 92, dur: 0.13, vol: 0.32, form: 330, q: 1.2 })); },
+  // morgás (kacsacsőrű emlős): halk, pergő "rrrr"
+  growl() { const t = actx.currentTime; voice(t, { f0: 190, f1: 160, dur: 0.5, vol: 0.24, form: 640, q: 2, vib: 30 }); },
+  // cippantás (kvokka): két lefelé csúszó, puha "piú" (a nyuszi hangja felfelé csúszik)
+  peep() { const t = actx.currentTime; for (let i = 0; i < 2; i++) voice(t + i * 0.2, { f0: 1500, f1: 880, dur: 0.13, vol: 0.14, form: 1900, q: 5, type: 'triangle' }); },
+  // fújtatás (hangyászsün): mély szippantások és egy halk "hm" (a sünnél mélyebb és lassabb)
+  huff() { const t = actx.currentTime; for (let i = 0; i < 3; i++) hiss(t + i * 0.16, 0.09, r(850, 1050), 1.6, 0.18); voice(t + 0.52, { f0: 165, f1: 145, dur: 0.2, vol: 0.2, form: 420, q: 0.8, type: 'sine' }); },
   // rágcsálás: két rövid roppanás
   munch() { const c = actx, t = c.currentTime; for (let i = 0; i < 2; i++) { const d = 0.06, n = c.createBufferSource(), b = c.createBuffer(1, Math.ceil(c.sampleRate * d), c.sampleRate), ch = b.getChannelData(0); for (let k = 0; k < ch.length; k++) ch[k] = (Math.random() * 2 - 1) * (1 - k / ch.length); n.buffer = b; const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = r(1100, 1700); bp.Q.value = 1.5; const g = c.createGain(); g.gain.value = 0.5; n.connect(bp); bp.connect(g); g.connect(bus('animal')); n.start(t + i * 0.11); } },
   // ujjongás: emelkedő hármashangzat (tapsoló csengés)
@@ -148,7 +165,8 @@ export function play(kind) { note(kind); if (!unlockAudio()) return; try { SOUND
 // happy: a cica utána dorombol is.
 export const VOICE = { cat: 'meow', bunny: 'squeak', dog: 'woof', fox: 'foxyip', bear: 'brumm', panda: 'bleat',
   duck: 'quack', frog: 'ribbit', hedgehog: 'snuffle', hen: 'cluck', squirrel: 'chitter', owl: 'hoot', mouse: 'cincin',
-  unicorn: 'magic', pig: 'oink', sheep: 'baa', turtle: 'plop', pony: 'neigh', cow: 'moo' };
+  unicorn: 'magic', pig: 'oink', sheep: 'baa', turtle: 'plop', pony: 'neigh', cow: 'moo',
+  kangaroo: 'chuff', koala: 'snore', cockatoo: 'screech', wombat: 'grunt', emu: 'boom', platypus: 'growl', quokka: 'peep', echidna: 'huff' };
 export function animalVoice(id, { happy: glad = false, defer = setTimeout } = {}) {
   const kind = VOICE[id] || 'yay';
   play(kind);

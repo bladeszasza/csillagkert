@@ -100,8 +100,8 @@ const bump = el => { el.classList.remove('bump'); void el.offsetWidth; el.classL
 $('gift-next').addEventListener('click', () => { bump($('gift-next')); say(`A következő ajándékod: ${nextGift(progress.get()).nom}.`, { remember: false }); });
 $('hearts').addEventListener('click', () => { bump($('hearts')); say('A szíveket a jó tettekért kapod. Ettől nő a Barátság fája.', { remember: false }); });
 
-// --- Kertrészek: a tópart (balra) és a tanya (jobbra) lakóihoz egy-egy gomb visz, a kamera átsiklik ---
-// A gombon az ottani első barát képe van (olvasni nem kell); a szélső részen a másik oldali 🐱 gomb visz vissza a kert közepére.
+// --- Kertrészek: balra a tópart (azon túl Ausztrália), jobbra a tanya; a gombok mindig a szomszédos részre visznek ---
+// A gombon az ottani első barát képe van (olvasni nem kell); a kert közepével szomszédos részen a 🐱 gomb visz vissza középre.
 // A térkép jelei a szélső részeken is a helyükön maradnak és koppinthatók (a szülő kérésére): ott a kertrész barátai
 // fölött lebegnek, de egyiket sem takarják el (fekvő és álló képernyőn mérve, lásd README).
 let areaTimer = 0;
@@ -112,16 +112,16 @@ function goArea(id = null) {
 }
 function renderAreaButtons() {
   const here = garden?.area?.() || null, list = garden?.areas?.() || [];
-  const hereX = AREAS.find(r => r.id === here)?.x || 0;
+  // a megállók balról jobbra: a lakott kertrészek és a kert közepe; a gombok a szomszédos megállóra visznek
+  const stops = [{ id: null, x: 0 }, ...list].sort((p, q) => p.x - q.x);
+  let i = stops.findIndex(s => s.id === here); if (i < 0) i = stops.findIndex(s => s.id === null);
   for (const [btn, side] of [[$('go-left'), -1], [$('go-right'), 1]]) {
     let to, icon = '', label = '';
-    if (here) { if (Math.sign(hereX) !== side) { to = ''; icon = '🐱'; label = 'Vissza a kert közepére'; } }
-    else {
-      const a = list.find(r => Math.sign(r.x) === side);
-      if (a) {
-        to = a.id; icon = a.friends.length ? friendById(a.friends[0]).emoji : ''; label = AREAS.find(r => r.id === a.id).name;
-        if (!icon) icon = a.decor.length ? { svg: giftById(a.decor[0]).icon } : floraById(a.flora[0]).emoji;   // ahol még csak dísz vagy fa van
-      }
+    const a = stops[i + side];
+    if (a && a.id === null) { to = ''; icon = '🐱'; label = 'Vissza a kert közepére'; }
+    else if (a) {
+      to = a.id; icon = a.friends.map(friendById).find(f => f?.emoji)?.emoji || ''; label = AREAS.find(r => r.id === a.id).name;
+      if (!icon) icon = a.decor.length ? { svg: giftById(a.decor[0]).icon } : floraById(a.flora[0])?.emoji || '🌿';   // ahol még csak dísz vagy fa van
     }
     btn.hidden = to === undefined;
     if (to !== undefined) {                                  // ahol még csak kerti dísz áll, ott a dísz saját rajza van a gombon
@@ -182,7 +182,7 @@ if (!progress.ready()) {
     const b = document.createElement('button'); b.className = 'who-card'; b.dataset.id = p.id; b.setAttribute('aria-label', p.name || 'Játékos');
     const mark = document.createElement('span'); mark.className = 'mark'; mark.textContent = p.mark;
     const nm = document.createElement('b'); nm.textContent = p.name || '';
-    const pals = document.createElement('small'); pals.textContent = friendsFor(p.total, p.friends).map(id => friendById(id).emoji).join('');
+    const pals = document.createElement('small'); pals.textContent = friendsFor(p.total, p.friends).map(id => friendById(id).emoji).filter(Boolean).join('');
     b.append(mark, nm, pals);
     b.addEventListener('click', () => { unlockAudio(); if (progress.use(p.id)) { fillFor(); begin(); } });
     row.append(b);

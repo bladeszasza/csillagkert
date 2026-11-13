@@ -3,7 +3,8 @@
 
 // stars: ennyi összegyűjtött csillagnál érkezik a kertbe (etetéssel hamarabb is megjöhet)
 // home: a zuga a kertben [x, z] (a kamerából nézve senki nem takarja a másikat);  height: a modell magassága a saját léptékében
-// area: a kert melyik részén lakik (nincs = a kert közepén, a térképen; 'to' = tópart balra; 'tanya' = tanya jobbra)
+// area: a kert melyik részén lakik (nincs = a kert közepén, a térképen; 'to' = tópart balra; 'tanya' = tanya jobbra;
+//   'ausztralia' = a tóparton túl, balra). emoji: kép a gombokhoz és a „Ki játszik?" kártyához; ahol nincs jó emoji, ott null.
 // eats: amit biztosan eszik (ebből lesz jó válasz);  maybe: amit néha megeszik, ezért rossz válasznak NEM használható.
 // Ami egyikben sincs benne, azt a teszt "biztosan nem eszi"-nek veszi – ezért a maybe-be minden kétes étel bekerül.
 // Az érkezési csillagszám a jóváhagyott tervből: nyuszi 3, kutya 8, róka 15, kacsa 25, maci 30, sün 40, panda 55, bagoly 70,
@@ -28,15 +29,34 @@ export const FRIENDS = [
   { id: 'turtle', emoji: '🐢', name: 'teknős', stars: 120, area: 'to', home: [-17.8, 2.7], height: 0.52, eats: [], maybe: [] },
   { id: 'pony', emoji: '🐴', name: 'póni', stars: 135, area: 'tanya', home: [20.3, -2.4], height: 1.67, eats: ['zab', 'széna', 'alma'], maybe: ['répa', 'fű', 'saláta', 'kukorica', 'búza', 'áfonya', 'bambusz'] },
   { id: 'cow', emoji: '🐮', name: 'tehén', stars: 150, area: 'tanya', home: [17.1, -1.4], height: 1.70, eats: ['fű', 'széna'], maybe: ['zab', 'kukorica', 'búza', 'répa', 'alma', 'saláta', 'csont', 'bambusz', 'áfonya', 'makk'] },
+  // Ausztrália: a tehén után jutalomkörönként jönnek (lásd lent). Őket nem etetjük, ezért nincs ételük (eats: []).
+  { id: 'kangaroo', emoji: '🦘', name: 'kenguru', stars: 180, area: 'ausztralia', home: [-30.9, -2.6], height: 1.80, eats: [], maybe: [] },
+  { id: 'koala', emoji: '🐨', name: 'koala', stars: 240, area: 'ausztralia', home: [-34.6, -1.8], height: 1.11, eats: [], maybe: [] },
+  { id: 'cockatoo', emoji: '🦜', name: 'kakadu', stars: 300, area: 'ausztralia', home: [-33.5, 1.9], height: 1.24, eats: [], maybe: [] },
+  { id: 'wombat', emoji: null, name: 'vombat', stars: 330, area: 'ausztralia', home: [-32.4, 0.4], height: 0.80, eats: [], maybe: [] },
+  { id: 'emu', emoji: null, name: 'emu', stars: 390, area: 'ausztralia', home: [-37.4, -3.0], height: 2.04, eats: [], maybe: [] },
+  { id: 'platypus', emoji: null, name: 'kacsacsőrű emlős', stars: 420, area: 'ausztralia', home: [-36.8, 2.1], height: 0.39, eats: [], maybe: [] },
+  { id: 'quokka', emoji: null, name: 'kvokka', stars: 480, area: 'ausztralia', home: [-35.9, 0.3], height: 0.98, eats: [], maybe: [] },
+  { id: 'echidna', emoji: null, name: 'hangyászsün', stars: 510, area: 'ausztralia', home: [-30.8, 2.4], height: 0.77, eats: [], maybe: [] },
 ];
 export const friendById = id => FRIENDS.find(f => f.id === id);
 
-// A kert két szélső része: ide az alsó sarkokban lévő gombokkal lehet átsiklani (a térkép jelei közben is koppinthatók).
-// x: a kamera vízszintes eltolása; a zugok úgy vannak, hogy fekvő és álló képernyőn is mind látsszon, egymást nem takarva.
+// A kert szélső részei: ide az alsó sarkokban lévő gombokkal lehet átsiklani, egyik részről a szomszédosra
+// (a térkép jelei közben is koppinthatók). x: a kamera vízszintes eltolása; a zugok úgy vannak, hogy fekvő és álló
+// képernyőn is mind látsszon, egymást nem takarva, és a térkép jelei se takarják őket.
+// land: távoli föld a kert végén túl, saját talajjal (ground: [közép x, közép z, sugár, x irányú nyújtás]; soil: színe).
+// A távoli föld lakóit, tájelemeit és fáit csak akkor rajzolja a kert, ha a kamera látja őket.
 export const AREAS = [
   { id: 'to', name: 'tópart', x: -17 },
   { id: 'tanya', name: 'tanya', x: 17 },
+  { id: 'ausztralia', name: 'Ausztrália', x: -34, land: true, ground: [-36, -1.5, 13, 1.15], soil: 0xe8c88e },
 ];
+// a kertrész talaján belül van-e a pont (a fő rét ellipszise, ill. a távoli föld saját talaja); k: mennyire a szélén (1 = a szélén)
+export function groundK(areaId, x, z) {
+  const a = AREAS.find(r => r.id === areaId);
+  if (!a?.land) return (x / (14 * 1.9)) ** 2 + (z / 14) ** 2;
+  const [cx, cz, r, sx] = a.ground; return ((x - cx) / (r * sx)) ** 2 + ((z - cz) / r) ** 2;
+}
 export const areaOf = id => friendById(id)?.area || null;
 
 // Ki van a kertben: akinek megvan a csillaga, vagy akit már megetettek
@@ -52,11 +72,13 @@ export const friendsFor = (total, fed = []) => FRIENDS.filter(f => total >= f.st
 // Egy csillagszámra csak egy jövevény jut; a táblákba csak az kerül, akinek már kész a modellje (a teszt ellenőrzi).
 export const NEWCOMER_FROM = 150, NEWCOMER_STEP = 30;
 
-// A kertrészek saját növényei. spot: [x, z, forgatás, méret]; a fák a barátok mögött, a hátsó sorban állnak (senkit nem takarnak).
-// A modelleket a js/flora3d.js építi.
+// A kertrészek saját növényei, érkezési sorrendben. spot: [x, z, forgatás, méret]; a fák a barátok mögött, a hátsó sorban
+// állnak (senkit nem takarnak). A modelleket a js/flora3d.js építi.
 export const FLORA = [
+  { id: 'eukaliptusz', name: 'eukaliptuszfa', emoji: '🌿', area: 'ausztralia', stars: 210, spot: [-39.6, -6.8, 0, 1.15] },
   { id: 'cseresznye', name: 'cseresznyefa', emoji: '🌸', area: null, stars: 270, spot: [-3.9, -10.0, 0, 1.2] },
   { id: 'almafa', name: 'almafa', emoji: '🍎', area: 'tanya', stars: 360, spot: [19.4, -8.6, 0, 1.1] },
+  { id: 'palackfa', name: 'palackfa', emoji: '🌳', area: 'ausztralia', stars: 450, spot: [-27.4, -7.2, 0, 1.1] },
   { id: 'fuzfa', name: 'szomorúfűz', emoji: '🌳', area: 'to', stars: 720, spot: [-17.4, -9.7, 0, 1.25] },
 ];
 export const floraById = id => FLORA.find(f => f.id === id);

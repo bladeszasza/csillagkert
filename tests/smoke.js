@@ -6,7 +6,7 @@ import { stopSpeaking } from '../js/voice.js';
 import { CURRICULUM } from '../js/curriculum.js';
 import { createGarden } from '../js/garden.js';
 import { soundLog, soundMark, VOICE } from '../js/sounds.js';
-import { MEALS, ANY, friendById, FRIENDS, AREAS, MAX_FLOWERS, FLORA, floraFor } from '../js/friends.js';
+import { MEALS, ANY, friendById, FRIENDS, AREAS, MAX_FLOWERS, FLORA, floraFor, friendsFor } from '../js/friends.js';
 import { testOpenWorld, testAvatarWorld, testMinigames } from './smoke-games.js';
 import { testContent } from './smoke-content.js';
 import { testGifts } from './smoke-gifts.js';
@@ -174,7 +174,7 @@ async function testGarden() {
   const out = Object.entries(center).filter(([, r]) => r.left < 0 || r.right > 900 || r.top < 0 || r.bottom > 650).map(([k]) => k);
   ok('kert: a kert közepén lakó minden barát a kezdő képen van', out.length === 0 && Object.keys(center).length === 6, out.length ? `kilóg: ${out.join(', ')}` : Object.entries(center).map(([k, r]) => `${k} ${Math.round(r.cx)},${Math.round(r.cy)}`).join(' · '));
   garden.setStars(70 + 230, []); await wait(2900); garden.debug(); await wait(1900); d = garden.debug();
-  ok(`kert: 300 csillagnál mind a 19 barát itt van, és egyszerre csak ${MAX_FLOWERS} virág nyílik (a régiek elhervadtak)`, d.friends.length === 19 && d.flowers === MAX_FLOWERS && d.bloomed === 300 && d.calls <= calls70 + 2 && d.calls <= 150, `virágok: ${d.flowers} (eddig ${d.bloomed}), hívások: ${d.calls} (70 csillagnál ${calls70}), háromszögek: ${d.triangles}`);
+  ok(`kert: 300 csillagnál mind a ${friendsFor(300).length} barát itt van, és egyszerre csak ${MAX_FLOWERS} virág nyílik (a régiek elhervadtak)`, d.friends.length === friendsFor(300).length && d.flowers === MAX_FLOWERS && d.bloomed === 300 && d.calls <= calls70 + 2 && d.calls <= 150, `virágok: ${d.flowers} (eddig ${d.bloomed}), hívások: ${d.calls} (70 csillagnál ${calls70}), háromszögek: ${d.triangles}`);
   const tri300 = d.triangles;
   const before = garden.flowerAt(300);
   garden.setStars(301, []); await wait(450); const mid = garden.debug(), wm = garden.flowerAt(300); await wait(1500); const after = garden.debug(), wa = garden.flowerAt(300);
@@ -184,7 +184,8 @@ async function testGarden() {
     `hely ${before.slot}: hervadás közben ${wm.k.toFixed(2)} méret, ${Math.round(wm.fade * 100)}% fakulás; utána ${wa.k.toFixed(2)} méret, saját szín: ${wa.own}; virágok ${mid.flowers} → ${after.flowers}; háromszögek ${tri300} → ${after.triangles}`);
   garden.setStars(420, []); await wait(1700); d = garden.debug();               // az új fa kinő (fél mp várakozás + 0,7 mp növés)
   ok(`kert: a háromszögek száma a teljes kerttel is kordában marad (420 csillag, ${MAX_FLOWERS} virág; saját határ: 250 ezer)`, d.flowers === MAX_FLOWERS && d.triangles <= 250000 && d.calls <= 150, `300 csillagnál ${tri300}, 420 csillagnál ${d.triangles} háromszög, ${d.calls} hívás`);
-  ok('kert: 420 csillagnál a hozzá tartozó fák kinőttek (a cseresznyefa a kert közepén, az almafa a tanyán)', d.flora.join() === floraFor(420).join() && floraFor(420).length >= 2 && Object.values(d.floraScreen).every(p => p.scale > 0.99), `fák: ${d.flora.join(', ')}`);
+  ok('kert: a kert közepéről nézve a távoli földeket nem rajzolja (nem látszanak), a kert közepét igen', d.drawn.main && AREAS.filter(a => a.land).every(a => d.drawn[a.id] === false), JSON.stringify(d.drawn));
+  ok('kert: 420 csillagnál a hozzá tartozó fák kinőttek (a cseresznyefa a kert közepén, az almafa a tanyán)', [...d.flora].sort().join() === [...floraFor(420)].sort().join() && floraFor(420).length >= 2 && Object.values(d.floraScreen).every(p => p.scale > 0.99), `fák: ${d.flora.join(', ')}`);
   // a kertben lakó saját unikornis átöltözik (a legnehezebb öltözettel is a kereten belül marad)
   {
     const HEAVY = { body: 'c7', pattern: 'spots', manestyle: 'curl', horn: 'rainbow', hornstyle: 'spiral', wing: 'rainbow', head: 'flowers', eyes: 'glasses', neck: 'pearls' };
@@ -209,6 +210,7 @@ async function testGarden() {
       ok(`kert: ${lastNew} csillagnál minden fa kinőtt, a kert közepén állók a kezdő képen vannak`, !missing.length && !off.length, `hiányzik: ${missing.join(', ') || '–'}; képen kívül: ${off.join(', ') || '–'}`);
     }
     const owlBefore = garden.debug().awake.owl;
+    let owlAfter = null;
     for (const area of garden.areas()) {
       const ms = garden.goTo(area.id); await wait(ms + 250);
       const g = garden.debug(), bad = [], mute = [];
@@ -219,6 +221,7 @@ async function testGarden() {
         const n = soundMark(); pev(canvas, 'pointerdown', r.cx, r.cy); await wait(60);
         if (!since(n).some(x => x.kind === VOICE[id])) mute.push(id);
       }
+      if (area.friends.includes('owl')) owlAfter = garden.debug().awake.owl;      // a koppintás után 4,5 mp-ig ébren van
       ok(`kertrész (${area.id}): minden lakó a képen van, a gombsor fölött`, bad.length === 0 && area.friends.length >= 6, bad.join(' · ') || area.friends.join(', '));
       // a térkép jelei itt is a helyükön maradnak (66 px-es körök): egyik lakót sem takarhatják el (koppintható marad)
       const cover = [];
@@ -228,10 +231,12 @@ async function testGarden() {
       }
       ok(`kertrész (${area.id}): a feladatok jelei itt is koppinthatók, és egyik lakót sem takarják el`, cover.length === 0, cover.join(', ') || 'egyik sem');
       ok(`kertrész (${area.id}): koppintásra mindenki a saját hangján szól`, mute.length === 0, mute.length ? `néma: ${mute.join(', ')}` : 'mind megszólalt');
+      if (AREAS.find(a => a.id === area.id).land) ok(`kertrész (${area.id}): a távoli földön a kert közepét nem rajzolja; a háromszögek és a hívások a kereten belül`,
+        g.drawn[area.id] && g.drawn[area.id + 'Friends'] && !g.drawn.main && g.triangles <= 250000 && g.calls <= 150, `háromszögek: ${g.triangles}, hívások: ${g.calls}, rajzolva: ${JSON.stringify(g.drawn)}`);
+      else ok(`kertrész (${area.id}): háromszögek és hívások a kereten belül; a távoli földek lakóit innen nem rajzolja`, g.triangles <= 250000 && g.calls <= 150 && AREAS.filter(a => a.land).every(a => !g.drawn[a.id + 'Friends']), `háromszögek: ${g.triangles}, hívások: ${g.calls}, rajzolva: ${JSON.stringify(g.drawn)}`);
       const trees = FLORA.filter(f => f.area === area.id), offT = trees.filter(f => { const p = g.floraScreen[f.id]; return !p || p.x < 0 || p.x > 900 || p.y < 0 || p.y > 650; });
       ok(`kertrész (${area.id}): a saját fái (${trees.map(f => f.name).join(', ') || 'nincs'}) a képen vannak`, offT.length === 0 && area.flora.length === trees.length, offT.map(f => f.id).join(', ') || 'rendben');
     }
-    const owlAfter = garden.debug().awake.owl;
     ok('bagoly: nappal szundikál, koppintásra felébred', owlBefore === false && owlAfter === true, `előtte ébren: ${owlBefore}, koppintás után: ${owlAfter}`);
     garden.goTo(null); await wait(1600);
     ok('kertrész: vissza a kert közepére', garden.debug().pan === 0 && garden.area() === null, `pan: ${garden.debug().pan}`);

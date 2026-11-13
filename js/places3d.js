@@ -4,7 +4,7 @@
 import * as THREE from '../vendor/three.module.js';
 import { merge, part } from './geo.js';
 import { mat as lookMat } from './three/look.js';
-import { PLACES, FRIENDS, FLORA } from './friends.js';
+import { PLACES, FRIENDS, FLORA, AREAS } from './friends.js';
 import { DECOR } from './gifts.js';
 
 const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
@@ -162,12 +162,81 @@ function buildAreas(at) {
   for (const cx of [-17, 17]) at(0, 0, wildflowers(cx, keep));
 }
 
+// --- távoli földek: a tájelemeik saját hálóban, a földdel együtt rejthetők (js/garden.js) ---
+// 🇦🇺 Ausztrália (a tóparton túl, balra): vörös sziklahegy hátul, billabong (kis tavacska) a kacsacsőrű emlősnek,
+// termeszvár, tüskés spinifex-fűcsomók, vörös kövek, szürkészöld sóbokrok, piros sivatagi virágok.
+const AU = { rock: 0xd0663a, groove: 0xa9492a, ochre: 0xc4733e, spin: 0xc9b458, salt: 0x9bb08a, salt2: 0xb6c6a2, water: 0x7fc8e8, red: 0xb85a34, pea: 0xe8323c };
+const BILLABONG = { x: -36.9, z: 2.2, rx: 1.2, rz: 0.72 };
+const uluru = () => {
+  const out = [part(ball(1, 24, 12), AU.rock, [0, -0.3, 0], [0, 0, 0], [3.6, 2.4, 1.7]), part(ball(1, 16, 10), AU.rock, [2.7, -0.25, 0.25], [0, 0, 0], [1.5, 1.5, 1.2])];
+  for (const x of [-2.3, -1.1, 0.2, 1.4]) {                              // függőleges barázdák az elején
+    const y = 0.9, zs = 1.7 * Math.sqrt(Math.max(0.05, 1 - (x / 3.6) ** 2 - ((y + 0.3) / 2.4) ** 2));
+    out.push(part(ball(1, 8, 6), AU.groove, [x, y, zs - 0.05], [0, 0, 0], [0.09, 0.95, 0.1]));
+  }
+  return out;
+};
+const mound = () => [part(cone(0.6, 1.9, 9), AU.ochre, [0, 0.95, 0]), part(ball(0.5, 10, 8), AU.ochre, [0, 0.25, 0], [0, 0, 0], [1.25, 0.7, 1.25]),
+  part(cone(0.28, 0.95, 7), AU.ochre, [0.42, 0.45, 0.08], [0, 0, -0.2]), part(cone(0.22, 0.7, 7), AU.ochre, [-0.38, 0.35, 0.14], [0, 0, 0.25])];
+function billabong() {
+  const { rx, rz } = BILLABONG, out = [part(cyl(1, 1, 0.04, 28), AU.water, [0, 0.02, 0], [0, 0, 0], [rx, 1, rz])];
+  for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2; out.push(part(ball(0.14, 8, 6), 0xc98a5a, [Math.cos(a) * (rx + 0.07), 0.04, Math.sin(a) * (rz + 0.07)], [0, 0, 0], [1.2, 0.5, 1])); }
+  for (const [x, z, h] of [[-1.15, -0.4, 0.7], [-0.95, -0.58, 0.85], [-1.28, -0.12, 0.6]]) out.push(part(cyl(0.022, 0.022, h, 5), C.green, [x, h / 2, z]), part(cyl(0.05, 0.05, 0.2, 8), C.brown, [x, h - 0.05, z]));
+  out.push(part(cyl(0.2, 0.2, 0.02, 12), C.leaf, [0.55, 0.05, 0.3]));
+  return out;
+}
+const spinifex = (k = 1) => {
+  const out = [part(ball(0.28, 8, 6), AU.spin, [0, 0.06, 0], [0, 0, 0], [1, 0.45, 1])];
+  for (let i = 0; i < 9; i++) { const a = i * 0.7, t = 0.45 + (i % 3) * 0.2; out.push(part(cone(0.035, 0.55, 4), AU.spin, [Math.sin(a) * 0.12, 0.24, Math.cos(a) * 0.12], [Math.cos(a) * t, 0, -Math.sin(a) * t])); }
+  return out.map(q => (q.matrix.premultiply(new THREE.Matrix4().makeScale(k, k, k)), q));
+};
+const rock = (k = 1, r = 0) => [part(ball(0.3, 8, 6), AU.red, [0, 0.07 * k, 0], [0, r, 0], [1.3 * k, 0.7 * k, k])];
+const saltbush = (k = 1) => [part(ball(0.42, 10, 8), AU.salt, [0, 0.3 * k, 0], [0, 0, 0], k), part(ball(0.3, 8, 6), AU.salt2, [0.32 * k, 0.22 * k, 0.08 * k], [0, 0, 0], k), part(ball(0.28, 8, 6), AU.salt2, [-0.3 * k, 0.2 * k, 0.1 * k], [0, 0, 0], k)];
+const desertPea = () => [part(cyl(0.02, 0.02, 0.3, 4), C.green, [0, 0.15, 0]), part(ball(0.09, 8, 6), AU.pea, [-0.07, 0.31, 0], [0, 0, 0.6], [1.5, 0.7, 0.8]),
+  part(ball(0.09, 8, 6), AU.pea, [0.07, 0.31, 0], [0, 0, -0.6], [1.5, 0.7, 0.8]), part(ball(0.05, 6, 4), 0x2a1a1a, [0, 0.36, 0.05])];
+const LANDS = {
+  ausztralia(at, area) {
+    at(-34.8, -10.4, uluru());
+    at(BILLABONG.x, BILLABONG.z, billabong());
+    at(-28.4, -4.4, mound());
+    // apróságok szétszórva (determinisztikusan): a lakók zuga, a tavacska, a termeszvár és a fák helye szabadon marad
+    const keep = [...FRIENDS.filter(f => f.area === area.id).map(f => [f.home[0], f.home[1], 1.25]), [BILLABONG.x, BILLABONG.z, 1.9], [-28.4, -4.4, 1.1],
+      ...FLORA.filter(f => f.area === area.id).map(f => [f.spot[0], f.spot[1], 1.5])];
+    let s = 4242;
+    const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    const items = [[spinifex, 11], [rock, 7], [saltbush, 5], [desertPea, 9]];
+    for (const [make, n] of items) {
+      for (let i = 0, got = 0; i < 300 && got < n; i++) {
+        const x = -44 + rnd() * 16.5, z = -7 + rnd() * 10;                        // elöl, a kamera előtt nem nőnek nagy dolgok
+        if (keep.some(([kx, kz, r]) => Math.hypot(x - kx, z - kz) < r)) continue;
+        keep.push([x, z, 0.7]); got++;
+        at(x, z, make === rock ? rock(0.6 + rnd() * 0.4, rnd() * 3) : make === desertPea ? desertPea() : make(0.8 + rnd() * 0.4));
+      }
+    }
+  },
+};
+// { mesh, spheres: [[x, y, z, r], …] } – a gömbök a tájelemek befoglalói: a kert ezekkel dönti el, látja-e a kamera a földet
+export function buildLand(id) {
+  const area = AREAS.find(a => a.id === id), fill = LANDS[id]; if (!area || !fill) return null;
+  const parts = [], spheres = [], box = new THREE.Box3(), b = new THREE.Box3(), sp = new THREE.Sphere();
+  const at = (x, z, list) => {
+    const m = new THREE.Matrix4().makeTranslation(x, 0, z); box.makeEmpty();
+    for (const q of list) { q.matrix.premultiply(m); parts.push(q); if (!q.geo.boundingBox) q.geo.computeBoundingBox(); box.union(b.copy(q.geo.boundingBox).applyMatrix4(q.matrix)); }
+    box.getBoundingSphere(sp); spheres.push([sp.center.x, sp.center.y, sp.center.z, sp.radius]);
+  };
+  fill(at, area);
+  const mesh = new THREE.Mesh(merge(parts), lookMat({ vertexColors: true }));
+  mesh.frustumCulled = false;
+  return { mesh, spheres };
+}
+
 export function buildPlaces() {
   const parts = [];
   const at = (x, z, list, k = 1) => { const m = new THREE.Matrix4().makeTranslation(x, 0, z).scale(new THREE.Vector3(k, k, k)); for (const q of list) { q.matrix.premultiply(m); parts.push(q); } };
   for (const p of PLACES) at(p.x, p.z, BUILD[p.id](), p.scale || 1);
   TREES.forEach(([x, z, k], i) => at(x, z, tree(k, i)));
   buildAreas(at);
+  // a távoli földek talaja (mindig látszik, a fő rét alatt egy hajszállal, így az átfedésben a rét zöldje marad felül)
+  for (const a of AREAS.filter(r => r.land)) { const [cx, cz, r, sx] = a.ground; parts.push(part(cyl(r, r, 0.6, 48), a.soil, [cx, -0.32, cz], [0, 0, 0], [sx, 1, 1])); }
   const mesh = new THREE.Mesh(merge(parts), lookMat({ vertexColors: true }));
   mesh.frustumCulled = false;
   return mesh;

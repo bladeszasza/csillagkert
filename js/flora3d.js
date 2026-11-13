@@ -61,7 +61,7 @@ const BUILD = {
   },
   // 🍶 palackfa: hasas, palack alakú törzs, kis lombpamacsok (Ausztrália)
   palackfa: () => {
-    const T = 0xc9a27a, out = [part(ball(0.62, 14, 10), T, [0, 0.95, 0], [0, 0, 0], [1, 1.45, 1]), part(cyl(0.2, 0.32, 0.7, 10), T, [0, 2.0, 0])];
+    const T = 0xc9a27a, out = [part(ball(0.62, 14, 10), T, [0, 0.9, 0], [0, 0, 0], [1, 1.45, 1]), part(cyl(0.2, 0.32, 0.7, 10), T, [0, 2.0, 0])];
     for (let i = 0; i < 5; i++) {
       const a = i / 5 * Math.PI * 2 + 0.3, dx = Math.cos(a), dz = Math.sin(a);
       out.push(part(cyl(0.05, 0.08, 0.7, 6), T, [dx * 0.25, 2.45, dz * 0.25], [dz * 0.7, 0, -dx * 0.7]));
