@@ -2,7 +2,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as core from '../js/scheduler-core.js';
-import { POOL, FEED_POOL, legacySolvedIn } from '../js/content/index.js';
+import { POOL, FEED_POOL, legacySolvedIn, entryOf } from '../js/content/index.js';
+import { build } from '../js/content/engine.js';
 import { rng } from '../js/content/rng.js';
 
 const MIN = 60000;
@@ -126,4 +127,12 @@ test('szabad rajz (semleges): a befejezés nem lépteti a szintet, és a szint s
   assert.equal(core.levelOf(s, 'rajz').lv, lv0);
   assert.ok(s.seen[e.id] !== undefined);
   assert.deepEqual(s.hist, []);
+});
+
+test('a játék útja (a megjelenített feladatból vett bejegyzés) is viszi a semleges jelzést: a kész rajz nem léptet', () => {
+  const s = { age: 5, seen: {} }, item = build('rajz.szabad:nap', rng(1)), e = entryOf(item);
+  assert.equal(e.neutral, true);
+  const lv0 = core.levelOf(s, 'rajz').lv;
+  for (let i = 0; i < 6; i++) core.record(s, entryOf(item), { wrong: 0 }, i);
+  assert.equal(core.levelOf(s, 'rajz').lv, lv0);
 });

@@ -7,6 +7,7 @@ import { optionKey } from '../js/activities/pick.js';
 import { setScope } from '../js/scope.js';
 import { stopSpeaking } from '../js/voice.js';
 import { compress } from '../js/robot-path.js';
+import { KEPEK } from '../js/content/kepek.js';
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
 async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < ms) { const v = fn(); if (v) return v; await wait(50); } return null; }
@@ -109,12 +110,13 @@ async function solveDots(d) {
 
 async function solveKepUi(d, ans, mistake) {
   const box = await waitFor(() => d.querySelector('.activity.kep'), 5000); if (!box?.__kep) throw new Error('a színező nem nyílt meg');
-  d.style.pointerEvents = 'auto';                    // a böngésző saját találat-vizsgálata: ott koppint, ahol a gyerek is
+  Object.assign(d.style, { pointerEvents: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center' });   // mint a valódi #stage; a böngésző saját találat-vizsgálata: ott koppint, ahol a gyerek is
   const hit = id => { const [x, y] = box.__kep.point(id), el = document.elementFromPoint(x, y), g = el?.closest('.kp-part');
     if (g?.dataset.p !== id) throw new Error(`a(z) ${id} rész nem koppintható (${g?.dataset.p || el?.tagName})`); return [el, x, y]; };
   const tapAt = id => { const [el, x, y] = hit(id); el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId: 5, pointerType: 'pen', clientX: x, clientY: y })); };
   for (const g of box.querySelectorAll('.kp-part')) hit(g.dataset.p);
-  if (mistake) { const other = [...box.querySelectorAll('.kp-part')].map(g => g.dataset.p).find(p => p !== ans.part); tapAt(other); await wait(800); }
+  if (mistake) { const other = [...box.querySelectorAll('.kp-part')].map(g => g.dataset.p).find(p => p !== ans.part), wc = ans.color === 1 ? 2 : 1;
+    box.__kep.swatch(wc).click(); tapAt(other); await wait(800); }
   box.__kep.swatch(ans.color).click(); tapAt(ans.part);
 }
 
@@ -211,4 +213,18 @@ export async function testContent(ok) {
   ok(`generált feladatok: a megoldó mind a ${runs.length} mintát megoldja a valódi feladatban (minden sablon, minden szint)`, solved === runs.length, fails.slice(0, 6).join(' · ') || `${solved} megoldva`);
   ok('generált feladatok: a szándékos tévedés eljut az ütemezőhöz', reported === mistakes && mistakes === graded, `${reported} / ${mistakes} tévedés jelentve`);
   ok('generált feladatok: Rozi nem mond számjegyet, jelet vagy emojit', badLines.length === 0, badLines.slice(0, 5).join(' · ') || 'rendben');
+  // színező: minden kép minden része ott koppintható, ahol a gyerek is koppintana (a mintafeladatok csak egy képet érintenek)
+  const kepMod = await import('../js/activities/kep.js'), missed = []; let parts = 0;
+  for (const pic of Object.keys(KEPEK)) {
+    const ac = new AbortController(), d = host(); Object.assign(d.style, { pointerEvents: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }); setScope(ac.signal);
+    kepMod.run(d, build(`rajz.kep:${pic}:${KEPEK[pic].parts[0][0]}`, rng(1)));
+    const box = await waitFor(() => d.querySelector('.activity.kep'), 3000);
+    for (const p of KEPEK[pic].parts) {
+      parts++;
+      const [x, y] = box.__kep.point(p[0]), g = document.elementFromPoint(x, y)?.closest('.kp-part');
+      if (g?.dataset.p !== p[0]) missed.push(`${pic}:${p[0]}`);
+    }
+    ac.abort(); stopSpeaking(); setScope(null); d.remove(); await wait(20);
+  }
+  ok('színező: mind a nyolc kép minden része koppintható (böngészős találat-vizsgálat)', missed.length === 0 && parts > 0, missed.join(', ') || `${parts} rész`);
 }

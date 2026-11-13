@@ -288,12 +288,13 @@ szigorú? túl laza?), és hogy a vastag vonal kényelmes-e a kis kéznek.
 ### 3.8 Rajzasztal (7 sablon, 7 készség)
 
 **Mire épül**: a térbeli szavak (fölé, alá, rá, bele, mellé, balra, jobbra, közé) a DIFER relációszókincs-területéhez
-tartoznak (1. rész). A sorminta folytatására: Zippert, Douglas és Rittle-Johnson (2020) 65 négy–hat éves gyereknél azt
-találta, hogy az óvodás kori ismétlődő sorminta-tudás a munkamemóriától függetlenül előre jelezte a nagycsoport végi
-matematikai tudást [kivonat]. A minta szerinti összerakásra: Verdine és mtsai (2014) 102 hároméves gyereknél azt
-találta, hogy a minta szerinti kockaépítés ügyessége a matematikai teljesítmény egy részét önállóan magyarázta
-[kivonat]. Mindkettő együttjárást mutat, nem azt, hogy a gyakorlás okozza a fejlődést; a játék csak annyit vesz át, hogy
-a sorminta és a másolás helyet kap. **A feladatok sorrendje és nehezedése saját összeállítás** (a tükrözés, a szabály
+tartoznak (1. rész). A sormintára: Zippert, Douglas és Rittle-Johnson (2020) 65 óvodás (négy–hat éves) gyereknél azt
+találta, hogy az ismétlődő sorminta-tudás a verbális és téri munkamemóriától függetlenül előre jelezte az iskolakezdés
+előtti év (az amerikai kindergarten) végén mért matematikai és számfogalmi tudást [kivonat]. A térbeli összerakásra:
+Verdine és mtsai (2014) 102 hároméves gyereknél azt találta, hogy az egymásba illeszthető kockákból való építés
+ügyessége az ugyanakkor mért matematikai teljesítmény egy részét önállóan magyarázta [kivonat]. Mindkettő együttjárást
+mutat, nem azt, hogy a gyakorlás okozza a fejlődést; a játék csak annyit vesz át, hogy a sorminta és a minta szerinti
+másolás helyet kap (hogy a rácsos másolás a kockaépítéshez hasonló készséget kér, az saját feltevés). **A feladatok sorrendje és nehezedése saját összeállítás** (a tükrözés, a szabály
 szerinti színezés és a színező is), ehhez forrást nem ellenőriztem.
 
 **Hogyan működik**: a rácsos feladatoknál a gyerek színt választ, és a cellára koppint. Rossz szín vagy rossz hely

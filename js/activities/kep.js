@@ -22,10 +22,10 @@ export function run(container, item) {
           ${parts.map(p => `<g class="kp-part" data-p="${p.id}">${p.shapes.map(s => shapeSvg(s, 'fill="#fff" stroke="#3b2a63" stroke-width="3" stroke-linejoin="round"')).join('')}</g>`).join('')}
           <g class="kp-deco">${(item.deco || []).map(decoSvg).join('')}</g>
         </svg></div>
-        <div class="palette">${order.map(i => `<button class="swatch${i === order[0] ? ' sel' : ''}" data-c="${i + 1}" style="background:${colors[i]}" aria-label="${cnames[i]}"></button>`).join('')}</div>
+        <div class="palette">${order.map(i => `<button class="swatch" data-c="${i + 1}" style="background:${colors[i]}" aria-label="${cnames[i]}"></button>`).join('')}</div>
       </div>`;
     const box = container.querySelector('.activity'), svg = container.querySelector('.kp-svg');
-    let sel = order[0] + 1, wrong = 0, done = false, lastAct = performance.now(), lastTalk = 0;
+    let sel = 0, wrong = 0, done = false, lastAct = performance.now(), lastTalk = 0;
     const partEl = id => svg.querySelector(`.kp-part[data-p="${id}"]`);
     const fill = (id, c) => partEl(id).querySelectorAll('*').forEach(s => s.setAttribute('fill', c));
     function talk(text) { const now = performance.now(); if (now - lastTalk < 2000) return; lastTalk = now; say(text, { remember: false }); }
@@ -36,6 +36,7 @@ export function run(container, item) {
       const g = e.target.closest?.('.kp-part'); if (!g || done || !penAllows(e)) return;
       e.preventDefault(); lastAct = performance.now();
       const id = g.dataset.p, P = parts.find(p => p.id === id);
+      if (!sel) { talk('Előbb válassz egy színt!'); container.querySelectorAll('.swatch').forEach(pulse); return; }   // nem tévedés
       if (id === target && sel === want) {
         done = true; fill(id, colors[want - 1]); box.classList.add('done'); happy('🦄');
         say(`Kész! ${cap(cra[want - 1])} színezted ${T.acc}.`);

@@ -13,7 +13,7 @@ export const POOL = [...entries(), ...LEGACY.map(legacyEntry)];
 export const FEED_POOL = FEED_ITEMS.map(legacyEntry);
 export const materialize = (e, r) => (e ? e.item || build(e.id, r) : null);
 const BY_ID = new Map(entries().map(e => [e.id, e]));
-export const entryOf = item => (item.template ? BY_ID.get(item.id) || { id: item.id, station: item.station, skill: item.skill, level: item.level, graded: item.graded } : legacyEntry(item));
+export const entryOf = item => (item.template ? BY_ID.get(item.id) || { id: item.id, station: item.station, skill: item.skill, level: item.level, graded: item.graded, neutral: item.neutral } : legacyEntry(item));
 
 // A korábbi (1.0-s) feladatok azonosítói állomásonként: aki ezekből sokat megoldott, az új készségeken egy szinttel feljebb indul
 const OLD = {
