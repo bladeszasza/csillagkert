@@ -227,8 +227,9 @@ nem a belépéskor:
   együtt kb. 73 KB), nincs külső kérés. A terv a Fredokát javasolta, de abból mérhetően hiányzik az ő, ű, Ő, Ű
   (tartalék betűvel jelent volna meg), ezért Nunito lett. A számjegyek és a betűk alakja (1, 4, 7, 9, I, J, G, a, g)
   ugyanaz, mint a korábbi betűé, csak kerekebb, ezért a tananyag betűi és a vásznon rajzolt számok is erre álltak át.
-  A sormagasság a régi betűéhez igazítva (1,2), így egyik feladat sem lett magasabb: mind a 311 mintafeladatot (minden
-  sablon minden szintje és a régi feladatok) fekvő és álló iPad-méretben lemértük, levágott felirat nincs.
+  A sormagasság a régi betűéhez igazítva (1,2). Mind a 311 mintafeladatot (minden sablon minden szintje és a régi
+  feladatok) lemértük a régi és az új betűvel, fekvő és álló iPad-méretben: fekvő képernyőn egyik sem lett magasabb,
+  álló képernyőn 8 kicsit igen (a legalább 56 px-es gombok miatt, legfeljebb 63 px-szel), de mind elfér; levágott felirat nincs.
 - **Gombok:** egységes, rugós nyomás (lenyomva kicsit összemegy, elengedve visszapattan; `js/motion.js`). Minden
   gomb legalább 56 px: a kezdő-, fő- és jutalomképernyőn, mind a 311 mintafeladatban és minden jutalomjátékban, fekvő
   és álló iPad-méretben mérve. A kijelző szélén a gombok kihagyják a biztonságos sávot (home-sáv, állapotsor).
