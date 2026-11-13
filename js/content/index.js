@@ -23,6 +23,7 @@ const OLD = {
   hang: [/^clap\|/, /^betu-[A-Z]$/, /^pick\|(Mi rímel|Melyik állat neve kezdődik)/],
   zene: [/^music\|/],
   ceruza: [/^trace\|/, /^betu\|/],
+  rajz: [/^draw\|/],
   algo: [/^algo\|/, /^order\|Hogyan készítünk szendvicset/, /^pick\|(Hány taps lesz|Mi jön ezután\? Találd ki|Ha sötét van)/],
 };
 export function legacySolvedIn(seen, station) {

@@ -10,6 +10,8 @@ import { NOTES } from '../js/notes.js';
 import { simulate, solve as robotSolve, compress, keyOf } from '../js/robot-path.js';
 import { compose, known } from '../js/glyphs.js';
 import { decode, solveMaze } from '../js/maze-core.js';
+import { _canon } from '../js/content/rajz.js';
+import { visible } from '../js/content/kepek.js';
 
 const SEEDS = [1, 2, 3];
 const answerOf = o => o.n ?? (o.name || o.key);
@@ -145,7 +147,66 @@ test('minden feladat megoldható: a független megoldó ugyanazt a választ tal�
       assert.ok(/^egy /.test(it.name) && it.pic, `hiányzó kép vagy név: ${where}`);
       assert.deepEqual(ans, it.dots.map((_, i) => i), where);
       spoken(it.say, where); spoken(`Kész! ${it.name} lett belőle!`, where);
+    } else if (it.type === 'racs') {
+      // rács: a független megoldó a látottakból (minta, fél kép, a sor eleje, jelmagyarázat) ugyanazt a képet kapja
+      assert.deepEqual(ans, it.goal, `a megoldó mást talált: ${where}`);
+      for (const g of it.grids) { assert.equal(g.fixed.length, g.w * g.h, where); if (g.shapes) assert.equal(g.shapes.length, g.w * g.h, where); }
+      assert.equal(new Set(it.colors).size, it.colors.length, `ismétlődő szín: ${where}`);
+      let work = 0;
+      for (const [gi, s] of Object.entries(it.goal)) [...s].forEach((c, i) => {
+        assert.ok(c === '0' || (+c >= 1 && +c <= it.colors.length), `ismeretlen szín: ${where}`);
+        if (it.grids[gi].fixed[i] === '?' && c !== '0') work++;
+      });
+      assert.ok(work >= 2, `kevés kiszínezendő cella: ${where}`);
+      for (const c of it.colors.keys()) assert.ok(Object.values(it.goal).some(s => s.includes(String(c + 1))), `fölösleges szín a palettán: ${where}`);
+      if (it.mode === 'szabaly') for (const [s] of it.rules) assert.ok(it.grids[0].shapes.filter(x => x === s).length >= 2, `a szabályos alak kevesebb mint kétszer: ${where}`);
+      spoken(it.say, where);
+    } else if (it.type === 'kep') {
+      // színező: a megoldó a kimondott mondatból a megnevezett részt és a színt találja; minden rész látszik és koppintható
+      assert.deepEqual(ans, { part: it.target, color: it.color }, `a megoldó mást talált: ${where}`);
+      assert.ok(it.parts.length >= 3 && it.colors.length >= 3, `kevés rész vagy szín: ${where}`);
+      assert.equal(new Set(it.colors).size, it.colors.length, `ismétlődő szín: ${where}`);
+      assert.equal(new Set(it.parts.map(p => p.acc)).size, it.parts.length, `két rész neve egyforma: ${where}`);
+      for (const p of it.parts) {
+        const vis = visible(it.pic, p.id).length * 4;
+        assert.ok(vis >= 250, `túl kicsi a látható rész (${p.id}, ${vis}): ${where}`);
+        spoken(`${p.pl ? 'Ezek' : 'Ez'} ${p.nom}. ${p.acc} keressük.`, where);
+      }
+      spoken(it.say, where); spoken(`Kész! ${it.cra[it.color - 1]} színezted ${it.parts.find(p => p.id === it.target).acc}.`, where);
+    } else if (it.type === 'draw') {
+      // szabad rajz: téma, kép és Rozi mondata; nem pontozott és nem mozdítja a szintet
+      assert.ok(it.pic && it.say && it.done, `hiányzó kép vagy mondat: ${where}`);
+      assert.equal(it.graded, false, where); assert.equal(it.neutral, true, where);
+      spoken(it.say, where); spoken(it.done, where);
+    } else if (it.type === 'matrica') {
+      // matrica: a megoldó a mondat jelentéséből és a helyek elhelyezkedéséből pontosan a jó hely(ek)et találja
+      assert.deepEqual(ans, it.slots.filter(s => s.ok).map(s => s.id), `a megoldó mást talált: ${where}`);
+      assert.ok(ans.length >= 1 && ans.length <= 2, `jó helyek száma: ${where}`);
+      assert.ok(it.slots.length >= 3, `kevés választható hely: ${where}`);
+      for (const a of it.slots) for (const b of it.slots) if (a !== b) assert.ok(Math.hypot(a.x - b.x, a.y - b.y) >= 14, `túl közeli helyek: ${where}`);
+      for (const s of it.slots) assert.ok(s.x >= 6 && s.x <= 114 && s.y >= 6 && s.y <= 80, `jeleneten kívüli hely: ${where}`);
+      if (it.refs.length === 2 && it.rel !== 'koze') {      // két tárgy: a kérdezett oldalon, a kettő között csak jó hely lehet
+        const T = it.refs[it.target], O = it.refs[1 - it.target], lo = Math.min(T.x, O.x) + 1, hi = Math.max(T.x, O.x) - 1;
+        const sides = it.rel === 'melle' ? ['bal', 'jobb'] : ['bal', 'jobb'].includes(it.rel) ? [it.rel] : [];
+        for (const side of sides) if ((side === 'jobb') === (T.x < O.x))
+          for (const s of it.slots.filter(s => !s.ok)) assert.ok(!(s.x > lo && s.x < hi && s.y > 62 - T.s), `a két tárgy között a kérdezett oldalon más hely is van: ${where}`);
+      }
+      spoken(it.say, where);
     } else assert.fail(`ismeretlen feladattípus: ${it.type} (${where})`);
+  }
+});
+
+test('Rajzasztal rácsai: két feladat nem ugyanaz az alak eltolva, forgatva, tükrözve vagy más színekkel', () => {
+  const { canon, fromRows, TRANSFORMS } = _canon;
+  for (const [tid, tfs, shiftX] of [['rajz.masol', Object.keys(TRANSFORMS), true], ['rajz.tukor', ['id', 'fy'], false]]) {
+    const t = TEMPLATES.find(x => x.id === tid), seen = new Map();
+    for (const x of targetsOf(t)) {
+      const it = build(x.id, rng(x.id)), g = it.grids[0];
+      const rows = tid === 'rajz.tukor' ? Array.from({ length: g.h }, (_, y) => g.fixed.slice(y * g.w, y * g.w + g.axis)) : Array.from({ length: g.h }, (_, y) => g.fixed.slice(y * g.w, (y + 1) * g.w));
+      if (tid === 'rajz.tukor') assert.ok(rows.some(r => r[r.length - 1] !== '0'), `a fél kép nem éri el a tükörtengelyt: ${x.id}`);
+      const c = canon(fromRows(rows), tfs, shiftX);
+      assert.ok(!seen.has(c), `ugyanaz az alak kétszer: ${x.id} és ${seen.get(c)}`); seen.set(c, x.id);
+    }
   }
 });
 
@@ -153,7 +214,7 @@ test('Rozi minden mondata kimondható: nincs számjegy, jel, emoji, és rövidek
   resetLines();
   for (const t of TEMPLATES) for (const x of targetsOf(t)) {
     const it = build(x.id, rng(x.id));
-    if (['algo', 'trace', 'maze', 'dots'].includes(it.type)) { spoken(it.say, x.id); continue; }
+    if (['algo', 'trace', 'maze', 'dots', 'racs', 'matrica', 'draw', 'kep'].includes(it.type)) { spoken(it.say, x.id); continue; }
     if (it.type !== 'pick') continue;
     const sp = pickSpeech(it);
     if (it.memo) spoken(it.memo.say, x.id);
@@ -192,5 +253,13 @@ test('minden eltérítő máshol helyes válasz (nem lehet kizárással megtanul
     }
     const never = [...wrong].filter(w => !right.has(w));
     assert.deepEqual(never, [], `${st}: soha nem helyes válasz`);
+  }
+});
+
+test('matrica: a választható helyek száma feladatonként állandó (a tárgy fajtája nem könnyít és nem nehezít)', () => {
+  const t = TEMPLATES.find(x => x.id === 'rajz.matrica');
+  for (const x of targetsOf(t)) {
+    const n = new Set(SEEDS.map(sd => build(x.id, rng(x.id + sd)).slots.length));
+    assert.equal(n.size, 1, `${x.id}: ${[...n].join(' / ')} hely`);
   }
 });

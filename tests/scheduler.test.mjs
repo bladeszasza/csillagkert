@@ -117,3 +117,13 @@ test('gyakorló feladat (vonal, rajz): nincs hibaszám, három befejezés után 
   core.record(s, e, { help: 2 }, 21); core.record(s, e, { help: 3 }, 22); assert.equal(s.sk['st.ceruza'].lv, 1);
   assert.equal(s.rv[e.id].b, 0, 'elakadás után másnap visszajön');
 });
+
+test('szabad rajz (semleges): a befejezés nem lépteti a szintet, és a szint sem csökken tőle; a látott feladat számít', () => {
+  const s = { age: 5, seen: {} }, e = { id: 'rajz.szabad:nap', station: 'rajz', skill: 'rajz.szabad', level: 1, graded: false, neutral: true };
+  const lv0 = core.levelOf(s, 'rajz').lv;
+  for (let i = 0; i < 6; i++) core.record(s, e, {}, i);
+  for (let i = 0; i < 3; i++) core.record(s, e, { help: 3 }, 10 + i);
+  assert.equal(core.levelOf(s, 'rajz').lv, lv0);
+  assert.ok(s.seen[e.id] !== undefined);
+  assert.deepEqual(s.hist, []);
+});

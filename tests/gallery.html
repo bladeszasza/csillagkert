@@ -23,6 +23,19 @@
 <script type="module">
   import { TEMPLATES, targetsOf, build } from '../js/content/engine.js';
   import { rng } from '../js/content/rng.js';
+  import { shapeSvg, decoSvg, tapPoint, KEPEK } from '../js/content/kepek.js';
+  function kepHtml(it) {
+    const body = it.parts.map(p => `<g>${p.shapes.map(s => shapeSvg(s, `fill="${p.id === it.target ? it.colors[it.color - 1] : '#fff'}" stroke="#3b2a63" stroke-width="3" stroke-linejoin="round"`)).join('')}</g>`).join('')
+      + it.deco.map(decoSvg).join('') + it.parts.map(p => { const [x, y] = tapPoint(it.pic, p.id); return `<circle cx="${x}" cy="${y}" r="2.5" fill="#ff2d6f"/>`; }).join('');
+    return `<div class="activity kep"><div class="prompt">${it.say}</div><svg viewBox="0 0 200 200" style="width:430px;height:430px;background:#fff;border-radius:22px">${body}</svg><div class="prompt" style="font-size:20px">${it.cnames.join(', ')}</div></div>`;
+  }
+  function matricaHtml(it) {
+    const u = 4.6, ok = it.slots.find(s => s.ok), at = ok.rel === 'bele' ? [ok.x, 62 - it.refs[ok.ref].s * 0.88] : [ok.x, ok.y];
+    return `<div class="activity matrica"><div class="prompt">${it.say}</div><div class="mt-scene" style="--u:${u}px;width:${120 * u}px;height:${100 * u}px"><div class="mt-ground"></div><div class="mt-shelf"></div>`
+      + it.refs.map(r => `<span class="mt-ref" style="left:${r.x * u}px;top:${62 * u}px;font-size:${r.s * u}px">${r.pic}</span>`).join('')
+      + it.slots.map(s => `<div class="mt-slot" style="left:${s.x * u}px;top:${s.y * u}px;${s.ok ? 'border-color:#2fa84f;background:rgba(47,168,79,.4)' : ''}"></div>`).join('')
+      + `<span class="mt-st${ok.rel === 'bele' ? ' behind' : ''}" style="left:${at[0] * u}px;top:${at[1] * u}px">${it.sticker[0]}</span></div></div>`;
+  }
   import { markup } from '../js/activities/pick.js';
   import { NOTES } from '../js/notes.js';
   import { boardHtml, chipsHtml } from '../js/content/algo.js';
@@ -68,6 +81,9 @@
         : it.type === 'trace' ? `<div class="activity"><div class="prompt">${it.prompt} · ${it.free ? 'bármelyik irány' : 'kötött irány'} · tűrés ${it.tol}</div>${strokesSvg(it.strokes, 520)}<div class="prompt" style="font-size:22px">${it.say}</div></div>`
         : it.type === 'maze' ? `<div class="activity"><div class="prompt">útvesztő ${it.w}×${it.h} · ${x.key}</div>${mazeSvg(it)}</div>`
         : it.type === 'dots' ? `<div class="activity"><div class="prompt">${it.dots.length} pötty → ${it.pic} ${it.name}</div>${dotsSvg(it)}</div>`
+        : it.type === 'racs' ? `<div class="activity"><div class="prompt">${it.mode} · ${it.say}</div>${it.rules ? `<div>${it.rules.map(([s, c]) => `${s} → <span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:${it.colors[c - 1]}"></span>`).join(' &nbsp; ')}</div>` : ''}<div style="display:flex;gap:18px;align-items:center">${it.grids.map((g, gi) => `<div style="display:grid;grid-template-columns:repeat(${g.w},34px);grid-auto-rows:34px;gap:2px;background:#c9b3f5;padding:2px;border-radius:8px">${[...g.fixed].map((c, i) => { const v = c === '?' ? (it.goal[gi]?.[i] ?? '0') : c, col = v === '0' ? '#fff' : it.colors[+v - 1]; const sh = g.shapes?.[i]; return `<div style="background:${sh ? '#fff' : col};${c === '?' ? 'outline:2px dashed #8e5be8;outline-offset:-4px;' : ''}${g.axis && i % g.w === g.axis ? 'border-left:4px solid #8e5be8;' : ''}display:flex;align-items:center;justify-content:center;font:800 ${sh && sh === sh.toUpperCase() ? 22 : 14}px system-ui;color:${sh ? col : '#000'}">${sh ? (v === '0' ? sh : '●' + sh) : ''}</div>`; }).join('')}</div>`).join('➜')}</div></div>`
+        : it.type === 'matrica' ? matricaHtml(it)
+        : it.type === 'kep' ? kepHtml(it)
         : it.type === 'clap' ? `<div class="activity"><div class="prompt">tapsolás: ${it.word.parts.join('-')}</div><div class="items"><span class="item" style="font-size:150px">${it.word.t}</span></div><div class="prompt">${it.word.name} · ${it.word.parts.length} szótag</div></div>`
         : `<div class="activity"><div class="prompt">${it.type} ${JSON.stringify({ n: it.n, a: it.a, b: it.b, op: it.op })}</div></div>`;
       card.innerHTML = `<div class="gin">${body}</div><p>${x.id} · ${x.level}. szint${it.sound ? '<br>🔊 ' + sndText(it.sound.events) : ''}</p>`;
@@ -80,6 +96,17 @@
     const h2 = document.createElement('h2'); h2.textContent = 'Betűlap: nyomtatott nagybetűk és számjegyek (vonássorrend: a pötty száma, irány: a nyílhegy)'; document.body.appendChild(h2);
     const sheet = document.createElement('div'); sheet.style.cssText = 'display:flex;flex-wrap:wrap;gap:10px';
     for (const ch of [...LETTERS, ...DIGITS]) sheet.insertAdjacentHTML('beforeend', `<div style="text-align:center;font:700 18px system-ui">${strokesSvg(compose(ch), 130)}<br>${ch}</div>`);
+    document.body.appendChild(sheet);
+  }
+  // képlap: minden színezős kép a kész színekkel, alatta a részek neve és szintje (a szülő is átnézheti)
+  if (st === 'rajz') {
+    const h2 = document.createElement('h2'); h2.textContent = 'Színezős képek (kész színekkel; a rózsaszín pötty a koppintási pont)'; document.body.appendChild(h2);
+    const sheet = document.createElement('div'); sheet.style.cssText = 'display:flex;flex-wrap:wrap;gap:14px';
+    for (const [pic, K] of Object.entries(KEPEK)) {
+      const body = K.parts.map(p => p[6].map(s => shapeSvg(s, `fill="${p[4]}" stroke="#3b2a63" stroke-width="3" stroke-linejoin="round"`)).join('')).join('')
+        + K.deco.map(decoSvg).join('') + K.parts.map(p => { const [x, y] = tapPoint(pic, p[0]); return `<circle cx="${x}" cy="${y}" r="2.5" fill="#ff2d6f"/>`; }).join('');
+      sheet.insertAdjacentHTML('beforeend', `<div style="width:300px;font:600 13px system-ui;background:#f3ecff;border-radius:14px;padding:8px"><svg viewBox="0 0 200 200" style="width:284px;height:284px;background:#fff;border-radius:12px">${body}</svg><br>${K.pic} ${K.name}: ${K.parts.map(p => `${p[2]} (${p[1]})`).join(', ')}</div>`);
+    }
     document.body.appendChild(sheet);
   }
   window.__ready = true;

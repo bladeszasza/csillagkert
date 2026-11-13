@@ -3,6 +3,13 @@
 
 let lastPenAt = -1e9;     // még nem volt ceruza (0-val az oldal betöltése utáni első 4 mp-ben az ujj nem rajzolhatott)
 
+// Koppintós és húzós felületeknek (rács, matrica, színező): a ceruza mindig számít, az ujj csak akkor, ha 4 mp-e nem
+// használtak ceruzát. Így a ceruzát fogó kéz tenyere nem színez ki cellát, és nem számít tévedésnek.
+export function penAllows(e) {
+  if (e.pointerType === 'pen') { lastPenAt = performance.now(); return true; }
+  return performance.now() - lastPenAt > 4000;
+}
+
 export function attachPen(canvas, { onStart, onMove, onEnd, color = '#8e5be8', baseWidth = 14 } = {}) {
   const ctx = canvas.getContext('2d');
   let active = null;      // az éppen rajzoló pointerId

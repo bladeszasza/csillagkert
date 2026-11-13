@@ -107,6 +107,60 @@ async function solveDots(d) {
   await penStroke(box.__dots.canvas, between(Array.from({ length: box.__dots.total }, (_, i) => box.__dots.px(i))));
 }
 
+async function solveKepUi(d, ans, mistake) {
+  const box = await waitFor(() => d.querySelector('.activity.kep'), 5000); if (!box?.__kep) throw new Error('a színező nem nyílt meg');
+  d.style.pointerEvents = 'auto';                    // a böngésző saját találat-vizsgálata: ott koppint, ahol a gyerek is
+  const hit = id => { const [x, y] = box.__kep.point(id), el = document.elementFromPoint(x, y), g = el?.closest('.kp-part');
+    if (g?.dataset.p !== id) throw new Error(`a(z) ${id} rész nem koppintható (${g?.dataset.p || el?.tagName})`); return [el, x, y]; };
+  const tapAt = id => { const [el, x, y] = hit(id); el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId: 5, pointerType: 'pen', clientX: x, clientY: y })); };
+  for (const g of box.querySelectorAll('.kp-part')) hit(g.dataset.p);
+  if (mistake) { const other = [...box.querySelectorAll('.kp-part')].map(g => g.dataset.p).find(p => p !== ans.part); tapAt(other); await wait(800); }
+  box.__kep.swatch(ans.color).click(); tapAt(ans.part);
+}
+
+async function solveDrawUi(d) {
+  const box = await waitFor(() => d.querySelector('.activity.draw'), 5000); if (!box?.__draw) throw new Error('a rajzlap nem nyílt meg');
+  box.querySelector('.done-btn').click(); await wait(50);
+  if (box.classList.contains('done')) throw new Error('üres rajzlapnál is befejeződött');
+  const c = box.__draw.canvas, r = c.getBoundingClientRect(), P = (x, y) => ({ x: r.width * x, y: r.height * y });
+  await penStroke(c, between([P(0.3, 0.4), P(0.6, 0.5), P(0.5, 0.7)]));
+  box.querySelector('.swatch[data-i="4"]').click();
+  await penStroke(c, between([P(0.2, 0.2), P(0.4, 0.3)]));
+  box.querySelector('.dr-undo').click();
+  if (box.__draw.strokes() !== 1) throw new Error(`a visszavonás után ${box.__draw.strokes()} vonás maradt`);
+  box.querySelector('.done-btn').click();
+}
+
+async function solveMatricaUi(d, ans, mistake) {
+  const box = await waitFor(() => d.querySelector('.activity.matrica'), 5000); if (!box?.__matrica) throw new Error('a matrica nem nyílt meg');
+  const mid = el => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+  const ev = (el, type, [x, y]) => el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 9, pointerType: 'pen', clientX: x, clientY: y }));
+  if (mistake) {                     // szándékos tévedés: koppintás egy rossz helyre (Rozi megmondja, hova került)
+    const bad = [...box.querySelectorAll('.mt-slot')].find(el => !ans.includes(+el.dataset.s));
+    ev(bad, 'pointerdown', mid(bad)); await wait(1800);
+  }
+  const st = box.querySelector('.mt-st'), to = box.__matrica.slot(ans[0]), a = mid(st), b = mid(to);
+  ev(st, 'pointerdown', a);
+  for (let k = 1; k <= 6; k++) { ev(st, 'pointermove', [a[0] + (b[0] - a[0]) * k / 6, a[1] + (b[1] - a[1]) * k / 6]); await wait(16); }
+  ev(st, 'pointerup', b);
+}
+
+async function solveRacsUi(d, ans, mistake) {
+  const box = await waitFor(() => d.querySelector('.activity.racs'), 5000); if (!box?.__racs) throw new Error('a rács nem nyílt meg');
+  const tapCell = el => { const r = el.getBoundingClientRect(); el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 7, pointerType: 'pen', clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 })); };
+  if (mistake) {                     // szándékos tévedés: egy munkacellára olyan szín, ami oda nem jó
+    const nc = box.querySelectorAll('.swatch').length;
+    outer: for (const [gi, s] of Object.entries(ans)) for (let i = 0; i < s.length; i++) for (let c = 1; c <= nc; c++) {
+      if (String(c) === s[i] || !box.__racs.cell(+gi, i)?.classList.contains('work')) continue;
+      box.__racs.swatch(String(c)).click(); tapCell(box.__racs.cell(+gi, i)); await wait(800); break outer;
+    }
+  }
+  for (const [gi, s] of Object.entries(ans)) for (let i = 0; i < s.length; i++) {
+    if (s[i] === '0' || !box.__racs.cell(+gi, i)?.classList.contains('work')) continue;
+    box.__racs.swatch(s[i]).click(); tapCell(box.__racs.cell(+gi, i)); await wait(5);
+  }
+}
+
 export async function testContent(ok) {
   window.__soundSpeed = 4;                                 // a hangok ugyanazok, csak gyorsabban szólnak (a teszt ideje miatt)
   const runs = [], badLines = [];
@@ -131,6 +185,10 @@ export async function testContent(ok) {
       else if (item.type === 'trace') { await solveTrace(d); await waitFor(() => result || err, 8000); }
       else if (item.type === 'maze') { await solveMazeUi(d, tpl.solve(item)); await waitFor(() => result || err, 8000); }
       else if (item.type === 'dots') { await solveDots(d); await waitFor(() => result || err, 12000); }
+      else if (item.type === 'kep') { if (mistake) mistakes++; await solveKepUi(d, tpl.solve(item), mistake); await waitFor(() => result || err, 8000); }
+      else if (item.type === 'draw') { await solveDrawUi(d); await waitFor(() => result || err, 8000); }
+      else if (item.type === 'matrica') { if (mistake) mistakes++; await solveMatricaUi(d, tpl.solve(item), mistake); await waitFor(() => result || err, 8000); }
+      else if (item.type === 'racs') { if (mistake) mistakes++; await solveRacsUi(d, tpl.solve(item), mistake); await waitFor(() => result || err, 8000); }
       else if (item.type === 'algo') { if (mistake) mistakes++; await solveAlgo(d, item, tpl.solve(item), mistake); await waitFor(() => result || err, 15000); }
       else if (item.type === 'clap') { if (mistake) mistakes++; await solveClap(d, tpl.solve(item), mistake); await waitFor(() => result || err, 10000); }
       else {

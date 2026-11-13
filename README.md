@@ -21,15 +21,16 @@ Feladatok → csillagok → jutalomjáték. Hibázásért nincs büntetés: szel
   gondolkodtató feladatok (sorminta, kakukktojás, ellentétek, párok, „Mi tűnt el?", memória), hangok és rímek
   (szótagtaps, rím, kezdő- és véghang, betű), zene (harangok, feljebb–lejjebb, dallamív, ritmuskártyák, halk–hangos,
   hosszú–rövid, gyors–lassú, dallam-visszhang), állatetetés (a kert valódi 3D lakóját etetjük), testünk, időutazás,
-  robotprogramozás (építés, ismétlés, hibakeresés, „Hová ér?", ha–akkor), rajz.
-  Hét állomás feladatai sablonokból készülnek, állomásonként több száz (lásd lent).
+  robotprogramozás (építés, ismétlés, hibakeresés, „Hová ér?", ha–akkor), rajzasztal (rácsos másolás, tükör, sorminta,
+  szabály szerinti színezés, térbeli szavak matricával, színező, szabad rajz).
+  Nyolc állomás feladatai sablonokból készülnek, állomásonként több száz (lásd lent).
 - **Jutalomjátékok:** Unikornis-futás, Felhővár-verseny, szabad futás procedurális világban, hami-adagoló (3D cica),
   cica-etetés, Barátom (fésülés, simogatás, labdázás), unikornis-öltöztető (ajándékokkal), buborékpukkasztás.
 - Nincs build lépés: sima HTML + ES modulok + three.js (`vendor/`). GitHub Pages-en fut. A haladás csak az eszközön tárolódik.
 
 ## Tananyag és sorrend
 
-Az M4 mérföldkő harmadik része folyamatban: **7 állomás generált** (a 8 generálhatóból); a Rajzasztal következik.
+Az M4 mérföldkő kész: **mind a 8 generálható állomás** sablonokból készül.
 
 | Állomás | Önálló feladat | Készség |
 |---|---:|---:|
@@ -40,6 +41,7 @@ Az M4 mérföldkő harmadik része folyamatban: **7 állomás generált** (a 8 g
 | Zenevár | 293 | 7 |
 | Robotpálya | 464 | 6 |
 | Ceruzavár | 259 | 9 |
+| Rajzasztal | 266 (ebből 60 szabad rajz) | 7 |
 
 - **Sablonok** (`js/content/`): egy sablon egy feladatfajta; a „cél" az, ami a választ meghatározza (darabszám, minta,
   tárgy). Egy önálló feladat egy (sablon, cél) pár: a tárgy fajtája, a színe, a rossz válaszok és a sorrend díszítés,
@@ -51,6 +53,10 @@ Az M4 mérföldkő harmadik része folyamatban: **7 állomás generált** (a 8 g
 - **Ceruzavár**: a vonalat ceruzával vagy ujjal kell követni, hibajelzés nélkül; vonalnál bármelyik végéről, számnál,
   betűnél és szónál a zöld pöttytől, a számozott sorrendben. A betűformák saját összeállítások: a feladat-galéria
   betűlapján (`tests/gallery.html?st=ceruza`) átnézhetők.
+- **Rajzasztal**: rossz szín vagy rossz hely nem marad meg, Rozi megmondja, mi volna ott; a matricánál azt is, hova
+  került a matrica („A cica most a szék mellett van."). A szabad rajznak nincs jó vagy rossz megoldása, ezért nem számít
+  bele a szintlépésbe; Rozi a végén a használt színeket mondja el. A színezős képek a galéria képlapján
+  (`tests/gallery.html?st=rajz`) átnézhetők.
 - **Rozi mondatai** (`js/lines.js`): melegebb, kevesebb csillag-emlegetés, több közös felfedezés; a gyerek nevét néha
   kimondja, ha meg van adva (a név csak az eszközön tárolódik).
 - **A régi feladatok**: a generált állomások régi, kézzel írt feladatai kikerültek; aki azokból sokat megoldott, az új

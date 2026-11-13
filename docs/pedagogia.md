@@ -4,15 +4,15 @@ Ez a leírás azt mutatja meg, mire épül a feladatok sorrendje és nehezedése
 át tudja nézni. **A játék nem mér és nem diagnosztizál**, nem helyettesíti a szakember véleményét. A szintek a
 feladatok nehézségét jelölik, nem a gyerek fejlettségét.
 
-Minden forrásnál jelölöm, hogyan ellenőriztem (2026. november 12-én):
+Minden forrásnál jelölöm, hogyan ellenőriztem (2026. november 12–13-án):
 **[teljes szöveg]** = az eredeti szöveget olvastam (letöltve, vagy a nyílt hozzáférésű teljes szöveget);
 **[kivonat]** = a tanulmány kivonatát olvastam (Europe PMC vagy egyetemi adattár), a teljes szöveget nem;
 **[másodlagos]** = csak a bibliográfiai adatokat és más szerzők összefoglalóit ismerem, az eredetit és a kivonatot nem
 olvastam. A **saját beállítás** jelzésű számok az én döntéseim az elvek alapján, nem kutatásból átvett értékek: a
 tapasztalat szerint hangolandók.
 
-Állapot: az M4 harmadik része. Generált állomás: **Számoló rét, Formák és színek, Okoskodó, Hangok háza, Zenevár,
-Robotpálya, Ceruzavár**. A Rajzasztal az M4 harmadik részében készül. A tény-állomások
+Állapot: az M4 kész. Generált állomás: **Számoló rét, Formák és színek, Okoskodó, Hangok háza, Zenevár,
+Robotpálya, Ceruzavár, Rajzasztal**. A tény-állomások
 (Világunk, Egészség, Testünk csodái, Időutazás, Állatok, Szívkert) kézzel írt, a szülő által átnézett ténytáblát
 kapnak az M6-ban.
 
@@ -38,7 +38,7 @@ használat.
 | DIFER-készség | Állomás a játékban |
 |---|---|
 | elemi számolás | Számoló rét |
-| relációszókincs (alatt, között, több, legnagyobb…) | Formák és színek (téri viszonyok, méret), Számoló rét (több, kevesebb, előtte, utána) |
+| relációszókincs (alatt, között, több, legnagyobb…) | Formák és színek (téri viszonyok, méret), Számoló rét (több, kevesebb, előtte, utána), Rajzasztal (matrica: fölé, alá, rá, bele, mellé, balra, jobbra, közé) |
 | tapasztalati következtetés, összefüggés-megértés | Okoskodó (sorminta, kakukktojás, csoportosítás, analógia) |
 | beszédhallgatás | Hangok háza |
 | írásmozgás-koordináció | Ceruzavár |
@@ -69,7 +69,8 @@ A szabályok a `js/scheduler-core.js` fájlban vannak, Node-tesztekkel (`tests/s
 | Szintlépés | 3 elsőre sikerült feladat a gyerek szintjén | Saját beállítás. Ha egy készség legnehezebb feladata a gyerek szintje alatt van, az is számít (különben egy rövid készség-létra megakasztaná a lépést). |
 | Visszalépés | 2 olyan feladat, amelyet csak segítséggel (két tévedés után) oldott meg | Saját beállítás. |
 | Egy tévedés, aztán magától jó | semleges | Saját beállítás: nem lép feljebb, de az addigi sikersorozat sem vész el. Egy ötévesnél egy elcsúszott koppintás nem jelent tudáshiányt. |
-| Gyakorló feladat (memória, vonal, útvesztő, pöttyösszekötő, rajz) | 3 befejezés a gyerek szintjén = szintlépés; hibaszám nincs | Saját beállítás: itt nincs „rossz" válasz. |
+| Gyakorló feladat (memória, vonal, útvesztő, pöttyösszekötő) | 3 befejezés a gyerek szintjén = szintlépés; hibaszám nincs | Saját beállítás: itt nincs „rossz" válasz. |
+| Szabad rajz | semleges: nem léptet és nem léptet vissza; a látott feladat számít | Saját beállítás: egy rajz befejezése nem mond semmit a tudásról. A rajz témája az állomás szintjét követi, amit a Rajzasztal többi feladata állít. |
 | Elakadás gyakorló feladatnál | 6 másodperc tétlenség után felvillan a következő pont; ha a gyerek a segítség után sem halad tovább (kétszer egymás után 6 másodpercig nincs haladás), az egy vonal, útvesztő vagy pöttyösszekötő közben elakadás. Két elakadás után egy szinttel könnyebb jön, és a feladat másnap visszatér. Egyetlen segítség, vagy több rövid, egymástól független szünet egy hosszú feladatban semleges | Saját beállítás: a tévedés itt nem jel (a vonalról le lehet térni), a hosszú megakadás viszont az, hogy a feladat még nehéz. |
 | Ismétlés | elsőre sikerült: 1, 3, 7, 14 nap múlva; tévedés után: másnap | Saját beállítás a Cepeda-féle elv alapján (a konkrét napok nem a tanulmányból vannak). |
 | Ismétlések aránya | 30%, ha a sikerarány legalább 70%; különben 45% | Saját beállítás. |
@@ -85,7 +86,8 @@ A szabályok a `js/scheduler-core.js` fájlban vannak, Node-tesztekkel (`tests/s
 A 250-es kapu nem az egyedi azonosítókat számolja, hanem az önálló **(sablon, cél)** párokat. A cél csak az, ami a
 választ meghatározza (például a darabszám, a számhármas, a minta típusa); a tárgy fajtája, a színe, az eltérítők és a
 sorrend díszítés, nem új feladat. Állás: Számoló rét **758**, Formák és színek **304**, Okoskodó **407**, Hangok háza
-**618**, Zenevár **293**, Robotpálya **464**, Ceruzavár **259** önálló feladat (`tests/generated.test.mjs`). A
+**618**, Zenevár **293**, Robotpálya **464**, Ceruzavár **259**, Rajzasztal **266** (ebből 60 szabad rajz, lásd 3.8)
+önálló feladat (`tests/generated.test.mjs`). A
 Zenevárban a feljebb vagy lejjebb ugyanúgy szóló (transzponált) dallam nem új feladat; a Robotpályán az eltolt vagy
 nagyobb pályán ugyanaz a program sem; a Ceruzavárban ugyanaz a vonal nagyobban, máshol vagy fordított irányban sem,
 és ugyanaz az útvesztő-megoldás más zsákutcákkal sem.
@@ -96,7 +98,10 @@ gépi megoldó a gyerek által látott képből számolja ki a választ (`tests/
 valódi feladatot is megoldja (`tests/smoke.html`). A Ceruzavárban a választós szabályok helyett ez fut: a vonalak
 pontjai elég sűrűk, minden betű ismert, az útvesztő minden mezője elérhető és pontosan egy útja van, a pöttyök nem
 esnek túl közel egymáshoz; a böngészős megoldó tollal (szimulált Apple Pencil-vonással) végigköveti a vonalat, végigvezeti
-a cicát az útvesztőn, és sorban összeköti a pöttyöket.
+a cicát az útvesztőn, és sorban összeköti a pöttyöket. A Rajzasztalon: a rácsok megoldója a mintából, a fél képből,
+a sor elejéből vagy a jelmagyarázatból számolja ki a képet; a matrica megoldója a mondat jelentéséből és a helyek
+elhelyezkedéséből találja meg a jó helyet; a színező megoldója a kimondott mondatból veszi ki a részt és a színt, és
+minden rész látható és koppintható (a böngésző saját találat-vizsgálatával is).
 
 ---
 
@@ -280,6 +285,56 @@ a repóba. Ha nincs név megadva, a „MAMA" szót kell átírni.
 **Szülőnek érdemes kipróbálni** (asztali gépről nem ellenőrizhető): a tűrés az iPaden ceruzával és ujjal (túl
 szigorú? túl laza?), és hogy a vastag vonal kényelmes-e a kis kéznek.
 
+### 3.8 Rajzasztal (7 sablon, 7 készség)
+
+**Mire épül**: a térbeli szavak (fölé, alá, rá, bele, mellé, balra, jobbra, közé) a DIFER relációszókincs-területéhez
+tartoznak (1. rész). A sorminta folytatására: Zippert, Douglas és Rittle-Johnson (2020) 65 négy–hat éves gyereknél azt
+találta, hogy az óvodás kori ismétlődő sorminta-tudás a munkamemóriától függetlenül előre jelezte a nagycsoport végi
+matematikai tudást [kivonat]. A minta szerinti összerakásra: Verdine és mtsai (2014) 102 hároméves gyereknél azt
+találta, hogy a minta szerinti kockaépítés ügyessége a matematikai teljesítmény egy részét önállóan magyarázta
+[kivonat]. Mindkettő együttjárást mutat, nem azt, hogy a gyakorlás okozza a fejlődést; a játék csak annyit vesz át, hogy
+a sorminta és a másolás helyet kap. **A feladatok sorrendje és nehezedése saját összeállítás** (a tükrözés, a szabály
+szerinti színezés és a színező is), ehhez forrást nem ellenőriztem.
+
+**Hogyan működik**: a rácsos feladatoknál a gyerek színt választ, és a cellára koppint. Rossz szín vagy rossz hely
+nem marad meg: a cella megbillen, visszafehéredik, és Rozi megmondja, mi volna ott („A mintán itt piros van.").
+Ha a tévedések a rács méretéhez képest sokan vannak, a következő hiányzó cella felvillan, még több után a kész kép
+halványan előtűnik. A matricánál a gyerek a polcról a helyre húzza (vagy a helyre koppint) a matricát; rossz helyen
+Rozi megmondja, hova került („A cica most a szék mellett van."), és a matrica visszaszáll; a második tévedés után a
+jó hely felvillan, balra–jobbra kérdésnél pedig emlékeztet: „Tedd a kezed a szívedre: az a bal oldalad." A
+színezőnél: „Ez az ajtó. A tetőt keressük."; a második tévedés után a jó rész villan fel, a harmadik után a jó szín
+is; sikerre a kép többi része magától kiszíneződik. Az iPaden a ceruza elsőbbséget kap: ha a ceruza 4 másodpercen
+belül járt a képernyőn, az ujj (tenyér) érintése nem számít.
+
+| Készség | Feladat | Szintek | Mi nehezedik |
+|---|---:|---|---|
+| másolás | 61 | 1–5 | 3×3-as rács, egy szín, két–négy cella → 5×5-ös rács, három szín, hét–kilenc cella; a minta mellett (álló iPaden fölötte) |
+| tükör | 55 | 2–5 | 2×4-es fél kép, egy szín → 4×5-ös fél kép, két szín; a fél kép mindig eléri a tükörtengelyt |
+| sorminta | 16 | 1–5 | AB → AAB, ABB, ABC → AABB, AAAB, ABBB → ABCD, AABC, ABBC, ABCC → ABAC, ABCB; síkban: sakktábla, csíkos, átlós |
+| szabály szerinti színezés | 16 | 1–5 | egy alak, egy szín → két, három, négy szabály; szabály nélküli alakok (fehérek maradnak); hasonló alakok (kör és ovális, négyzet és téglalap); méret szerinti szabály (a nagy négyzet más, mint a kicsi) |
+| térbeli szavak (matrica) | 15 | 1–5 | fölé, alá → rá, bele, mellé → balra, jobbra, közé → két egyforma, egy nagy és egy kicsi tárgy közül a megnevezett mellé, alá, fölé, bele, rá |
+| színező | 43 | 1–4 | nagy rész (tető, fal, a hal teste) → közepes (ajtó, ablak) → kicsi (kémény, szem, zászló) → két hasonló közül a megnevezett (bal vagy jobb oldali ablak, felső vagy alsó uszony, nagy vagy kis vitorla); nyolc saját rajzolt kép |
+| szabad rajz | 60 | 1–5 | egy forma (nap, labda, lufi) → két-három forma (alma, gomba, hóember) → tárgy (ház, autó, hajó) → állat, Rozi, „rajzold le magadat" → kis jelenet térbeli szóval („Rajzolj egy fát, és rá egy madarat!") |
+
+**Mi számít egy feladatnak**: másolásnál az alak (eltolva, elforgatva, tükrözve vagy más színekkel ugyanaz a
+feladat, a szintek között is); tükörnél a fél kép alakja a tengelyhez illesztve (függőlegesen eltolva, fejjel lefelé
+vagy más színnel ugyanaz); sormintánál a szerkezet; szabálynál a szabály szerkezete (hogy melyik alak melyik színt
+kapja, díszítés); matricánál a viszony és hogy egy vagy két tárgy közül kell választani (a tárgy és a matrica fajtája
+díszítés, a választható helyek száma feladatonként állandó); színezőnél a kép és a megnevezett rész (a kért szín
+díszítés); szabad rajznál a téma.
+
+**Őszintén a szabad rajzról**: a 266 feladatból 60 szabad rajz. Ezeknek nincs jó vagy rossz megoldása: a gépi
+ellenőrzés csak azt nézi, hogy a feladat elindul, üres lappal nem fejeződik be, elfogad egy vonást, a visszavonás
+működik, és a pipára véget ér. Értékelt (jó vagy rossz választ adó) feladat 206 van. A pipához egyetlen vonás is elég
+(az 1.0-s átnézés ezt nyitott pontként jelölte; saját döntés, hogy így marad: a gyerek dönti el, mikor kész a rajza).
+Rozi a végén nem minősít, hanem elmondja, milyen színeket lát („Látom, pirosat és sárgát használtál."), vagy megköszöni.
+**Kiegészítős rajz** (hiányzó rész odarajzolása) nem készült, mert géppel nem értékelhető; a rajzok egyelőre nem
+kerülnek ki a kert rajztáblájára (az M5-ben).
+
+**Szülőnek érdemes kipróbálni**: a matrica húzása ujjal és ceruzával az iPaden, és hogy a tárgyak (szék, ágy, kosár,
+doboz) képe az iPad saját emojijaival is úgy néz-e ki, hogy a „szék alá" hely tényleg a szék alatt legyen (a helyeket
+a tárgyak szokásos rajzához igazítottam, de az emojik eszközönként eltérnek).
+
 ---
 
 ## 4. Rozi mondatai (monológ-könyvtár)
@@ -301,10 +356,10 @@ A mondatok a `js/lines.js` fájlban vannak; szándékonként legalább hat vált
 
 ## 5. Ami még hátra van, és amit nem tudunk
 
-- **Még nem generált** (M4/3): Rajzasztal. (A Zenevár Kodály-sorrendjének forrása: a gyakorlatok a kis
-  terccel, a szó–mi hangközzel kezdenek, aztán egyenként jön a lá, a dó és a ré; a fá és a ti csak később, mert a
-  félhangot a gyerekek nehezen éneklik tisztán; [Wikipédia: Kodály method](https://en.wikipedia.org/wiki/Kod%C3%A1ly_method),
-  Choksy: *The Kodály Method I*, 1999, 9–12. o. alapján, [másodlagos].)
+- **A Zenevár Kodály-sorrendjének forrása**: a gyakorlatok a kis terccel, a szó–mi hangközzel kezdenek, aztán
+  egyenként jön a lá, a dó és a ré; a fá és a ti csak később, mert a félhangot a gyerekek nehezen éneklik tisztán
+  ([Wikipédia: Kodály method](https://en.wikipedia.org/wiki/Kod%C3%A1ly_method), Choksy: *The Kodály Method I*, 1999,
+  9–12. o. alapján, [másodlagos]).
 - **A Robotpálya régi feladatai**: a hét régi pálya helyett generáltak jöttek. A szendvics-sorrend (hétköznapi
   sorrend) és a „Ha sötét van a szobában…" kérdés most kimarad, az M6 ténytábláiban (Egészség, Világunk) térhet
   vissza; a „Hány taps lesz összesen?" számolást a Számoló rét, a színes sormintát az Okoskodó sorminta-feladatai
@@ -338,7 +393,7 @@ A tervezéskor mind a 136 régi feladatot átnéztük; 61-et jelöltünk javíta
 | Ceruzavár | 3 | 2 javítva korábban (a kör azonosítója, a név nélküli betű); 1 kiváltva: a kilenc azonos utasítású régi vonal helyett generált feladatok jöttek, mindegyiknek saját utasítása van („Rajzolj esőt! Minden csepp fentről lefelé esik.") |
 | Hangok háza | 8 | kivéve, a generált feladatok váltják ki (a válaszok nevét Rozi kimondja, a kép látszik, a tapsolásnál nincs számjegy, sok rím-feladat) |
 | Zenevár | 4 | kivéve, a generált feladatok váltják ki (nincs abszolút hallás: a harangok előbb a nevükkel szólnak; a hangnév mindig harang neve; a felirat „ti") |
-| Rajzasztal | 0 | – |
+| Rajzasztal | 0 | a négy régi rajzos feladat (nap, ház és virág kiszínezése, szabad rajz) helyett generált feladatok jöttek (3.8) |
 
 Összesen: 30 kiváltva generált feladattal, 29 javítva, 1 kivéve, **1 nyitott** (az M6-ban).
 
@@ -383,6 +438,12 @@ A tervezéskor mind a 136 régi feladatot átnéztük; 61-et jelöltünk javíta
   Evaluate Fine Motor Skills Associated with Mathematical Skills in Preschoolers. *European Journal of Investigation in
   Health, Psychology and Education*, 13(7), 1330–1361. https://doi.org/10.3390/ejihpe13070098 (a Beery-féle VMI
   formáinak listája, Beery és Beery kézikönyve alapján) [teljes szöveg]
+- Verdine, B. N., Golinkoff, R. M., Hirsh-Pasek, K., Newcombe, N. S., Filipowicz, A. T., & Chang, A. (2014).
+  Deconstructing building blocks: preschoolers' spatial assembly performance relates to early mathematical skills.
+  *Child Development*, 85(3), 1062–1076. https://doi.org/10.1111/cdev.12165 [kivonat]
+- Zippert, E. L., Douglas, A. A., & Rittle-Johnson, B. (2020). Finding patterns in objects and numbers: Repeating
+  patterning in pre-K predicts kindergarten mathematics knowledge. *Journal of Experimental Child Psychology*, 200,
+  104965. https://doi.org/10.1016/j.jecp.2020.104965 [kivonat]
 - Marr, D., & Cermak, S. (2002). Predicting handwriting performance of early elementary students with the
   developmental test of visual-motor integration. *Perceptual and Motor Skills*, 95(2), 661–669.
   https://doi.org/10.2466/pms.2002.95.2.661 [kivonat]

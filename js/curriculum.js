@@ -57,7 +57,6 @@ const BASE = [
   // ✏️ Ceruzavár · 🔤 Hangok · 🌍 Világunk · 🍎 Egészség · 🫀 Testünk · 🏺 Időutazás · 🎵 Zene · 🤖 Robotpálya · 🎨 Rajz
   pick('🫀', 'Melyik szerv pumpálja a vért?', '❤️ szív', '🧠 agy', '🦷 fog'),
   pick('🏺', 'Melyik állat élt nagyon régen, és ma már nem él?', '🦖 dinoszaurusz', '🐶 kutya', '🐱 cica'),
-  { type: 'draw', template: 'nap' },
 
   pick('🌍', 'Melyik évszakban esik a hó?', '❄️ tél', '🏖️ nyár', '🌸 tavasz'),
   pick('🫀', 'Mivel gondolkodunk?', '🧠 agy', '🦴 csont', '👅 nyelv'),
@@ -71,16 +70,13 @@ const BASE = [
   pick('🌍', 'Mikor látjuk a csillagokat az égen?', '🌙 éjszaka', '☀️ délben', '🌤️ délután'),
   pick('🍎', 'Melyik az egészséges?', '🥕 répa', '🍭 nyalóka', '🍟 sült krumpli'),
   pick('🏺', 'Hol laktak a királyok és a lovagok régen?', '🏰 vár', '🏢 felhőkarcoló', '⛺ sátor'),
-  { type: 'draw', template: 'haz' },
 
   pick('🫀', 'Mivel rágunk?', '🦷 fog', '👃 orr', '👂 fül'),
   withQ('🐥', pick('🌍', 'Kinek a kicsinye a csibe?', '🐔 tyúk', '🐮 tehén', '🐷 malac')),
   pick('🍎', 'Mivel mosunk fogat?', '🪥 fogkefe', '🧼 szappan', '🧽 szivacs'),
-  { type: 'draw', template: 'virag' },
 
   pick('🌍', 'Melyik nap jön péntek után?', '🎈 szombat', '🎒 hétfő', '📚 szerda'),
   pick('🫀', 'Mivel hallunk?', '👂 fül', '👃 orr', '🦶 láb'),
-  { type: 'draw', say: 'Rajzolj, amit csak szeretnél!' },
 
   order('🌍', 'Mi történik a nap folyamán? Koppints sorrendben!', '🌅 reggel', '☀️ dél', '🌇 este', '🌙 éjszaka'),
   order('🫀', 'Hogyan változunk az évek alatt? Koppints sorrendben!', '👶 baba', '🧒 gyerek', '🧑 felnőtt', '🧓 idős'),
@@ -126,7 +122,7 @@ export const STATIONS = [
   { id: 'algo', emoji: '🤖', name: 'Robotpálya' },
   { id: 'rajz', emoji: '🎨', name: 'Rajzasztal' },
 ];
-const BY_TYPE = { trace: 'ceruza', maze: 'ceruza', dots: 'ceruza', count: 'szamol', math: 'szamol', memory: 'okos', clap: 'hang', draw: 'rajz', seq: 'hang', echo: 'zene', feed: 'allat', algo: 'algo' };
+const BY_TYPE = { trace: 'ceruza', maze: 'ceruza', dots: 'ceruza', racs: 'rajz', matrica: 'rajz', kep: 'rajz', count: 'szamol', math: 'szamol', memory: 'okos', clap: 'hang', draw: 'rajz', seq: 'hang', echo: 'zene', feed: 'allat', algo: 'algo' };
 const BY_ICON = { '🔺': 'forma', '🔤': 'hang', '🧩': 'okos', '🌍': 'vilag', '🍎': 'egeszseg', '🔢': 'szamol', '🫀': 'test', '🏺': 'ido', '🤖': 'algo' };
 export const stationOf = item => item.station || BY_TYPE[item.type] || BY_ICON[item.icon] || 'okos';
 export const itemsOf = id => CURRICULUM.filter(i => stationOf(i) === id);

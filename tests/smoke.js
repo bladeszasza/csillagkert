@@ -10,6 +10,8 @@ import { MEALS, ANY, friendById, FRIENDS, AREAS, MAX_FLOWERS } from '../js/frien
 import { testOpenWorld, testMinigames } from './smoke-games.js';
 import { testContent } from './smoke-content.js';
 import { VOL } from '../js/notes.js';
+import { build } from '../js/content/engine.js';
+import { rng } from '../js/content/rng.js';
 
 const results = [];
 const ok = (name, pass, info = '') => { results.push({ name, pass: !!pass, info: String(info) }); };
@@ -91,6 +93,11 @@ async function testAbort() {
     // a robot öt lépést indul (kb. 2,5 mp); a megszakítás menet közben jön, utána nem szólhat a "odaért" mondat
     ['algo', { type: 'algo', w: 6, h: 2, start: [0, 0], goal: [5, 0], walls: [], max: 7, say: 'Vezesd a robotot a csillaghoz!' },
       d => { for (let k = 0; k < 5; k++) d.querySelector('.acmd[data-d="right"]').click(); d.querySelector('#arun').click(); }],
+    // Rajzasztal: egy tévedés (Rozi megszólal), utána megszakítás; a visszaállítás és a dicséret már nem szólhat
+    ['racs', build('rajz.minta:abc', rng(1)), d => { const c = d.querySelector('.rc-cell.work'); c?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'pen', pointerId: 3 })); }],
+    ['matrica', build('rajz.matrica:ala', rng(1)), d => { const s = d.querySelector('.mt-slot'); s?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'pen', pointerId: 3 })); }],
+    ['kep', build('rajz.kep:haz:teto', rng(1)), d => { const g = d.querySelector('.kp-part[data-p="fal"] rect'); g?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'pen', pointerId: 3 })); }],
+    ['draw', build('rajz.szabad:nap', rng(1)), () => {}],
     ['pick', { type: 'pick', prompt: 'Merre ment a hang?', fact: 'A második hang magasabb volt.', hint: 'Figyeld!', sound: { events: [{ n: 'do', dur: 0.8, gap: 0.3 }, { n: 'szo', dur: 0.8 }] },
       options: [{ key: 'fel', t: '⬆️', name: 'feljebb', ok: true }, { key: 'le', t: '⬇️', name: 'lejjebb', ok: false, said: 'Ez lejjebb.' }, { key: 'u', t: '➡️', name: 'ugyanaz', ok: false, said: 'Ez ugyanaz.' }] }, () => {}],
   ]) {

@@ -11,8 +11,9 @@ import { HANG } from './hang.js';
 import { ZENE } from './zene.js';
 import { ALGO } from './algo.js';
 import { CERUZA } from './ceruza.js';
+import { RAJZ } from './rajz.js';
 
-export const TEMPLATES = [...SZAMOL, ...FORMA, ...OKOS, ...HANG, ...ZENE, ...ALGO, ...CERUZA];
+export const TEMPLATES = [...SZAMOL, ...FORMA, ...OKOS, ...HANG, ...ZENE, ...ALGO, ...CERUZA, ...RAJZ];
 export const GENERATED = [...new Set(TEMPLATES.map(t => t.station))];
 const BY_ID = new Map(TEMPLATES.map(t => [t.id, t]));
 const TARGETS = new Map();
@@ -30,7 +31,7 @@ export const templateOf = id => BY_ID.get(String(id).slice(0, String(id).indexOf
 let ENTRIES = null;
 export function entries() {
   if (!ENTRIES) {
-    ENTRIES = TEMPLATES.flatMap(t => targetsOf(t).map(x => ({ id: x.id, template: t.id, station: t.station, skill: t.skill, level: x.level, graded: t.graded !== false })));
+    ENTRIES = TEMPLATES.flatMap(t => targetsOf(t).map(x => ({ id: x.id, template: t.id, station: t.station, skill: t.skill, level: x.level, graded: t.graded !== false, neutral: t.neutral === true })));
     // top: a készség legnehezebb szintje (aki ezt megoldja, annak a sikere a terület szintlépésébe is beleszámít)
     const top = new Map(); for (const e of ENTRIES) top.set(e.skill, Math.max(top.get(e.skill) || 0, e.level));
     for (const e of ENTRIES) e.top = top.get(e.skill);
@@ -44,5 +45,5 @@ export function build(id, r = rng()) {
   targetsOf(t);
   const target = TARGETS.get(t.id).byId.get(id); if (!target) return null;
   const item = t.make(target, r);
-  return { icon: t.icon, ...item, id, station: t.station, skill: t.skill, level: target.level, template: t.id, graded: t.graded !== false };
+  return { icon: t.icon, ...item, id, station: t.station, skill: t.skill, level: target.level, template: t.id, graded: t.graded !== false, neutral: t.neutral === true };
 }

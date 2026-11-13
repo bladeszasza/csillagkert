@@ -135,6 +135,7 @@ export function record(state, entry, outcome = {}, now = Date.now(), legacySolve
   sk.at = now; sk.n = (sk.n || 0) + 1;
   const s = levelOf(state, entry.station, legacySolved);
   s.at = now; s.n++;
+  if (entry.neutral) return;                       // szabad rajz: nincs jó vagy rossz, a szintet a többi feladat állítja
   // a gyerek szintjén (vagy a készség legnehezebb szintjén, ha az alacsonyabb) megoldott feladat számít a szintlépéshez
   const atLevel = (entry.level || 0) >= Math.min(s.lv, entry.top ?? Infinity);
   if (entry.graded === false) {                   // gyakorló feladat (vonal, betű, rajz, memória): nincs hibaszám, a befejezés számít
