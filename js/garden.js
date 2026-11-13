@@ -109,6 +109,16 @@ export function createGarden(canvas) {
     }
     stems.count = petals.count = Math.max(stems.count, s + 1);
   }
+  // tesztekhez: a j. virág mérete (a teljes méretéhez képest), színe, és hogy épp hervad-e (fade: mennyire fakult meg)
+  const probe = new THREE.Color();
+  function flowerAt(j) {
+    const s = slotOf(j), g = growing.find(x => slotOf(x.j) === s);
+    let shown = g ? (g.old !== undefined ? g.old : g.j) : j; while (shown >= bloomed) shown -= MAX_FLOWERS;   // ami most ezen a helyen nyílik
+    stems.getMatrixAt(s, m4); m4.decompose(v3, q4, s3); petals.getColorAt(s, probe);
+    const base = colorOf(shown), far = Math.hypot(faded.r - base.r, faded.g - base.g, faded.b - base.b) || 1;
+    return { slot: s, shown, k: s3.x / (0.85 + ((shown * 37) % 10) * 0.03), color: probe.getHex(), own: probe.getHex() === colorOf(j).getHex(),
+      withering: g?.old !== undefined, fade: Math.hypot(probe.r - base.r, probe.g - base.g, probe.b - base.b) / far };
+  }
   function stepFlowers(now) {
     for (let k = growing.length - 1; k >= 0; k--) {
       const g = growing[k]; let age = (now - g.born) / 700;
@@ -445,7 +455,7 @@ export function createGarden(canvas) {
   }
 
   return {
-    setStars, setGifts, setAvatar, beginFeed, endFeed, places, setDay, goTo, areas,
+    setStars, setGifts, setAvatar, beginFeed, endFeed, places, setDay, goTo, areas, flowerAt,
     decorArea: id => giftById(id)?.spot?.[0] || null,
     area: () => pan.area,
     cheer() { const now = performance.now(); let k = 0; actors.forEach(a => { a.hop = now + 900 + (k++ % 3) * 70; }); },   // új csillag: mindenki ugrik egyet

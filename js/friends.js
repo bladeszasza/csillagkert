@@ -143,8 +143,8 @@ export const PLACES = [
 
 // --- virágok helye: determinisztikus; szabadon hagyja a barátok zugait, a tereptárgyakat és az etetőhely előtti sávot ---
 // Egyszerre legfeljebb MAX_FLOWERS virág nyílik (a szülő kérésére ne nőjön túl a kert): az új csillag virága a legrégebbi
-// helyére nő, az a régi előbb elhervad. 70, mert a 71. hely már a feladatjelek elé, a képernyő aljára esne.
-export const MAX_FLOWERS = 70;
+// helyére nő, az a régi előbb elhervad. 71, mert a 72. hely már a feladatjelek elé, a képernyő aljára esne.
+export const MAX_FLOWERS = 71;
 // Az aranyvirágok (ajándék) a külső gyűrűn nyílnak: nem a feladatjelek előtt, és egyik virágra sem lógnak rá.
 export const GOLD_MAX = 60;
 const SIGN_FRONT = 4.3, SIGN_WIDE = 4.9;                 // az alsó jelsor előtti sáv (a jelek és a Tovább gomb fölött)

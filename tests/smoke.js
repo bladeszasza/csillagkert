@@ -176,8 +176,12 @@ async function testGarden() {
   garden.setStars(70 + 230, []); await wait(2900); garden.debug(); await wait(1900); d = garden.debug();
   ok(`kert: 300 csillagnál mind a 19 barát itt van, és egyszerre csak ${MAX_FLOWERS} virág nyílik (a régiek elhervadtak)`, d.friends.length === 19 && d.flowers === MAX_FLOWERS && d.bloomed === 300 && d.calls <= calls70 + 2 && d.calls <= 150, `virágok: ${d.flowers} (eddig ${d.bloomed}), hívások: ${d.calls} (70 csillagnál ${calls70}), háromszögek: ${d.triangles}`);
   const tri300 = d.triangles;
-  garden.setStars(301, []); await wait(450); const mid = garden.debug(); await wait(1500); const after = garden.debug();
-  ok('kert: az új csillag virága a legrégebbi helyére nő (az előbb elhervad), a virágok száma nem nő', mid.flowers === MAX_FLOWERS && after.flowers === MAX_FLOWERS && after.bloomed === 301 && after.triangles === tri300, `hervadás közben ${mid.flowers}, utána ${after.flowers} virág; háromszögek ${tri300} → ${after.triangles}`);
+  const before = garden.flowerAt(300);
+  garden.setStars(301, []); await wait(450); const mid = garden.debug(), wm = garden.flowerAt(300); await wait(1500); const after = garden.debug(), wa = garden.flowerAt(300);
+  ok('kert: az új csillag virága a legrégebbi helyére nő: az előbb megfakul és összemegy, aztán kinő az új (a virágok száma nem nő)',
+    before.shown === 300 - MAX_FLOWERS && wm.withering && wm.shown === 300 - MAX_FLOWERS && wm.k > 0.05 && wm.k < 0.95 && wm.fade > 0.3 && !wa.withering && wa.shown === 300 && wa.own && Math.abs(wa.k - 1) < 0.01 && wa.slot === before.slot
+      && mid.flowers === MAX_FLOWERS && after.flowers === MAX_FLOWERS && after.bloomed === 301 && after.triangles === tri300,
+    `hely ${before.slot}: hervadás közben ${wm.k.toFixed(2)} méret, ${Math.round(wm.fade * 100)}% fakulás; utána ${wa.k.toFixed(2)} méret, saját szín: ${wa.own}; virágok ${mid.flowers} → ${after.flowers}; háromszögek ${tri300} → ${after.triangles}`);
   garden.setStars(420, []); await wait(900); d = garden.debug();
   ok(`kert: a háromszögek száma a teljes kerttel is kordában marad (420 csillag, ${MAX_FLOWERS} virág; saját határ: 250 ezer)`, d.flowers === MAX_FLOWERS && d.triangles <= 250000 && d.calls <= 150, `300 csillagnál ${tri300}, 420 csillagnál ${d.triangles} háromszög, ${d.calls} hívás`);
   // a kertben lakó saját unikornis átöltözik (a legnehezebb öltözettel is a kereten belül marad)

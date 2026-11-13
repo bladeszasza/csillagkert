@@ -192,7 +192,7 @@ test('kert: egyszerre legfeljebb MAX_FLOWERS virág, és egyik sem nő a feladat
   assert.ok(MAX_FLOWERS >= 50 && MAX_FLOWERS <= 100, `furcsa virágszám: ${MAX_FLOWERS}`);
   const front = Math.max(...PLACES.filter(p => p.z > 0).map(p => p.z)) + 1.1, wide = Math.max(...PLACES.map(p => Math.abs(p.x))) - 2;
   allSpots().forEach((p, i) => assert.ok(!(p.z > front && Math.abs(p.x) < wide), `a(z) ${i}. virág (az aranyvirágok a végén) a jelek elé nő (${p.x.toFixed(1)}, ${p.z.toFixed(1)})`));
-  const next = flowerSpot(MAX_FLOWERS + 1);
+  const next = flowerSpot(MAX_FLOWERS);
   assert.ok(next.z > front && Math.abs(next.x) < wide, 'a határ szoros: a következő hely már a jelek elé esne (ha nem, nőhet a virágszám)');
 });
 
