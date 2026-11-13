@@ -238,4 +238,6 @@ ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba ment
   egyenként, a mért és a táblázatban álló magassággal.
 - A barátok egyetlen közös, példányosított hálócsomagból rajzolódnak (`js/three/characters.js`): a teljes kert
   19 baráttal 12–30 rajzolási hívás. Háromszögből 300 csillagnál (300 virággal) kb. 194 ezer van; a tervben szereplő
-  kb. 150 ezres keretet ez a sok virág miatt átlépi. A teszt saját határa 250 ezer; az iPades próbán érdemes figyelni, nem lassul-e.
+  kb. 150 ezres keretet ez a sok virág miatt átlépi. A teljes kert (a virágplafonig, minden kerti dísszel, a Barátság fájával
+  és aranyvirágokkal) kb. 239 ezer háromszög és 45 rajzolási hívás. A teszt saját határa 250 ezer, ez alatt már kevés a hely
+  (a saját unikornis a kertben az M5 következő része); az iPades próbán érdemes figyelni, nem lassul-e.
