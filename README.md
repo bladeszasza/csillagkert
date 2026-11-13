@@ -7,7 +7,8 @@ Feladatok → csillagok → jutalomjáték. Hibázásért nincs büntetés: szel
 
 **Amire épül:** okosítás · erények · tisztelet · kedvesség · törődés · tudás.
 
-- **A kert él:** a cica mellett a csillagokkal sorban 18 barát érkezik (lásd lent). Pislognak, sétálnak a zugukban,
+- **A kert él:** a cica mellett a csillagokkal sorban 18 barát érkezik, 150 csillag után pedig jutalomkörönként egy újdonság:
+  új barát vagy új fa (lásd lent). Pislognak, sétálnak a zugukban,
   koppintásra megszólalnak a saját hangjukon (mindegyiknek más). Minden csillag egy virág, de egyszerre legfeljebb 71 nyílik
   (a szülő kérésére, hogy ne nője be a kertet): ha már 71 van, a legrégebbi elhervad, és a helyén új, más színű virág nő.
   A 71 azért ennyi, mert a 72. hely már az alsó feladatjelek elé, a képernyő aljára esne (teszt: `tests/content.test.mjs`).
@@ -147,6 +148,30 @@ Ki mit eszik (`js/friends.js`): rossz válasz csak olyan étel lehet, amit az á
 A jóváhagyott terv ezeket rögzítette: nyuszi 3, kutya 8, róka 15, kacsa 25, maci 30, sün 40, panda 55, bagoly 70, unikornis 90.
 **A többi küszöb (béka, tyúk, mókus, egér, malac, bárány, teknős, póni, tehén) az én beállításom**, szabadon átírható
 a `js/friends.js` táblájában. Etetéssel bárki hamarabb is beköltözik.
+
+### Jövevények a tehén után: egy jutalomkörönként
+
+A szülő kérésére a tehén (150 csillag) után nagyjából **jutalomkörönként egy** újdonság érkezik, ahogy az ajándék is:
+**30 csillagonként** hol egy új barát, hol egy új fa. Egy jutalomkör a beállított kezdőszámmal (5, 7, 10 vagy 15 csillag)
+indul, körönként kettővel hosszabb, és legfeljebb 30 csillag (`roundStars`, `js/economy.js`). Ezért egy körben soha nem jön
+egynél több jövevény (Node-teszt mind a négy kezdőszámmal), és ha a kör már 30 csillagos, a teljes rendben minden körre jut egy.
+A rend rögzített (az én beállításom, a `js/friends.js` elején):
+
+| Csillag | Jövevény | Hol |
+|---:|---|---|
+| 180 · 210 · 240 | kenguru · eukaliptuszfa · koala | Ausztrália |
+| 270 | cseresznyefa 🌸 | kert közepe (hátul, a jelek között) |
+| 300 · 330 | kakadu · vombat | Ausztrália |
+| 360 | almafa 🍎 | tanya (a hinta mögött) |
+| 390 · 420 · 450 · 480 · 510 | emu · kacsacsőrű emlős · palackfa · kvokka · hangyászsün | Ausztrália |
+| 540 · 570 · 600 · 630 · 660 · 690 | elefánt · majomkenyérfa · zsiráf · ernyőakác · zebra · oroszlán | Afrika |
+| 720 | szomorúfűz 🌳 | tópart (a virágkapu mögött) |
+| 750 · 780 · 810 · 840 · 870 | víziló · szurikáta · pálmafa · flamingó · majom | Afrika |
+
+Ausztrália és Afrika még készül; a táblázat a végleges rendet mutatja, de a kódba egy jövevény csak a kész modelljével
+kerül be (a három régi kertrész fái már ott vannak). Egy 30 csillagos körrel számolva Afrika kb. 13 körrel a tehén után
+nyílik, az utolsó jövevény 24 körrel utána jön. A fák a barátok mögött, a hátsó sorban nőnek, így senkit nem takarnak el;
+amikor egy fa kinő, Rozi bejelenti („Új fa nőtt a kertben: …"), és ha a tóparton vagy a tanyán nőtt, a kamera odasiklik.
 
 ## Ajándékok és szívek
 

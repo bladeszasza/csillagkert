@@ -9,11 +9,11 @@ import { unlock as unlockAudio } from './audio.js';
 import { emote, moodFor, introduce } from './robot.js';
 import { renderMeter, flyStar } from './stars.js';
 import { setupParent } from './parent.js';
-import { friendsFor, friendById, AREAS } from './friends.js';
+import { friendsFor, friendById, floraFor, floraById, AREAS } from './friends.js';
 import { withArt } from './hu.js';
 import { createRewardTimer } from './reward-timer.js';
 import { play } from './sounds.js';
-import { nextGift, newRewardSession } from './economy.js';
+import { nextGift, newRewardSession, roundStars } from './economy.js';
 import { giftById } from './gifts.js';
 import { showGift, giftBusy, clearGifts, floatHeart, BOX_SVG } from './gift-moment.js';
 import { REWARDS } from './rewards/index.js';
@@ -65,7 +65,7 @@ window.addEventListener('unhandledrejection', ev => logError(ev.reason, 'ígére
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const name = () => progress.get().name;
 // Egyre több csillag kell: az alapérték + 2 minden megjátszott jutalomkör után (legfeljebb 30)
-const perReward = () => Math.min(30, (progress.get().perReward || 10) + 2 * (progress.get().rewardsDone || 0));
+const perReward = () => roundStars(progress.get().perReward, progress.get().rewardsDone);
 
 let garden = null;
 try { garden = createGarden($('garden')); window.__garden = garden; }
@@ -116,7 +116,13 @@ function renderAreaButtons() {
   for (const [btn, side] of [[$('go-left'), -1], [$('go-right'), 1]]) {
     let to, icon = '', label = '';
     if (here) { if (Math.sign(hereX) !== side) { to = ''; icon = '🐱'; label = 'Vissza a kert közepére'; } }
-    else { const a = list.find(r => Math.sign(r.x) === side); if (a) { to = a.id; icon = a.friends.length ? friendById(a.friends[0]).emoji : ''; label = AREAS.find(r => r.id === a.id).name; if (!icon) icon = { svg: giftById(a.decor[0]).icon }; } }
+    else {
+      const a = list.find(r => Math.sign(r.x) === side);
+      if (a) {
+        to = a.id; icon = a.friends.length ? friendById(a.friends[0]).emoji : ''; label = AREAS.find(r => r.id === a.id).name;
+        if (!icon) icon = a.decor.length ? { svg: giftById(a.decor[0]).icon } : floraById(a.flora[0]).emoji;   // ahol még csak dísz vagy fa van
+      }
+    }
     btn.hidden = to === undefined;
     if (to !== undefined) {                                  // ahol még csak kerti dísz áll, ott a dísz saját rajza van a gombon
       btn.dataset.to = to; const sp = btn.querySelector('span');
@@ -247,7 +253,7 @@ async function runItem(item, station, via) {
     setTimeout(() => say(res === 'abort' ? 'Semmi baj! Válassz mást, vagy játssz, ha kedved van.' : 'Semmi baj! Válasszunk mást!', { remember: false }), 400);
     return;
   }
-  const here = new Set(friendsFor(progress.get().total, progress.get().friends));
+  const here = new Set(friendsFor(progress.get().total, progress.get().friends)), hereFlora = new Set(floraFor(progress.get().total));
   const meter = progress.addStar(station, idOf(item));
   if (inGarden) { progress.taskHeart(); floatHeart(); }     // etetés = gondoskodás: egy szív a Barátság fájának
   const starGift = progress.starGift();                      // minden 20. csillag egy ajándék (a mentés már most megtörténik)
@@ -255,17 +261,20 @@ async function runItem(item, station, via) {
   record(item, { wrong: outcome.wrong || 0, help: outcome.help || 0 });   // az ütemező ebből hangolja a következő feladatot
   if (via === 'next') noteRound(item);
   const arrived = friendsFor(progress.get().total, progress.get().friends).filter(f => !here.has(f));   // ezzel a csillaggal érkezett barát
+  const grown = floraFor(progress.get().total).filter(f => !hereFlora.has(f)).map(floraById);          // ezzel a csillaggal nőtt fa
   garden?.setStars(progress.get().total, progress.get().friends);                 // az új barát besétál, megszólal, szívek szállnak
   garden?.setDay(Math.min(meter, perReward()) / perReward());
   garden?.cheer();
-  // A tópartra / tanyára érkező új barátot megnézzük: a kamera odasiklik, kicsivel később vissza (ha a gyerek közben nem választott mást)
-  const newcomer = [...arrived, ...fedNew].map(friendById).find(f => f.area);
+  // A tópartra / tanyára érkező új barátot (vagy ott nőtt fát) megnézzük: a kamera odasiklik, kicsivel később vissza
+  // (ha a gyerek közben nem választott mást)
+  const newcomer = [...[...arrived, ...fedNew].map(friendById), ...grown].find(f => f.area);
   if (newcomer && garden) {
     goArea(newcomer.area);
     areaTimer = setTimeout(() => { if (!running && garden.area() === newcomer.area) goArea(null); }, 6500);
   } else renderAreaButtons();
   // Új barátnál Rozi egy mondatban bejelenti; etetés után különben hallgat (ott az állat a saját hangján köszöni meg)
   if (arrived.length) say(`Új barát érkezett: ${withArt(friendById(arrived[0]).name)}!`, { remember: false });
+  else if (grown.length) say(`Új fa nőtt a kertben: ${withArt(grown[0].name)}!`, { remember: false });
   else if (!inGarden) say(lineNamed('star', name(), Math.random, meter >= perReward() ? 0.6 : 0.3), { remember: false });
   await flyStar(Math.min(meter, perReward()) - 1, Math.min(meter, perReward()));
   garden?.setGifts(progress.get(), true);                    // az etetés szíve a Barátság fáján

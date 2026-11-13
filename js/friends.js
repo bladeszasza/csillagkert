@@ -42,6 +42,26 @@ export const areaOf = id => friendById(id)?.area || null;
 // Ki van a kertben: akinek megvan a csillaga, vagy akit már megetettek
 export const friendsFor = (total, fed = []) => FRIENDS.filter(f => total >= f.stars || fed.includes(f.id)).map(f => f.id);
 
+// --- Jövevények a tehén (150 csillag) után: 30 csillagonként egy, hol egy új barát, hol egy új fa ---
+// A szülő kérésére nagyjából egy jutalomkörönként jön valaki, ahogy az ajándék is (egy kör legfeljebb 30 csillag, lásd
+// roundStars a js/economy.js-ben). A rögzített rend (saját beállítás, a README is leírja):
+//  180 kenguru · 210 eukaliptuszfa · 240 koala · 270 cseresznyefa (kert közepe) · 300 kakadu · 330 vombat · 360 almafa (tanya)
+//  390 emu · 420 kacsacsőrű emlős · 450 palackfa · 480 kvokka · 510 hangyászsün  – ez Ausztrália (balra, a tópart mögött)
+//  540 elefánt · 570 majomkenyérfa · 600 zsiráf · 630 ernyőakác · 660 zebra · 690 oroszlán · 720 szomorúfűz (tópart)
+//  750 víziló · 780 szurikáta · 810 pálmafa · 840 flamingó · 870 majom  – ez Afrika (jobbra, a tanya mögött)
+// Egy csillagszámra csak egy jövevény jut; a táblákba csak az kerül, akinek már kész a modellje (a teszt ellenőrzi).
+export const NEWCOMER_FROM = 150, NEWCOMER_STEP = 30;
+
+// A kertrészek saját növényei. spot: [x, z, forgatás, méret]; a fák a barátok mögött, a hátsó sorban állnak (senkit nem takarnak).
+// A modelleket a js/flora3d.js építi.
+export const FLORA = [
+  { id: 'cseresznye', name: 'cseresznyefa', emoji: '🌸', area: null, stars: 270, spot: [-3.9, -10.0, 0, 1.2] },
+  { id: 'almafa', name: 'almafa', emoji: '🍎', area: 'tanya', stars: 360, spot: [19.4, -8.6, 0, 1.1] },
+  { id: 'fuzfa', name: 'szomorúfűz', emoji: '🌳', area: 'to', stars: 720, spot: [-17.4, -9.7, 0, 1.25] },
+];
+export const floraById = id => FLORA.find(f => f.id === id);
+export const floraFor = total => FLORA.filter(f => total >= f.stars).map(f => f.id);
+
 // Ételek. acc: tárgyeset a tanító mondathoz ("A nyuszi répát eszik."); a ragozott alak ki van írva, nem a gép vezeti le.
 // t: kép (emoji); svg: saját rajz, ahol nincs jó emoji.
 const SVG = {

@@ -8,6 +8,9 @@ import { LADDER, OLD_ORDER, GOLD, giftById } from './gifts.js';
 import { named } from './lines.js';
 
 export const STAR_STEP = 20;                              // ennyi csillagonként jár egy ajándék (a régi szabály)
+// Egy jutalomkör ennyi csillag: a szülő által választott kezdőszám (5, 7, 10 vagy 15), körönként kettővel több, legfeljebb 30
+export const ROUND_MAX = 30;
+export const roundStars = (base = 10, done = 0) => Math.min(ROUND_MAX, (base || 10) + 2 * (done || 0));
 // Egy jutalomkörön belül játékonként legfeljebb ennyi szív jár (a szívet nem lehet "gyűjtögetni", a jó tett számít)
 export const HEART_CAPS = { healthy: 3, pet: 3, race: 3, foodcatch: 2, openworld: 4 };
 // Ezek a játékok adnak ajándékot; az öltöztető fogadja őket (ott a megnyert ruhák várnak), ezért ő maga nem ad.

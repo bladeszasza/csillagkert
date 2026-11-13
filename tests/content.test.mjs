@@ -3,7 +3,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CURRICULUM, STATIONS, stationOf, idOf, BASE_ITEMS, FEED_ITEMS } from '../js/curriculum.js';
 import { art, withArt, artLetter, ACC_NUM, numAttr, fromNum } from '../js/hu.js';
-import { FRIENDS, FOODS, MEALS, ANY, friendById, friendsFor, flowerSpot, MAX_FLOWERS, GOLD_MAX, goldSpot, FEED_SPOT, FEED_GATE, PLACES, AREAS } from '../js/friends.js';
+import { FRIENDS, FOODS, MEALS, ANY, friendById, friendsFor, flowerSpot, MAX_FLOWERS, GOLD_MAX, goldSpot, FEED_SPOT, FEED_GATE, PLACES, AREAS, FLORA, floraFor, NEWCOMER_FROM, NEWCOMER_STEP } from '../js/friends.js';
+import { roundStars } from '../js/economy.js';
 import { progress } from '../js/progress.js';
 
 const flat = CURRICULUM.flatMap(i => (i.type === 'seq' ? [i, ...i.steps] : [i]));
@@ -139,6 +140,55 @@ test('kert: a barátok a csillagokkal érkeznek, etetéssel hamarabb is', () => 
   const at = { bunny: 3, dog: 8, fox: 15, duck: 25, bear: 30, hedgehog: 40, panda: 55, owl: 70, unicorn: 90 };
   for (const [id, s] of Object.entries(at)) assert.equal(friendById(id).stars, s, id);
   for (let i = 1; i < FRIENDS.length; i++) assert.ok(FRIENDS[i].stars > FRIENDS[i - 1].stars, 'a tábla érkezési sorrendben áll, egy csillagszámra egy barát');
+});
+
+// a tehén (150) utáni jövevények: új barátok és a kertrészek fái egy közös, 30 csillagos lépcsőn
+const lateOnes = () => [...FRIENDS.filter(f => f.stars > NEWCOMER_FROM).map(f => [f.stars, f.id]), ...FLORA.map(f => [f.stars, f.id])].sort((a, b) => a[0] - b[0]);
+test('jövevények: 150 csillag után 30 csillagonként egy (barát vagy fa), egy csillagszámra csak egy', () => {
+  const late = lateOnes();
+  assert.equal(friendById('cow').stars, NEWCOMER_FROM, 'a tehén zárja a régi rendet');
+  for (const [s, id] of late) assert.ok(s >= NEWCOMER_FROM + NEWCOMER_STEP && (s - NEWCOMER_FROM) % NEWCOMER_STEP === 0 && s <= 900, `${id}: ${s} csillag nincs a 30-as lépcsőn (180…900)`);
+  assert.equal(new Set(late.map(([s]) => s)).size, late.length, 'két jövevény ugyanannál a csillagszámnál');
+  assert.deepEqual(floraFor(NEWCOMER_FROM), [], 'a tehén előtt nem nő új fa');
+  assert.deepEqual(floraFor(900), FLORA.map(f => f.id));
+});
+
+test('jövevények üteme: a jutalomkör hosszával (5, 7, 10, 15 kezdőszám) körönként legfeljebb egy jövevény jön', () => {
+  const late = lateOnes().map(([s]) => s), last = Math.max(...late);
+  assert.equal(roundStars(10, 0), 10); assert.equal(roundStars(10, 3), 16); assert.equal(roundStars(5, 100), 30); assert.equal(roundStars(undefined, 0), 10);
+  for (const base of [5, 7, 10, 15]) {
+    let total = 0, done = 0, rounds = 0;
+    while (total < last) {
+      const n = roundStars(base, done), got = late.filter(s => s > total && s <= total + n);
+      assert.ok(got.length <= 1, `${base}-ös kezdés, ${done + 1}. kör (${total + 1}–${total + n} csillag): ${got.length} jövevény`);
+      if (total + n > NEWCOMER_FROM) rounds++;
+      total += n; done++;
+    }
+    assert.ok(rounds >= late.length, 'legalább annyi kör kell, ahány jövevény');
+  }
+});
+
+test('kertrészek növényei: van modelljük, a saját kertrészükben, a barátok mögött állnak, nem ülnek díszre, tárgyra, virágra', async () => {
+  const { buildFloraGeo } = await import('../js/flora3d.js');
+  const { DECOR } = await import('../js/gifts.js');
+  assert.equal(new Set(FLORA.map(f => f.id)).size, FLORA.length);
+  for (const f of FLORA) {
+    const [x, z, , k = 1] = f.spot;
+    assert.ok(f.name && f.emoji, `${f.id}: név és kép kell`);
+    const geo = buildFloraGeo(f.id); assert.ok(geo, `nincs modell: ${f.id}`);
+    geo.computeBoundingBox(); const b = geo.boundingBox;
+    assert.ok(Math.abs(b.min.y) < 0.05 && b.max.y * k > 2 && b.max.y * k < 4.6, `${f.id}: furcsa magasság ${(b.max.y * k).toFixed(2)}`);
+    const ax = f.area ? AREAS.find(a => a.id === f.area)?.x : 0;
+    assert.ok(ax !== undefined && Math.abs(x - ax) <= 7, `${f.name} nem a saját kertrészében áll`);
+    for (const g of FRIENDS) {
+      assert.ok(Math.hypot(x - g.home[0], z - g.home[1]) > 2.5, `${f.name} túl közel: ${g.name}`);
+      if (Math.abs(g.home[0] - x) < 6) assert.ok(z < g.home[1] - 2, `${f.name} nem ${g.name} mögött áll (eltakarná)`);
+    }
+    for (const d of DECOR) assert.ok(Math.hypot(x - d.spot[1], z - d.spot[2]) > 1.5, `${f.name} a(z) ${d.id} díszen`);
+    for (const p of PLACES) assert.ok(Math.hypot(x - p.x, z - p.z) > 1.5, `${f.name} a(z) ${p.id} tereptárgyon`);
+    for (const g of FLORA) if (g !== f) assert.ok(Math.hypot(x - g.spot[0], z - g.spot[1]) > 2.5, `${f.name} túl közel: ${g.name}`);
+    for (const q of allSpots()) assert.ok(Math.hypot(x - q.x, z - q.z) > 1.0, `${f.name} virágra nő`);
+  }
 });
 
 test('kertrészek: a tóparti és a tanyasi barátok a virágkörön kívül, egymástól távol laknak', () => {
