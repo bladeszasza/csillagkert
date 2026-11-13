@@ -8,7 +8,7 @@ Feladatok → csillagok → jutalomjáték. Hibázásért nincs büntetés: szel
 **Amire épül:** okosítás · erények · tisztelet · kedvesség · törődés · tudás.
 
 - **A kert él:** a cica mellett a csillagokkal sorban 18 barát érkezik, 150 csillag után pedig jutalomkörönként egy újdonság:
-  új barát vagy új fa (lásd lent). A tóparton túl egy egész új kertrész, **Ausztrália** népesül be nyolc állattal. Pislognak, sétálnak a zugukban,
+  új barát vagy új fa (lásd lent). A tóparton túl **Ausztrália**, a tanyán túl **Afrika** népesül be nyolc-nyolc állattal. Pislognak, sétálnak a zugukban,
   koppintásra megszólalnak a saját hangjukon (mindegyiknek más). Minden csillag egy virág, de egyszerre legfeljebb 71 nyílik
   (a szülő kérésére, hogy ne nője be a kertet): ha már 71 van, a legrégebbi elhervad, és a helyén új, más színű virág nő.
   A 71 azért ennyi, mert a 72. hely már az alsó feladatjelek elé, a képernyő aljára esne (teszt: `tests/content.test.mjs`).
@@ -122,7 +122,7 @@ Ki mit eszik (`js/friends.js`): rossz válasz csak olyan étel lehet, amit az á
 
 - **A sün és az alma:** a mesékben a sün almát visz a tüskéin, a valóságban rovarokat, gilisztát, csigát eszik.
   Az alma ezért nála se jó, se rossz válasz nem lehet.
-- **Akit (még) nem etetünk:** béka, bagoly, egér, unikornis, malac, bárány, teknős, és a távoli földek (Ausztrália, később Afrika)
+- **Akit (még) nem etetünk:** béka, bagoly, egér, unikornis, malac, bárány, teknős, és a távoli földek (Ausztrália és Afrika)
   minden lakója: náluk `eats: []` és `maybe: []` áll a táblában, így etetős feladat nem készül velük. Ők a kertben élnek és megszólalnak,
   de etetős feladatuk csak akkor lesz, ha az étrendjüket forrásból ellenőriztük (vagy a szülő jóváhagyja).
 - A „rossz" ételek is ellenőrzöttek: amit az állat néha megeszik (pl. a panda ritkán halat), az nem lehet rossz válasz.
@@ -169,8 +169,8 @@ A rend rögzített (az én beállításom, a `js/friends.js` elején):
 | 720 | szomorúfűz 🌳 | tópart (a virágkapu mögött) |
 | 750 · 780 · 810 · 840 · 870 | víziló · szurikáta · pálmafa · flamingó · majom | Afrika |
 
-Ausztrália kész; Afrika még készül. A táblázat a végleges rendet mutatja, de a kódba egy jövevény csak a kész modelljével
-kerül be. Egy 30 csillagos körrel számolva Afrika kb. 13 körrel a tehén után nyílik, az utolsó jövevény 24 körrel utána jön.
+Mind a 24 jövevény elkészült, a lépcső hézagmentes (Node-teszt: 180-tól 870-ig minden 30. csillagnál pontosan egy érkezik).
+Egy 30 csillagos körrel számolva Afrika kb. 13 körrel a tehén után nyílik, az utolsó jövevény 24 körrel utána jön.
 A fák a barátok mögött, a hátsó sorban nőnek, így senkit nem takarnak el; amikor egy fa kinő, Rozi bejelenti
 („Új fa nőtt a kertben: …"), és ha egy szélső kertrészben nőtt, a kamera odasiklik.
 
@@ -201,6 +201,30 @@ lakó, mindegyik saját hanggal (szintetizált, nem felvétel):
   szélén). Ausztráliában a kert közepe nem rajzolódik: ott kb. 74 ezer háromszög és 15 rajzolási hívás. A tópartról nézve
   iPad-arányú képernyőn Ausztráliából semmi nem esik a képbe, ezért ott sem rajzolódik (csak széles, 16:9-es képernyőn látszik
   a széle); a kert közepén 420 csillagnál változatlanul kb. 134 ezer.
+
+### Afrika (a tanyán túl, jobbra)
+
+Saját, aranysárga szavanna-talaj a kert jobb végén túl: hátul gránit sziklacsoport, itatótó nádassal a vízilónak és a
+flamingónak, vörös termeszvár, szavannafű-csomók, kövek, zöld bokrok és sárga virágok; a fái a majomkenyérfa, az ernyőakác
+és a pálmafa. Nyolc saját tervezésű lakó, mindegyik saját hanggal (szintetizált, nem felvétel):
+
+| Állat | Mi teszi felismerhetővé | Hangja |
+|---|---|---|
+| elefánt 🐘 | nagy, kékesszürke, hatalmas legyező fül, kunkorodó ormány, kis agyar | harsány trombitálás |
+| zsiráf 🦒 | hosszú nyak és láb, barna foltok, két bütyök a fején | mély, egyenletes dúdolás (állatkerti zsiráfoknál éjjel ilyet rögzítettek: [Baotic és mtsai, 2015](https://pmc.ncbi.nlm.nih.gov/articles/PMC4565008)) |
+| zebra 🦓 | fekete-fehér csíkos test, nyak és láb, csíkos sörény, szürke pofa | ugatásszerű „hí-ha" |
+| oroszlán 🦁 | aranysárga, dús, kétszínű sörény, bojtos farok | szelíd, rövid bömbölés |
+| víziló 🦛 | nagy, kerek, széles pofa, apró fül; az itatótóban lakik | szusszanás és mély „hö-hö-hö" |
+| szurikáta | felegyenesedve őrködik, sötét szemfolt, mancsok a mellén | gyors csiripelés |
+| flamingó 🦩 | rózsaszín, S alakú nyak, hosszú vékony láb, lehajló, fekete hegyű csőr | orrhangú gágogás |
+| majom 🐒 | barna, világos arc és has, nagy kerek fül, kunkorodó farok | „u-u-á" |
+
+- **Odajutás:** középről jobbra a tanya, onnan tovább Afrika (🐘 gomb); visszafelé a 🐔 gomb a tanyára, aztán a 🐱 gomb
+  a kert közepére. Az Afrika-gomb csak akkor jelenik meg, ha az elefánt (540 csillag) már megérkezett.
+- **Elrendezés:** mint Ausztráliánál, a négy képernyőméretre kiszámolva és a füstteszttel mérve. A bokrok nagyobbak a többi
+  apróságnál, ezért távolabb maradnak a lakóktól, hogy senkit ne takarjanak.
+- **Rajzolási teher:** Afrikában kb. 82 ezer háromszög és 17 rajzolási hívás (870 csillag, ajándékok nélkül). A tanyáról nézve
+  iPad-arányú képernyőn Afrikából semmi nem esik a képbe (csak 16:9-es képernyőn a széle), így ott sem rajzolódik.
 
 ## Ajándékok és szívek
 
@@ -266,8 +290,8 @@ nem a belépéskor:
   (külön repó, külön feltöltéssel) ebből teszi a választható unikornisok elejére „Az én unikornisom"-at, ha az adat
   ellenőrzött; ha nincs vagy hibás, minden a régi. A régebbi Sparkhorn-változat nem olvassa, a Csillagkert vele is működik.
 - **Mérések:** az alap unikornis 34 alkatrész és kb. 5,3 ezer háromszög, a legnehezebb öltözet 101 alkatrész és kb. 9,3 ezer;
-  az öltöztető 7–9 rajzolási hívás. A teljes kert (510 csillag, 71 virág, minden dísz, 60 aranyvirág, 40 szív) a legnehezebb
-  öltözettel kb. 162 ezer háromszög és 48 rajzolási hívás (saját határ: 250 ezer; a virágok korlátozása előtt 242 ezer volt).
+  az öltöztető 7–9 rajzolási hívás. A teljes kert (870 csillag, 71 virág, minden dísz, 60 aranyvirág, 40 szív) a legnehezebb
+  öltözettel kb. 163 ezer háromszög és 49 rajzolási hívás (saját határ: 250 ezer; a virágok korlátozása előtt 242 ezer volt).
 - **Eltérések a tervtől:**
   - A saját unikornis a kertbe továbbra is 90 csillagnál érkezik (a terv küszöbe); addig a játékokban és az öltöztetőben látszik.
   - Az ajándék-pillanat képe 2D rajz maradt (ugyanazzal a ruhával), hogy ne nyíljon egy harmadik 3D-vászon.
@@ -377,9 +401,9 @@ ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba ment
 - Állatgaléria: `http://localhost:8080/tests/characters.html` (`?kind=cow`, `?page=2`, `?wave=1`, `?side=1`) – minden faj
   egyenként, a mért és a táblázatban álló magassággal.
 - A barátok egyetlen közös, példányosított hálócsomagból rajzolódnak (`js/three/characters.js`): a teljes kert
-  19 baráttal 12–31 rajzolási hívás. A távoli földek lakói saját csomagban vannak (lásd Ausztrália). Mivel egyszerre legfeljebb 71 virág nyílik, a háromszögek száma 71 csillag után már
+  19 baráttal 12–31 rajzolási hívás. A távoli földek lakói saját csomagban vannak (lásd Ausztrália és Afrika). Mivel egyszerre legfeljebb 71 virág nyílik, a háromszögek száma 71 csillag után már
   csak a barátokkal nő: 300 és 420 csillagnál is kb. 130 ezer (a korlátozás előtt 300 csillagnál 194 ezer volt), így a kert
-  a tervben szereplő kb. 150 ezres kereten belül marad. A legtöbb ajándékkal kicsit fölé megy: 510 csillagnál minden kerti
+  a tervben szereplő kb. 150 ezres kereten belül marad. A legtöbb ajándékkal kicsit fölé megy: 870 csillagnál minden kerti
   dísszel, a Barátság fájával (40 szív), 60 aranyvirággal és a saját unikornis legnehezebb öltözetével a kert közepén
-  kb. 162 ezer háromszög és 48 rajzolási hívás, a tóparton és a tanyán kb. 157 ezer, Ausztráliában kb. 80 ezer.
+  kb. 163 ezer háromszög és 49 rajzolási hívás, a tóparton és a tanyán kb. 158 ezer, Ausztráliában kb. 81 ezer, Afrikában kb. 89 ezer.
   A teszt saját határa 250 ezer; az iPades próbán érdemes figyelni, nem lassul-e.

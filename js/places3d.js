@@ -175,8 +175,8 @@ const uluru = () => {
   }
   return out;
 };
-const mound = () => [part(cone(0.6, 1.9, 9), AU.ochre, [0, 0.95, 0]), part(ball(0.5, 10, 8), AU.ochre, [0, 0.25, 0], [0, 0, 0], [1.25, 0.7, 1.25]),
-  part(cone(0.28, 0.95, 7), AU.ochre, [0.42, 0.45, 0.08], [0, 0, -0.2]), part(cone(0.22, 0.7, 7), AU.ochre, [-0.38, 0.35, 0.14], [0, 0, 0.25])];
+const mound = (c = AU.ochre) => [part(cone(0.6, 1.9, 9), c, [0, 0.95, 0]), part(ball(0.5, 10, 8), c, [0, 0.25, 0], [0, 0, 0], [1.25, 0.7, 1.25]),
+  part(cone(0.28, 0.95, 7), c, [0.42, 0.45, 0.08], [0, 0, -0.2]), part(cone(0.22, 0.7, 7), c, [-0.38, 0.35, 0.14], [0, 0, 0.25])];
 function billabong() {
   const { rx, rz } = BILLABONG, out = [part(cyl(1, 1, 0.04, 28), AU.water, [0, 0.02, 0], [0, 0, 0], [rx, 1, rz])];
   for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2; out.push(part(ball(0.14, 8, 6), 0xc98a5a, [Math.cos(a) * (rx + 0.07), 0.04, Math.sin(a) * (rz + 0.07)], [0, 0, 0], [1.2, 0.5, 1])); }
@@ -193,25 +193,59 @@ const rock = (k = 1, r = 0) => [part(ball(0.3, 8, 6), AU.red, [0, 0.07 * k, 0], 
 const saltbush = (k = 1) => [part(ball(0.42, 10, 8), AU.salt, [0, 0.3 * k, 0], [0, 0, 0], k), part(ball(0.3, 8, 6), AU.salt2, [0.32 * k, 0.22 * k, 0.08 * k], [0, 0, 0], k), part(ball(0.28, 8, 6), AU.salt2, [-0.3 * k, 0.2 * k, 0.1 * k], [0, 0, 0], k)];
 const desertPea = () => [part(cyl(0.02, 0.02, 0.3, 4), C.green, [0, 0.15, 0]), part(ball(0.09, 8, 6), AU.pea, [-0.07, 0.31, 0], [0, 0, 0.6], [1.5, 0.7, 0.8]),
   part(ball(0.09, 8, 6), AU.pea, [0.07, 0.31, 0], [0, 0, -0.6], [1.5, 0.7, 0.8]), part(ball(0.05, 6, 4), 0x2a1a1a, [0, 0.36, 0.05])];
+// 🌍 Afrika (a tanyán túl, jobbra): gránit sziklacsoport hátul, itatótó a vízilónak és a flamingónak, termeszvár,
+// aranysárga szavannafű-csomók, kövek, zöld bokrok, sárga virágok.
+const AF = { rock: 0xbaa78f, rock2: 0xa59078, mound: 0xb5683e, grass: 0xd9be5c, grass2: 0xc4a646, stone: 0x9a8a78, bush: 0x6f9a4a, bush2: 0x87ad5c, water: 0x7fc8e8, mud: 0x9a7a52, flower: 0xffcc33 };
+const WATERHOLE = { x: 36.0, z: 2.5, rx: 1.7, rz: 0.75 };
+const kopje = () => [part(ball(1, 16, 10), AF.rock, [0, 0.1, 0], [0, 0, 0], [2.0, 1.5, 1.4]), part(ball(1, 14, 9), AF.rock2, [-1.9, -0.1, 0.3], [0, 0.4, 0], [1.4, 1.1, 1.1]),
+  part(ball(1, 14, 9), AF.rock2, [1.8, -0.2, 0.2], [0, -0.3, 0], [1.3, 0.95, 1.1]), part(ball(1, 12, 8), AF.rock, [0.4, 1.55, 0.1], [0, 0, 0.2], [0.9, 0.6, 0.8])];
+function waterhole() {
+  const { rx, rz } = WATERHOLE, out = [part(cyl(1, 1, 0.04, 28), AF.water, [0, 0.02, 0], [0, 0, 0], [rx, 1, rz])];
+  for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2; out.push(part(ball(0.15, 8, 6), AF.mud, [Math.cos(a) * (rx + 0.07), 0.04, Math.sin(a) * (rz + 0.07)], [0, 0, 0], [1.3, 0.45, 1])); }
+  for (const [x, z, h] of [[0.1, -0.72, 0.75], [0.35, -0.64, 0.9], [0.6, -0.74, 0.65]]) out.push(part(cyl(0.022, 0.022, h, 5), C.green, [x, h / 2, z]), part(cyl(0.05, 0.05, 0.2, 8), C.brown, [x, h - 0.05, z]));   // nád hátul, középen (a vízilót és a flamingót nem takarja)
+  out.push(part(cyl(0.2, 0.2, 0.02, 12), C.leaf, [-0.3, 0.05, 0.3]), part(cyl(0.15, 0.15, 0.02, 12), C.leaf, [0.45, 0.05, 0.2]));
+  return out;
+}
+const tuft = (k = 1) => {
+  const out = [];
+  for (let i = 0; i < 8; i++) { const a = i * 0.8, t = 0.12 + (i % 3) * 0.1; out.push(part(cone(0.04, 0.7 - (i % 3) * 0.12, 4), i % 2 ? AF.grass : AF.grass2, [Math.sin(a) * 0.08, 0.3, Math.cos(a) * 0.08], [Math.cos(a) * t, 0, -Math.sin(a) * t])); }
+  return out.map(q => (q.matrix.premultiply(new THREE.Matrix4().makeScale(k, k, k)), q));
+};
+const stone = (k = 1, r = 0) => [part(ball(0.3, 8, 6), AF.stone, [0, 0.07 * k, 0], [0, r, 0], [1.3 * k, 0.7 * k, k])];
+const savBush = (k = 1) => [part(cyl(0.04, 0.05, 0.3, 5), C.brown, [0, 0.12 * k, 0], [0, 0, 0], k), part(ball(0.4, 10, 8), AF.bush, [0, 0.36 * k, 0], [0, 0, 0], [1.2 * k, 0.7 * k, k]),
+  part(ball(0.28, 8, 6), AF.bush2, [0.3 * k, 0.44 * k, 0.1 * k], [0, 0, 0], k)];
+const goldFlower = () => [part(cyl(0.018, 0.018, 0.28, 4), C.green, [0, 0.14, 0]), part(ball(0.08, 8, 6), AF.flower, [0, 0.3, 0], [0, 0, 0], [1, 0.45, 1]), part(ball(0.035, 6, 4), 0x8a4a1a, [0, 0.33, 0])];
+// apróságok szétszórva (determinisztikusan): a lakók zuga, a tó, a termeszvár és a fák helye szabadon marad.
+// x0: a szórás bal széle (15,4 egység széles); elöl, a kamera előtt nem nőnek nagy dolgok. pad: a nagyobb tárgy (bokor)
+// ennyivel messzebb marad a lakóktól és a többi tárgytól, hogy senkit ne takarjon
+function scatter(at, keep, seed, x0, items) {
+  let s = seed;
+  const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  for (const [n, make, pad = 0] of items) {
+    for (let i = 0, got = 0; i < 300 && got < n; i++) {
+      const x = x0 + rnd() * 15.4, z = -7 + rnd() * 10;
+      if (keep.some(([kx, kz, r]) => Math.hypot(x - kx, z - kz) < r + pad)) continue;
+      keep.push([x, z, 0.7]); got++;
+      at(x, z, make(rnd));
+    }
+  }
+}
+const keepOf = (area, extra) => [...FRIENDS.filter(f => f.area === area.id).map(f => [f.home[0], f.home[1], 1.25]), ...extra,
+  ...FLORA.filter(f => f.area === area.id).map(f => [f.spot[0], f.spot[1], 1.5])];
 const LANDS = {
   ausztralia(at, area) {
     at(-36.0, -10.6, uluru());                     // a tópartról nézve már nem lóg be a kép szélére (így ott nem kell rajzolni)
     at(BILLABONG.x, BILLABONG.z, billabong());
     at(-28.4, -4.4, mound());
-    // apróságok szétszórva (determinisztikusan): a lakók zuga, a tavacska, a termeszvár és a fák helye szabadon marad
-    const keep = [...FRIENDS.filter(f => f.area === area.id).map(f => [f.home[0], f.home[1], 1.25]), [BILLABONG.x, BILLABONG.z, 1.9], [-28.4, -4.4, 1.1],
-      ...FLORA.filter(f => f.area === area.id).map(f => [f.spot[0], f.spot[1], 1.5])];
-    let s = 4242;
-    const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
-    const items = [[spinifex, 11], [rock, 7], [saltbush, 5], [desertPea, 9]];
-    for (const [make, n] of items) {
-      for (let i = 0, got = 0; i < 300 && got < n; i++) {
-        const x = -44 + rnd() * 15.4, z = -7 + rnd() * 10;                        // elöl, a kamera előtt nem nőnek nagy dolgok
-        if (keep.some(([kx, kz, r]) => Math.hypot(x - kx, z - kz) < r)) continue;
-        keep.push([x, z, 0.7]); got++;
-        at(x, z, make === rock ? rock(0.6 + rnd() * 0.4, rnd() * 3) : make === desertPea ? desertPea() : make(0.8 + rnd() * 0.4));
-      }
-    }
+    scatter(at, keepOf(area, [[BILLABONG.x, BILLABONG.z, 1.9], [-28.4, -4.4, 1.1]]), 4242, -44,
+      [[11, r => spinifex(0.8 + r() * 0.4)], [7, r => rock(0.6 + r() * 0.4, r() * 3)], [5, r => saltbush(0.8 + r() * 0.4)], [9, () => desertPea()]]);
+  },
+  afrika(at, area) {
+    at(36.0, -10.6, kopje());                      // a tanyáról nézve nem lóg be a kép szélére
+    at(WATERHOLE.x, WATERHOLE.z, waterhole());
+    at(28.6, -4.4, mound(AF.mound));
+    scatter(at, keepOf(area, [[WATERHOLE.x, WATERHOLE.z, 2.0], [28.6, -4.4, 1.1]]), 2424, 28.6,
+      [[14, r => tuft(0.8 + r() * 0.4)], [6, r => stone(0.6 + r() * 0.4, r() * 3)], [5, r => savBush(0.8 + r() * 0.4), 0.8], [8, () => goldFlower()]]);
   },
 };
 // { mesh, boxes: [[minX, minY, minZ, maxX, maxY, maxZ], …] } – a dobozok a tájelemek befoglalói (a föld alatti rész nélkül):

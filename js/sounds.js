@@ -103,6 +103,24 @@ const SOUNDS = {
   peep() { const t = actx.currentTime; for (let i = 0; i < 2; i++) voice(t + i * 0.2, { f0: 1500, f1: 880, dur: 0.13, vol: 0.14, form: 1900, q: 5, type: 'triangle' }); },
   // fújtatás (hangyászsün): mély szippantások és egy halk "hm" (a sünnél mélyebb és lassabb)
   huff() { const t = actx.currentTime; for (let i = 0; i < 3; i++) hiss(t + i * 0.16, 0.09, r(850, 1050), 1.6, 0.18); voice(t + 0.52, { f0: 165, f1: 145, dur: 0.2, vol: 0.2, form: 420, q: 0.8, type: 'sine' }); },
+  // --- Afrika ---
+  // trombitálás (elefánt): felfelé csúszó, harsány "töröö", felhanggal
+  trumpet() { const t = actx.currentTime; voice(t, { f0: 330, f1: 560, dur: 0.18, vol: 0.22, form: 1300, q: 2 }); voice(t + 0.16, { f0: 560, f1: 500, dur: 0.6, vol: 0.26, form: 1500, q: 2, vib: 7 }); voice(t + 0.16, { f0: 1120, f1: 1000, dur: 0.6, vol: 0.08, form: 2600, q: 3, vib: 7 }); },
+  // dúdolás (zsiráf): mély, egyenletes, hosszú zümmögés (állatkerti zsiráfoknál éjjel ilyet rögzítettek, kb. 92 Hz).
+  // Fűrészhullám a felhangjaival és egy halk magasabb rész, hogy az iPad kis hangszóróján is hallatsszon
+  hum() { const t = actx.currentTime; voice(t, { f0: 98, f1: 92, dur: 1.1, vol: 0.28, form: 440, q: 1, vib: 3 }); voice(t, { f0: 392, f1: 368, dur: 1.1, vol: 0.07, form: 800, q: 1.5, type: 'sine' }); },
+  // "hí-ha" (zebra): háromszor ismételt, ugatásszerű kétszótagú kiáltás
+  bray() { const t = actx.currentTime; for (let i = 0; i < 3; i++) { voice(t + i * 0.32, { f0: 700, f1: 950, dur: 0.1, vol: 0.2, form: 1500, q: 3 }); voice(t + i * 0.32 + 0.1, { f0: 520, f1: 380, dur: 0.16, vol: 0.2, form: 1100, q: 3 }); } },
+  // bömbölés (oroszlán): szelíd, mély, pergő "rrroaar" – nem ijesztő, rövid
+  roar() { const t = actx.currentTime; voice(t, { f0: 140, f1: 210, dur: 0.25, vol: 0.26, form: 600, q: 1.5, vib: 18 }); voice(t + 0.24, { f0: 210, f1: 110, dur: 0.6, vol: 0.28, form: 560, q: 1.5, vib: 16 }); },
+  // fújtatás és dörmögés (víziló): egy szusszanás, utána mély, lefelé lépő "hö-hö-hö-hö"
+  rumble() { const t = actx.currentTime; hiss(t, 0.25, 500, 1, 0.16); for (let i = 0; i < 4; i++) voice(t + 0.28 + i * 0.15, { f0: 160 - i * 8, f1: 120, dur: 0.11, vol: 0.28, form: 420, q: 2.5 }); },
+  // csiripelés (szurikáta): gyors, magas pergés és egy lefelé csúszó "csip"
+  trill() { const t = actx.currentTime; for (let i = 0; i < 5; i++) voice(t + i * 0.07, { f0: 1700, f1: 2100, dur: 0.045, vol: 0.12, form: 2200, q: 6 }); voice(t + 0.4, { f0: 1900, f1: 1500, dur: 0.1, vol: 0.12, form: 2000, q: 5 }); },
+  // gágogás (flamingó): három orrhangú, a kacsánál magasabb "gá"
+  honk() { const t = actx.currentTime; for (let i = 0; i < 3; i++) voice(t + i * 0.2, { f0: 640, f1: 560, dur: 0.13, vol: 0.2, form: 1600, q: 5 }); },
+  // "u-u-á" (majom): felfelé lépő "u-u-u", aztán egy magas "á"
+  ooh() { const t = actx.currentTime; [0, 0.16, 0.32].forEach((dt, i) => voice(t + dt, { f0: 400 + i * 120, f1: 520 + i * 140, dur: 0.12, vol: 0.2, form: 800 + i * 300, q: 2.5, type: 'triangle' })); voice(t + 0.5, { f0: 900, f1: 700, dur: 0.22, vol: 0.2, form: 1500, q: 3 }); },
   // rágcsálás: két rövid roppanás
   munch() { const c = actx, t = c.currentTime; for (let i = 0; i < 2; i++) { const d = 0.06, n = c.createBufferSource(), b = c.createBuffer(1, Math.ceil(c.sampleRate * d), c.sampleRate), ch = b.getChannelData(0); for (let k = 0; k < ch.length; k++) ch[k] = (Math.random() * 2 - 1) * (1 - k / ch.length); n.buffer = b; const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = r(1100, 1700); bp.Q.value = 1.5; const g = c.createGain(); g.gain.value = 0.5; n.connect(bp); bp.connect(g); g.connect(bus('animal')); n.start(t + i * 0.11); } },
   // ujjongás: emelkedő hármashangzat (tapsoló csengés)
@@ -166,7 +184,8 @@ export function play(kind) { note(kind); if (!unlockAudio()) return; try { SOUND
 export const VOICE = { cat: 'meow', bunny: 'squeak', dog: 'woof', fox: 'foxyip', bear: 'brumm', panda: 'bleat',
   duck: 'quack', frog: 'ribbit', hedgehog: 'snuffle', hen: 'cluck', squirrel: 'chitter', owl: 'hoot', mouse: 'cincin',
   unicorn: 'magic', pig: 'oink', sheep: 'baa', turtle: 'plop', pony: 'neigh', cow: 'moo',
-  kangaroo: 'chuff', koala: 'snore', cockatoo: 'screech', wombat: 'grunt', emu: 'boom', platypus: 'growl', quokka: 'peep', echidna: 'huff' };
+  kangaroo: 'chuff', koala: 'snore', cockatoo: 'screech', wombat: 'grunt', emu: 'boom', platypus: 'growl', quokka: 'peep', echidna: 'huff',
+  elephant: 'trumpet', giraffe: 'hum', zebra: 'bray', lion: 'roar', hippo: 'rumble', meerkat: 'trill', flamingo: 'honk', monkey: 'ooh' };
 export function animalVoice(id, { happy: glad = false, defer = setTimeout } = {}) {
   const kind = VOICE[id] || 'yay';
   play(kind);

@@ -4,7 +4,7 @@
 // stars: ennyi összegyűjtött csillagnál érkezik a kertbe (etetéssel hamarabb is megjöhet)
 // home: a zuga a kertben [x, z] (a kamerából nézve senki nem takarja a másikat);  height: a modell magassága a saját léptékében
 // area: a kert melyik részén lakik (nincs = a kert közepén, a térképen; 'to' = tópart balra; 'tanya' = tanya jobbra;
-//   'ausztralia' = a tóparton túl, balra). emoji: kép a gombokhoz és a „Ki játszik?" kártyához; ahol nincs jó emoji, ott null.
+//   'ausztralia' = a tóparton túl, balra; 'afrika' = a tanyán túl, jobbra). emoji: kép a gombokhoz és a „Ki játszik?" kártyához; ahol nincs jó emoji, ott null.
 // eats: amit biztosan eszik (ebből lesz jó válasz);  maybe: amit néha megeszik, ezért rossz válasznak NEM használható.
 // Ami egyikben sincs benne, azt a teszt "biztosan nem eszi"-nek veszi – ezért a maybe-be minden kétes étel bekerül.
 // Az érkezési csillagszám a jóváhagyott tervből: nyuszi 3, kutya 8, róka 15, kacsa 25, maci 30, sün 40, panda 55, bagoly 70,
@@ -38,6 +38,14 @@ export const FRIENDS = [
   { id: 'platypus', emoji: null, name: 'kacsacsőrű emlős', stars: 420, area: 'ausztralia', home: [-36.8, 2.1], height: 0.39, eats: [], maybe: [] },
   { id: 'quokka', emoji: null, name: 'kvokka', stars: 480, area: 'ausztralia', home: [-35.9, 0.3], height: 0.98, eats: [], maybe: [] },
   { id: 'echidna', emoji: null, name: 'hangyászsün', stars: 510, area: 'ausztralia', home: [-30.8, 2.4], height: 0.77, eats: [], maybe: [] },
+  { id: 'elephant', emoji: '🐘', name: 'elefánt', stars: 540, area: 'afrika', home: [33.4, -2.0], height: 1.72, eats: [], maybe: [] },
+  { id: 'giraffe', emoji: '🦒', name: 'zsiráf', stars: 600, area: 'afrika', home: [37.0, -2.8], height: 2.37, eats: [], maybe: [] },
+  { id: 'zebra', emoji: '🦓', name: 'zebra', stars: 660, area: 'afrika', home: [30.6, -2.8], height: 1.67, eats: [], maybe: [] },
+  { id: 'lion', emoji: '🦁', name: 'oroszlán', stars: 690, area: 'afrika', home: [35.6, 0.2], height: 1.43, eats: [], maybe: [] },
+  { id: 'hippo', emoji: '🦛', name: 'víziló', stars: 750, area: 'afrika', home: [37.4, 2.2], height: 1.09, eats: [], maybe: [] },
+  { id: 'meerkat', emoji: null, name: 'szurikáta', stars: 780, area: 'afrika', home: [31.4, 2.0], height: 0.89, eats: [], maybe: [] },
+  { id: 'flamingo', emoji: '🦩', name: 'flamingó', stars: 840, area: 'afrika', home: [34.4, 2.4], height: 1.79, eats: [], maybe: [] },
+  { id: 'monkey', emoji: '🐒', name: 'majom', stars: 870, area: 'afrika', home: [32.2, 0.3], height: 1.05, eats: [], maybe: [] },
 ];
 export const friendById = id => FRIENDS.find(f => f.id === id);
 
@@ -50,6 +58,7 @@ export const AREAS = [
   { id: 'to', name: 'tópart', x: -17 },
   { id: 'tanya', name: 'tanya', x: 17 },
   { id: 'ausztralia', name: 'Ausztrália', x: -34, land: true, ground: [-36, -1.5, 13, 1.15], soil: 0xe8c88e },
+  { id: 'afrika', name: 'Afrika', x: 34, land: true, ground: [36, -1.5, 13, 1.15], soil: 0xdcc97a },
 ];
 // a kertrész talaján belül van-e a pont (a fő rét ellipszise, ill. a távoli föld saját talaja); k: mennyire a szélén (1 = a szélén)
 export function groundK(areaId, x, z) {
@@ -79,7 +88,10 @@ export const FLORA = [
   { id: 'cseresznye', name: 'cseresznyefa', emoji: '🌸', area: null, stars: 270, spot: [-3.9, -10.0, 0, 1.2] },
   { id: 'almafa', name: 'almafa', emoji: '🍎', area: 'tanya', stars: 360, spot: [19.4, -8.6, 0, 1.1] },
   { id: 'palackfa', name: 'palackfa', emoji: '🌳', area: 'ausztralia', stars: 450, spot: [-35.0, -8.0, 0, 1.1] },
+  { id: 'majomkenyerfa', name: 'majomkenyérfa', emoji: '🌳', area: 'afrika', stars: 570, spot: [39.4, -7.0, 0, 1.1] },
+  { id: 'ernyoakac', name: 'ernyőakác', emoji: '🌳', area: 'afrika', stars: 630, spot: [32.8, -8.4, 0, 1.05] },
   { id: 'fuzfa', name: 'szomorúfűz', emoji: '🌳', area: 'to', stars: 720, spot: [-17.4, -9.7, 0, 1.25] },
+  { id: 'palma', name: 'pálmafa', emoji: '🌴', area: 'afrika', stars: 810, spot: [36.2, -6.0, 0.4, 1.0] },
 ];
 export const floraById = id => FLORA.find(f => f.id === id);
 export const floraFor = total => FLORA.filter(f => total >= f.stars).map(f => f.id);

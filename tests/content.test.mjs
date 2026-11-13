@@ -150,6 +150,9 @@ test('jövevények: 150 csillag után 30 csillagonként egy (barát vagy fa), eg
   assert.equal(friendById('cow').stars, NEWCOMER_FROM, 'a tehén zárja a régi rendet');
   for (const [s, id] of late) assert.ok(s >= NEWCOMER_FROM + NEWCOMER_STEP && (s - NEWCOMER_FROM) % NEWCOMER_STEP === 0 && s <= 900, `${id}: ${s} csillag nincs a 30-as lépcsőn (180…900)`);
   assert.equal(new Set(late.map(([s]) => s)).size, late.length, 'két jövevény ugyanannál a csillagszámnál');
+  // a lépcső hézagmentes: a tehén után az utolsó jövevényig minden 30. csillagnál pontosan egy érkezik
+  const last = Math.max(...late.map(([s]) => s));
+  for (let s = NEWCOMER_FROM + NEWCOMER_STEP; s <= last; s += NEWCOMER_STEP) assert.ok(late.some(([t]) => t === s), `${s} csillagnál nem jön senki (hézag a lépcsőn)`);
   assert.deepEqual(floraFor(NEWCOMER_FROM), [], 'a tehén előtt nem nő új fa');
   assert.deepEqual(floraFor(900), FLORA.map(f => f.id));
 });

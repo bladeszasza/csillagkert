@@ -517,7 +517,8 @@ export function createGarden(canvas) {
         decorScreen: Object.fromEntries([...decor].map(([id, m]) => { v3.set(m.position.x, 0.8, m.position.z).project(camera); return [id, { x: (v3.x + 1) / 2 * W, y: (1 - v3.y) / 2 * H }]; })),
         floraScreen: Object.fromEntries([...flora].map(([id, m]) => { v3.set(m.position.x, 1.6 * m.userData.k, m.position.z).project(camera); return [id, { x: (v3.x + 1) / 2 * W, y: (1 - v3.y) / 2 * H, scale: m.scale.x / m.userData.k }]; })), friends: [...actors.keys()], zoom: zoomAt(performance.now()), pan: panAt(performance.now()), feeding: feeding && !feeding.done ? feeding.a.id : null,
         awake: Object.fromEntries([...actors.values()].filter(a => a.def.sleepy).map(a => [a.id, a.g.userData.eyes[0].scale.y > 0.5])),
-        screen: Object.fromEntries([...actors.values()].map(a => [a.id, screenOf(a)])) };
+        screen: Object.fromEntries([...actors.values()].map(a => [a.id, screenOf(a)])),
+        pos: Object.fromEntries([...actors.values()].map(a => [a.id, { x: a.x, z: a.z }])) };   // a barátok helye a kertben (tesztekhez)
     },
   };
 }

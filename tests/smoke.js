@@ -202,6 +202,16 @@ async function testGarden() {
     ok('kert: a saját unikornis átöltözik a helyén; a legnehezebb öltözettel is a kereten belül', okSet && d2.triangles > t0 && d2.triangles <= 250000 && d2.calls <= 150 && d3.triangles === t0 && s0 && s1 && Math.abs(s1.cx - s0.cx) < 40 && d2.friends.includes('unicorn'),
       `háromszögek ${t0} → ${d2.triangles} → ${d3.triangles}, hívások ${d2.calls}, hely ${s0 && Math.round(s0.cx)} → ${s1 && Math.round(s1.cx)}`);
   }
+  // a jobb oldali távoli föld első lakója: a föld jobb szélén túlról sétál be (itt a csillagok már csak nőnek: a kert
+  // csökkenő csillagszámnál nem küldi haza a lakókat, mert élesben a csillag sosem fogy)
+  {
+    garden.setStars(539, []); await wait(3200);
+    const m = soundMark(); garden.setStars(540, []); await wait(400); const e0 = garden.debug().pos?.elephant; await wait(2900);
+    const e = garden.debug(), heardE = since(m).map(x => x.kind), home = friendById('elephant').home, e1 = e.pos?.elephant;
+    ok('kert: 540 csillagnál megjön az elefánt Afrikába: jobbról sétál be, a zugában megáll és a saját hangján köszön',
+      e.friends.includes('elephant') && heardE.includes(VOICE.elephant) && e.shadows === e.friends.length && !!e0 && e0.x > home[0] + 1 && !!e1 && Math.hypot(e1.x - home[0], e1.z - home[1]) < 1.5,
+      `hangok: ${heardE.join(', ') || '–'}; árnyékok: ${e.shadows}/${e.friends.length}; hely: ${e0 ? e0.x.toFixed(1) : '?'} → ${e1 ? e1.x.toFixed(1) : '?'}`);
+  }
 
   // kertrészek: a kamera átsiklik, ott minden lakó a képen van (a gombsor fölött), és koppintásra a saját hangján szól
   {
