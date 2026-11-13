@@ -8,7 +8,9 @@ Feladatok → csillagok → jutalomjáték. Hibázásért nincs büntetés: szel
 **Amire épül:** okosítás · erények · tisztelet · kedvesség · törődés · tudás.
 
 - **A kert él:** a cica mellett a csillagokkal sorban 18 barát érkezik (lásd lent). Pislognak, sétálnak a zugukban,
-  koppintásra megszólalnak a saját hangjukon (mindegyiknek más). Minden csillag egy virág.
+  koppintásra megszólalnak a saját hangjukon (mindegyiknek más). Minden csillag egy virág, de egyszerre legfeljebb 70 nyílik
+  (a szülő kérésére, hogy ne nője be a kertet): ha már 70 van, a legrégebbi elhervad, és a helyén új, más színű virág nő.
+  A 70 azért ennyi, mert a 71. hely már az alsó feladatjelek elé, a képernyő aljára esne (teszt: `tests/content.test.mjs`).
   Az új barát besétál, megszólal, és Rozi egy mondatban bejelenti. A nap a csillagmérővel együtt halad a naplemente felé.
 - **Tópart és tanya:** a kert két szélén két új rész van. Balra a tó (kacsa, béka, sün, mókus, bagoly, egér, teknős),
   jobbra a tanya (tyúk, unikornis, malac, bárány, póni, tehén) kerítéssel, pajtával, szénabálával és szivárvánnyal.
@@ -173,7 +175,8 @@ nem a belépéskor:
 
 - **Az ajándéklétra** (`js/gifts.js`) rögzített sorrendű, véletlen nincs benne: a tíz ruhadarab és tizenkét kerti dísz
   felváltva jön (korona, lámpás, szivárványszárny, kerti pad, …). Ami megvan, nem jön újra.
-  Ha a létra elfogyott, **aranyvirág** nyílik a kertben, így soha nincs üres ajándék.
+  Ha a létra elfogyott, **aranyvirág** nyílik a kertben, így soha nincs üres ajándék. Az aranyvirágok a virágos rész
+  külső gyűrűjén nyílnak: nem nőnek a feladatjelek elé, és egyik virágra sem lógnak rá.
 - **A következő ajándék** sziluettje a jobb felső sarokban látszik; koppintásra Rozi megmondja, mi lesz az.
   A bal felső ❤ jel a szívek száma; koppintásra Rozi elmondja, mire valók.
 - **Az ajándék-pillanat** (`js/gift-moment.js`): egy doboz megremeg és kinyílik, kiugrik belőle az ajándék
@@ -209,8 +212,8 @@ nem a belépéskor:
   (külön repó, külön feltöltéssel) ebből teszi a választható unikornisok elejére „Az én unikornisom"-at, ha az adat
   ellenőrzött; ha nincs vagy hibás, minden a régi. A régebbi Sparkhorn-változat nem olvassa, a Csillagkert vele is működik.
 - **Mérések:** az alap unikornis 34 alkatrész és kb. 5,3 ezer háromszög, a legnehezebb öltözet 101 alkatrész és kb. 9,3 ezer;
-  az öltöztető 7–9 rajzolási hívás. A teljes kert (a virágplafonig, minden dísszel) a legnehezebb öltözettel kb. 242 ezer háromszög és 46 rajzolási hívás
-  (saját határ: 250 ezer).
+  az öltöztető 7–9 rajzolási hívás. A teljes kert (420 csillag, 70 virág, minden dísz) a legnehezebb öltözettel kb. 144 ezer háromszög
+  és 46 rajzolási hívás (saját határ: 250 ezer; a virágok korlátozása előtt 242 ezer volt).
 - **Eltérések a tervtől:**
   - A saját unikornis a kertbe továbbra is 90 csillagnál érkezik (a terv küszöbe); addig a játékokban és az öltöztetőben látszik.
   - Az ajándék-pillanat képe 2D rajz maradt (ugyanazzal a ruhával), hogy ne nyíljon egy harmadik 3D-vászon.
@@ -320,8 +323,8 @@ ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba ment
 - Állatgaléria: `http://localhost:8080/tests/characters.html` (`?kind=cow`, `?page=2`, `?wave=1`, `?side=1`) – minden faj
   egyenként, a mért és a táblázatban álló magassággal.
 - A barátok egyetlen közös, példányosított hálócsomagból rajzolódnak (`js/three/characters.js`): a teljes kert
-  19 baráttal 12–30 rajzolási hívás. Háromszögből 300 csillagnál (300 virággal) kb. 194 ezer van; a tervben szereplő
-  kb. 150 ezres keretet ez a sok virág miatt átlépi. A teljes kert (a virágplafonig, minden kerti dísszel, a Barátság fájával
-  és aranyvirágokkal) kb. 239 ezer háromszög és 46 rajzolási hívás (ebből egy a foltárnyékoké); a saját unikornis legnehezebb öltözetével kb. 242 ezer.
-  A teszt saját határa 250 ezer, ez alatt már kevés a hely (új kertrészhez a nem látszó részeket el kell rejteni);
-  az iPades próbán érdemes figyelni, nem lassul-e.
+  19 baráttal 12–31 rajzolási hívás. Mivel egyszerre legfeljebb 70 virág nyílik, a háromszögek száma 70 csillag után már
+  csak a barátokkal nő: 300 és 420 csillagnál is kb. 130 ezer (a korlátozás előtt 300 csillagnál 194 ezer volt), így a kert
+  a tervben szereplő kb. 150 ezres kereten belül marad. A teljes kert minden kerti dísszel, a Barátság fájával, aranyvirágokkal
+  és a saját unikornis legnehezebb öltözetével kb. 144 ezer háromszög és 46 rajzolási hívás (ebből egy a foltárnyékoké).
+  A teszt saját határa 250 ezer; az iPades próbán érdemes figyelni, nem lassul-e.

@@ -4,7 +4,7 @@
 import * as THREE from '../vendor/three.module.js';
 import { makeGardenCat, animateCat } from './rewards/cat3d.js';
 import { makeCharacter, animateCharacter, createCharacterBatch } from './three/characters.js';
-import { friendById, friendsFor, flowerSpot, MAX_FLOWERS, FEED_SPOT, FEED_GATE, PLACES, AREAS } from './friends.js';
+import { friendById, friendsFor, flowerSpot, MAX_FLOWERS, GOLD_MAX, goldSpot, FEED_SPOT, FEED_GATE, PLACES, AREAS } from './friends.js';
 import { animalVoice } from './sounds.js';
 import { merge } from './geo.js';
 import { buildPlaces } from './places3d.js';
@@ -62,7 +62,7 @@ export function createGarden(canvas) {
   }
   placeClouds();
 
-  // --- virágok = az összes gyűjtött csillag; két példányosított háló (szár + közép, szirmok) ---
+  // --- virágok = a gyűjtött csillagok (egyszerre legfeljebb MAX_FLOWERS); két példányosított háló (szár + közép, szirmok) ---
   const tilt = new THREE.Matrix4().makeRotationX(0.55).setPosition(0, 0.95, 0);     // a virág arca a néző felé dől
   const at = (x, y, z) => new THREE.Matrix4().makeTranslation(x, y, z);
   const stemGeo = merge([
@@ -85,25 +85,46 @@ export function createGarden(canvas) {
   const petals = new THREE.InstancedMesh(petalGeo, swaying(lookMat({ color: 0xffffff })), MAX_FLOWERS);
   stems.count = petals.count = 0; stems.frustumCulled = petals.frustumCulled = false; scene.add(stems, petals);
   const colors = [0xff8fc8, 0xffcf3f, 0x8e5be8, 0x7fe0c0, 0xff9f6b].map(c => new THREE.Color(c));
+  const faded = new THREE.Color(0xc9a46a), tint = new THREE.Color();
+  // A j. virág (j = hányadik csillag) a j % MAX_FLOWERS helyen nyílik; ha a hely foglalt, a régi virág előbb elhervad.
+  // Ugyanazon a helyen körönként más színű virág nyílik.
   const growing = [];
-  let flowerCount = 0;
-  function setFlower(i, k) {
-    const p = flowerSpot(i), size = (0.85 + ((i * 37) % 10) * 0.03) * k;
-    m4.makeScale(size, size, size).setPosition(p.x, 0, p.z);
-    stems.setMatrixAt(i, m4); petals.setMatrixAt(i, m4);
+  let bloomed = 0;                                          // eddig nyílt virágok = csillagok (a látható ennél kevesebb lehet)
+  const slotOf = j => j % MAX_FLOWERS;
+  const colorOf = j => colors[(j + Math.floor(j / MAX_FLOWERS)) % colors.length];
+  function setFlower(j, k, sink = 0) {
+    const s = slotOf(j), p = flowerSpot(s), size = (0.85 + ((j * 37) % 10) * 0.03) * k;
+    m4.makeScale(size, size, size).setPosition(p.x, -sink, p.z);
+    stems.setMatrixAt(s, m4); petals.setMatrixAt(s, m4);
     stems.instanceMatrix.needsUpdate = petals.instanceMatrix.needsUpdate = true;
   }
-  function addFlower(i, animate) {
-    petals.setColorAt(i, colors[i % colors.length]); petals.instanceColor.needsUpdate = true;
-    setFlower(i, animate ? 0.01 : 1);
-    if (animate) growing.push({ i, born: performance.now() });
-    stems.count = petals.count = i + 1;
+  function paint(j, c) { petals.setColorAt(slotOf(j), c); petals.instanceColor.needsUpdate = true; }
+  function addFlower(j, animate) {
+    const s = slotOf(j), old = j - MAX_FLOWERS;
+    for (let k = growing.length - 1; k >= 0; k--) if (slotOf(growing[k].j) === s) { setFlower(growing[k].j, 1); growing.splice(k, 1); }
+    if (animate && old >= 0) growing.push({ j, old, born: performance.now() });          // előbb a régi hervad el, aztán nő az új
+    else {
+      paint(j, colorOf(j)); setFlower(j, animate ? 0.01 : 1);
+      if (animate) growing.push({ j, born: performance.now() });
+    }
+    stems.count = petals.count = Math.max(stems.count, s + 1);
+  }
+  function stepFlowers(now) {
+    for (let k = growing.length - 1; k >= 0; k--) {
+      const g = growing[k]; let age = (now - g.born) / 700;
+      if (g.old !== undefined) {                            // hervadás: a szirmok megfakulnak, a virág lekonyul és eltűnik
+        const w = Math.min(1, (now - g.born) / 900);
+        if (w < 1) { paint(g.old, tint.copy(colorOf(g.old)).lerp(faded, Math.min(1, w * 1.6))); setFlower(g.old, Math.max(0.01, 1 - w * w), w * 0.35); continue; }
+        paint(g.j, colorOf(g.j)); g.born += 900; delete g.old; age = (now - g.born) / 700;
+      }
+      if (age >= 1) { setFlower(g.j, 1); growing.splice(k, 1); }
+      else setFlower(g.j, Math.max(0.01, 1 - Math.pow(1 - age, 3)) * (1 + Math.sin(age * 3.14) * 0.3));
+    }
   }
 
   // --- ajándékok a kertben: kerti díszek (tópart, tanya), aranyvirágok és a szívekből növő Barátság fája ---
   const decorMat = lookMat({ vertexColors: true }), decor = new Map(), popping = [];
   const tree = createFriendTree(scene);
-  const GOLD_MAX = 60;
   const goldStems = new THREE.InstancedMesh(stemGeo, swaying(lookMat({ vertexColors: true })), GOLD_MAX);
   const goldPetals = new THREE.InstancedMesh(petalGeo, swaying(lookMat({ color: 0xffc21a, emissive: 0x6a4300 })), GOLD_MAX);
   goldStems.count = goldPetals.count = 0; goldStems.frustumCulled = goldPetals.frustumCulled = false; scene.add(goldStems, goldPetals);
@@ -121,7 +142,7 @@ export function createGarden(canvas) {
     tree.setHearts(hearts, animate);
     const n = Math.min(GOLD_MAX, gold | 0);
     for (let k = goldPetals.count; k < n; k++) {
-      const p = flowerSpot(MAX_FLOWERS + k * 3), s = 1.25;
+      const p = goldSpot(k), s = 1.25;
       m4.makeScale(s, s, s).setPosition(p.x, 0, p.z); goldStems.setMatrixAt(k, m4); goldPetals.setMatrixAt(k, m4);
     }
     goldStems.count = goldPetals.count = n; goldStems.instanceMatrix.needsUpdate = goldPetals.instanceMatrix.needsUpdate = true;
@@ -298,11 +319,7 @@ export function createGarden(canvas) {
     sway.value = t;
     for (let i = 0; i < 6; i++) { cloudX[i] += 0.24 * (1 + i * 0.1) * dt; if (cloudX[i] > 16) cloudX[i] = -16; }
     placeClouds();
-    for (let k = growing.length - 1; k >= 0; k--) {
-      const g = growing[k], age = (now - g.born) / 700;
-      if (age >= 1) { setFlower(g.i, 1); growing.splice(k, 1); }
-      else setFlower(g.i, Math.max(0.01, 1 - Math.pow(1 - age, 3)) * (1 + Math.sin(age * 3.14) * 0.3));
-    }
+    stepFlowers(now);
     for (let k = popping.length - 1; k >= 0; k--) {                // új kerti dísz: kipattan a helyén
       const p = popping[k], a = (now - p.t0) / 700;
       if (a < 0) continue;
@@ -359,8 +376,10 @@ export function createGarden(canvas) {
   }
 
   function setStars(total, fed = [], animate = true) {
-    const first = flowerCount === 0, target = Math.min(total, MAX_FLOWERS);
-    while (flowerCount < target) { addFlower(flowerCount, !first && flowerCount >= target - 1); flowerCount++; }
+    total = Math.max(0, total | 0);
+    const first = bloomed === 0 || total < bloomed;        // betöltéskor csak a legutóbbi virágok nyílnak ki, animáció nélkül
+    if (first) { bloomed = Math.max(0, total - MAX_FLOWERS); growing.length = 0; stems.count = petals.count = 0; }
+    while (bloomed < total) { addFlower(bloomed, !first && bloomed === total - 1); bloomed++; }
     const had = actors.size > 0;
     for (const id of friendsFor(total, fed)) {                                    // új barát: besétál az ösvényen
       if (actors.has(id)) continue;
@@ -434,7 +453,7 @@ export function createGarden(canvas) {
     qualityTick: ms => { quality.tick(ms); return { ...quality.state(), buffer: [renderer.domElement.width, renderer.domElement.height] }; },   // teszthez: egy képkocka adott idővel    // tesztekhez és hibakereséshez: rajzolási hívások, lakók, virágok, a barátok helye a képernyőn
     debug() {
       draw(performance.now());
-      return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, shadows: crowd.shadows, quality: quality.state(), flowers: flowerCount, decor: [...decor.keys()], treeHearts: tree.count(), treeScale: tree.group.scale.x, gold: goldPetals.count,
+      return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, shadows: crowd.shadows, quality: quality.state(), flowers: stems.count, bloomed, decor: [...decor.keys()], treeHearts: tree.count(), treeScale: tree.group.scale.x, gold: goldPetals.count,
         decorScreen: Object.fromEntries([...decor].map(([id, m]) => { v3.set(m.position.x, 0.8, m.position.z).project(camera); return [id, { x: (v3.x + 1) / 2 * W, y: (1 - v3.y) / 2 * H }]; })), friends: [...actors.keys()], zoom: zoomAt(performance.now()), pan: panAt(performance.now()), feeding: feeding && !feeding.done ? feeding.a.id : null,
         awake: Object.fromEntries([...actors.values()].filter(a => a.def.sleepy).map(a => [a.id, a.g.userData.eyes[0].scale.y > 0.5])),
         screen: Object.fromEntries([...actors.values()].map(a => [a.id, screenOf(a)])) };

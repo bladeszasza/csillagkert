@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CURRICULUM, STATIONS, stationOf, idOf, BASE_ITEMS, FEED_ITEMS } from '../js/curriculum.js';
 import { art, withArt, artLetter, ACC_NUM, numAttr, fromNum } from '../js/hu.js';
-import { FRIENDS, FOODS, MEALS, ANY, friendById, friendsFor, flowerSpot, MAX_FLOWERS, FEED_SPOT, FEED_GATE, PLACES, AREAS } from '../js/friends.js';
+import { FRIENDS, FOODS, MEALS, ANY, friendById, friendsFor, flowerSpot, MAX_FLOWERS, GOLD_MAX, goldSpot, FEED_SPOT, FEED_GATE, PLACES, AREAS } from '../js/friends.js';
 import { progress } from '../js/progress.js';
 
 const flat = CURRICULUM.flatMap(i => (i.type === 'seq' ? [i, ...i.steps] : [i]));
@@ -175,15 +175,25 @@ test('állathangok: minden barátnak saját, a többiekétől különböző hang
   assert.equal(new Set(ids.map(id => VOICE[id])).size, ids.length, 'két barátnak ugyanaz a hangja');
 });
 
+// a kert összes virághelye: a csillagvirágok (legfeljebb MAX_FLOWERS) és az aranyvirágok
+const allSpots = () => [...Array.from({ length: MAX_FLOWERS }, (_, i) => flowerSpot(i)), ...Array.from({ length: GOLD_MAX }, (_, k) => goldSpot(k))];
 test('kert: a virágok nem ülnek egymásra, a barátok zugában és az etetőhely előtt nincs virág', () => {
-  const pts = Array.from({ length: MAX_FLOWERS }, (_, i) => flowerSpot(i));
-  assert.equal(new Set(pts.map(p => `${p.x.toFixed(3)},${p.z.toFixed(3)}`)).size, MAX_FLOWERS);
-  for (let i = 0; i < 200; i++) for (let j = 0; j < i; j++) assert.ok(Math.hypot(pts[i].x - pts[j].x, pts[i].z - pts[j].z) > 0.6, `túl közeli virágok: ${i}, ${j}`);
+  const pts = allSpots();
+  assert.equal(new Set(pts.map(p => `${p.x.toFixed(3)},${p.z.toFixed(3)}`)).size, pts.length);
+  for (let i = 0; i < pts.length; i++) for (let j = 0; j < i; j++) assert.ok(Math.hypot(pts[i].x - pts[j].x, pts[i].z - pts[j].z) > 0.6, `túl közeli virágok: ${i}, ${j}`);
   for (const p of pts) {
     for (const f of FRIENDS) assert.ok(Math.hypot(p.x - f.home[0], p.z - f.home[1]) > 1.3, `virág ${f.name} zugában`);
     assert.ok(!(Math.abs(p.x - FEED_SPOT[0]) < 1.7 && p.z > 2.3), 'virág az etetőhely előtt');
     assert.ok(Math.hypot(p.x, p.z) < 13, 'virág a kerten kívül');
   }
+});
+
+test('kert: egyszerre legfeljebb MAX_FLOWERS virág, és egyik sem nő a feladatjelek elé (a képernyő aljára)', () => {
+  assert.ok(MAX_FLOWERS >= 50 && MAX_FLOWERS <= 100, `furcsa virágszám: ${MAX_FLOWERS}`);
+  const front = Math.max(...PLACES.filter(p => p.z > 0).map(p => p.z)) + 1.1, wide = Math.max(...PLACES.map(p => Math.abs(p.x))) - 2;
+  allSpots().forEach((p, i) => assert.ok(!(p.z > front && Math.abs(p.x) < wide), `a(z) ${i}. virág (az aranyvirágok a végén) a jelek elé nő (${p.x.toFixed(1)}, ${p.z.toFixed(1)})`));
+  const next = flowerSpot(MAX_FLOWERS + 1);
+  assert.ok(next.z > front && Math.abs(next.x) < wide, 'a határ szoros: a következő hely már a jelek elé esne (ha nem, nőhet a virágszám)');
 });
 
 test('mentés: régi mentésben nincs "friends" mező – üresről indul, bővíthető, újrakezdéskor törlődik', () => {
@@ -198,7 +208,7 @@ test('térkép: minden állomásnak van helye a kertben, a tereptárgyak nem ül
   assert.deepEqual(PLACES.map(p => p.id).sort(), STATIONS.map(s => s.id).sort());
   for (let i = 0; i < PLACES.length; i++) for (let j = 0; j < i; j++) assert.ok(Math.hypot(PLACES[i].x - PLACES[j].x, PLACES[i].z - PLACES[j].z) >= 1.1, `túl közeli tereptárgyak: ${PLACES[i].id}, ${PLACES[j].id}`);
   for (const p of PLACES) for (const f of FRIENDS) assert.ok(Math.hypot(p.x - f.home[0], p.z - f.home[1]) > 1.6, `${p.id} a(z) ${f.name} zugában áll`);
-  const pts = Array.from({ length: MAX_FLOWERS }, (_, i) => flowerSpot(i));
+  const pts = allSpots();
   for (const q of pts) for (const p of PLACES) assert.ok(Math.hypot(q.x - p.x, q.z - p.z) > 0.7, `virág a(z) ${p.id} tereptárgyon`);
   // az etetőhelyre vezető kapu a tereptárgyak sora mellett van, nem rajtuk keresztül
   for (const p of PLACES) assert.ok(Math.hypot(FEED_GATE[0] - p.x, FEED_GATE[1] - p.z) > 1 && Math.hypot(FEED_SPOT[0] - p.x, FEED_SPOT[1] - p.z) > 1, `az etetés útja a(z) ${p.id} tárgyon megy át`);

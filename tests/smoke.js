@@ -174,10 +174,12 @@ async function testGarden() {
   const out = Object.entries(center).filter(([, r]) => r.left < 0 || r.right > 900 || r.top < 0 || r.bottom > 650).map(([k]) => k);
   ok('kert: a kert közepén lakó minden barát a kezdő képen van', out.length === 0 && Object.keys(center).length === 6, out.length ? `kilóg: ${out.join(', ')}` : Object.entries(center).map(([k, r]) => `${k} ${Math.round(r.cx)},${Math.round(r.cy)}`).join(' · '));
   garden.setStars(70 + 230, []); await wait(2900); garden.debug(); await wait(1900); d = garden.debug();
-  ok('kert: 300 csillagnál mind a 19 barát itt van, és a 300 virág sem kerül több rajzolási hívásba', d.friends.length === 19 && d.flowers === 300 && d.calls <= calls70 + 2 && d.calls <= 150, `virágok: ${d.flowers}, hívások: ${d.calls} (70 csillagnál ${calls70}), háromszögek: ${d.triangles}`);
+  ok(`kert: 300 csillagnál mind a 19 barát itt van, és egyszerre csak ${MAX_FLOWERS} virág nyílik (a régiek elhervadtak)`, d.friends.length === 19 && d.flowers === MAX_FLOWERS && d.bloomed === 300 && d.calls <= calls70 + 2 && d.calls <= 150, `virágok: ${d.flowers} (eddig ${d.bloomed}), hívások: ${d.calls} (70 csillagnál ${calls70}), háromszögek: ${d.triangles}`);
   const tri300 = d.triangles;
-  garden.setStars(MAX_FLOWERS, []); await wait(900); d = garden.debug();
-  ok(`kert: a háromszögek száma a teljes kerttel is kordában marad (${MAX_FLOWERS} virág; saját határ: 250 ezer)`, d.flowers === MAX_FLOWERS && d.triangles <= 250000 && d.calls <= 150, `300 csillagnál ${tri300}, ${MAX_FLOWERS} csillagnál ${d.triangles} háromszög, ${d.calls} hívás`);
+  garden.setStars(301, []); await wait(450); const mid = garden.debug(); await wait(1500); const after = garden.debug();
+  ok('kert: az új csillag virága a legrégebbi helyére nő (az előbb elhervad), a virágok száma nem nő', mid.flowers === MAX_FLOWERS && after.flowers === MAX_FLOWERS && after.bloomed === 301 && after.triangles === tri300, `hervadás közben ${mid.flowers}, utána ${after.flowers} virág; háromszögek ${tri300} → ${after.triangles}`);
+  garden.setStars(420, []); await wait(900); d = garden.debug();
+  ok(`kert: a háromszögek száma a teljes kerttel is kordában marad (420 csillag, ${MAX_FLOWERS} virág; saját határ: 250 ezer)`, d.flowers === MAX_FLOWERS && d.triangles <= 250000 && d.calls <= 150, `300 csillagnál ${tri300}, 420 csillagnál ${d.triangles} háromszög, ${d.calls} hívás`);
   // a kertben lakó saját unikornis átöltözik (a legnehezebb öltözettel is a kereten belül marad)
   {
     const HEAVY = { body: 'c7', pattern: 'spots', manestyle: 'curl', horn: 'rainbow', hornstyle: 'spiral', wing: 'rainbow', head: 'flowers', eyes: 'glasses', neck: 'pearls' };

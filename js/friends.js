@@ -142,7 +142,24 @@ export const PLACES = [
 ];
 
 // --- virágok helye: determinisztikus; szabadon hagyja a barátok zugait, a tereptárgyakat és az etetőhely előtti sávot ---
-export const MAX_FLOWERS = 420;
+// Egyszerre legfeljebb MAX_FLOWERS virág nyílik (a szülő kérésére ne nőjön túl a kert): az új csillag virága a legrégebbi
+// helyére nő, az a régi előbb elhervad. 70, mert a 71. hely már a feladatjelek elé, a képernyő aljára esne.
+export const MAX_FLOWERS = 70;
+// Az aranyvirágok (ajándék) a külső gyűrűn nyílnak: nem a feladatjelek előtt, és egyik virágra sem lógnak rá.
+export const GOLD_MAX = 60;
+const SIGN_FRONT = 4.3, SIGN_WIDE = 4.9;                 // az alsó jelsor előtti sáv (a jelek és a Tovább gomb fölött)
+export const beforeSigns = p => p.z > SIGN_FRONT && Math.abs(p.x) < SIGN_WIDE;
+const gold = [];
+export function goldSpot(k) {
+  for (let i = 420 + (gold.length ? gold.at(-1).i + 1 - 420 : 0); gold.length <= k && i < 2400; i++) {
+    const p = flowerSpot(i);
+    if (beforeSigns(p)) continue;
+    const near = q => Math.hypot(p.x - q.x, p.z - q.z) < 0.75;
+    if (gold.some(near) || Array.from({ length: MAX_FLOWERS }, (_, j) => flowerSpot(j)).some(near)) continue;
+    gold.push({ ...p, i });
+  }
+  return gold[Math.min(k, gold.length - 1)];
+}
 const ZONES = [...FRIENDS.map(f => ({ x: f.home[0], z: f.home[1], r: f.id === 'cat' ? 1.7 : 1.35 })), ...PLACES.filter(p => p.z < 0).map(p => ({ x: p.x, z: p.z, r: p.r }))];
 const isFree = (x, z) => !(Math.abs(x - FEED_SPOT[0]) < 1.7 && z > 1.6) && !(z > 2.4 && z < 4.3 && Math.abs(x) < 4.3) && z < 6 && Math.hypot(x, z) < 12.6
   && ZONES.every(o => Math.hypot(x - o.x, z - o.z) > o.r);

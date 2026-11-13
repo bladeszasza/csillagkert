@@ -113,11 +113,11 @@ export async function testGifts(ok) {
   try {
     // a saját unikornis a legszélesebb öltözetben (szárny, köpeny): így sem takarhatja dísz, és a kert a kereten belül marad
     garden.setAvatar({ body: 'c7', pattern: 'spots', manestyle: 'curl', horn: 'rainbow', hornstyle: 'spiral', wing: 'rainbow', head: 'flowers', eyes: 'glasses', neck: 'cape' });
-    garden.setStars(MAX_FLOWERS, []); garden.setGifts({ owned: CATALOG.map(g => g.id), hearts: 60, gold: 12 }, false);
+    garden.setStars(420, []); garden.setGifts({ owned: CATALOG.map(g => g.id), hearts: 60, gold: 12 }, false);
     await wait(2900); garden.debug(); await wait(1900);           // a barátok besétálnak, a köszönés szívei eltűnnek
     const d = garden.debug();
     ok(`kert: mind a ${d.decor.length} kerti dísz, a Barátság fája és az aranyvirágok ott vannak`, d.decor.length === CATALOG.filter(g => g.kind === 'garden').length && d.treeHearts === 40 && d.gold === 12 && Math.abs(d.treeScale - 1) < 0.01, `díszek ${d.decor.length}, szívek a fán ${d.treeHearts}, fa mérete ${d.treeScale.toFixed(2)}, aranyvirág ${d.gold}`);
-    ok(`kert: teljes kert (${MAX_FLOWERS} virág, minden dísz, 60 szív) a teljesítmény-kereten belül`, d.calls <= 150 && d.triangles <= 250000, `${d.calls} hívás, ${Math.round(d.triangles / 1000)}k háromszög (saját határ: 150 hívás, 250k)`);
+    ok(`kert: teljes kert (420 csillag, ${MAX_FLOWERS} virág, minden dísz, 60 szív) a teljesítmény-kereten belül`, d.calls <= 150 && d.triangles <= 250000, `${d.calls} hívás, ${Math.round(d.triangles / 1000)}k háromszög (saját határ: 150 hívás, 250k)`);
     for (const [W, H] of [[1024, 768], [768, 1024]]) {
       canvas.style.width = W + 'px'; canvas.style.height = H + 'px'; window.dispatchEvent(new Event('resize')); await wait(300);
       for (const a of AREAS) {
