@@ -390,6 +390,7 @@ export function run(container, opts = {}) {
         if (p.mode === 'follow' && used.size < MAX_FOLLOWERS) {      // csatlakozik: szabad helyre áll a V alakzatban
           p.follow = true; joinedSpawns.add(p.spawn.id); for (let s = 0; s < MAX_FOLLOWERS; s++) if (!used.has(s)) { p.slot = s; used.add(s); break; }
           greet(p);
+          opts.heart?.(); opts.gift?.();                      // új barát csatlakozik: barátság (szív); az első hozza az ajándékot
         } else if (t - p.greetT > 12) greet(p);
       }
       if (p.follow) {

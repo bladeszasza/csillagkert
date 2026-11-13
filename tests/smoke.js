@@ -9,6 +9,7 @@ import { soundLog, soundMark, VOICE } from '../js/sounds.js';
 import { MEALS, ANY, friendById, FRIENDS, AREAS, MAX_FLOWERS } from '../js/friends.js';
 import { testOpenWorld, testMinigames } from './smoke-games.js';
 import { testContent } from './smoke-content.js';
+import { testGifts } from './smoke-gifts.js';
 import { VOL } from '../js/notes.js';
 import { build } from '../js/content/engine.js';
 import { rng } from '../js/content/rng.js';
@@ -298,12 +299,13 @@ async function testVoices() {
 async function testOpenWorldGame() { await testOpenWorld(ok); }
 async function testMinigameList() { await testMinigames(ok); }
 async function testGeneratedContent() { await testContent(ok); }
+async function testGiftsAndHearts() { await testGifts(ok); }
 
 export async function runAll() {
   const only = new URLSearchParams(location.search).get('only');      // pl. smoke.html?only=games – csak a játékok tesztje
-  const all = [testHarness, testLoudness, testPositions, testClap, testStart, testGeneratedContent, testAbort, testVoices, testGarden, testOpenWorldGame, testMinigameList];
+  const all = [testHarness, testLoudness, testPositions, testClap, testStart, testGeneratedContent, testAbort, testVoices, testGarden, testOpenWorldGame, testMinigameList, testGiftsAndHearts];
   // ?only=rest: minden, ami nem a generált tartalom (a teljes futás két részletben fér az időkeretbe)
-  const list = only === 'games' ? [testOpenWorldGame, testMinigameList] : only === 'rest' ? all.filter(t => t !== testGeneratedContent) : only ? all.filter(t => t.name.toLowerCase().includes(only)) : all;   // pl. ?only=garden
+  const list = only === 'games' ? [testOpenWorldGame, testMinigameList, testGiftsAndHearts] : only === 'rest' ? all.filter(t => t !== testGeneratedContent) : only ? all.filter(t => t.name.toLowerCase().includes(only)) : all;   // pl. ?only=garden
   for (const t of list) { try { await t(); } catch (e) { ok(t.name, false, e.stack || e.message); } }
   window.__results = results;
   return results;

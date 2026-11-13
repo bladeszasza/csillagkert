@@ -1,13 +1,12 @@
 // Felhővár-verseny: két unikornis fut egymás mellett egy égi felhőpályán, felhővárak között.
 // Koppints bárhová: az unikornis átugorja az akadályt. Ha belefutsz, lelassulsz (nincs büntetés, csak lassabb vagy).
 // A másik unikornis a barátod: a célban mindketten megállnak, egymás felé fordulnak és együtt ünnepelnek.
-// Ha te érsz be előbb, ajándékot kapsz (az öltöztető egy új eleme).
+// A futam végén (győzelemnél és vereségnél is) ajándék jár, a célban összebújás egy szív (js/economy.js).
 // A díszlet példányosított (közös geometria és anyag), így kevés rajzolási hívással fut.
 import * as THREE from '../../vendor/three.module.js';
 import { makeUnicorn, animateRunner } from './creatures.js';
 import { say } from '../voice.js';
 import { play } from '../sounds.js';
-import { nextGift } from '../gifts.js';
 
 const LEN = 220;                         // a pálya hossza
 const LANE = 1.7;                        // a két sáv távolsága a középvonaltól
@@ -15,7 +14,7 @@ const HURDLE_EVERY = 16;                 // akadályok közti távolság
 const BASE = 9, RIVAL = 8.5;             // alapsebesség (a gyerek kicsit gyorsabb, ha nem hibázik)
 const GRAV = -26, JUMP = 9.5;
 
-export function run(container, { onGift } = {}) {
+export function run(container, ctx = {}) {
   container.innerHTML = `<div class="race"><canvas class="race-gl"></canvas>
     <div class="race-hud"><div class="race-track"><span class="mk me">🦄</span><span class="mk rv">🦄</span><span class="finish">🏁</span></div></div>
     <div class="race-center"></div><div class="race-hint">Koppints, hogy ugorj! ⬆️</div></div>`;
@@ -157,6 +156,7 @@ export function run(container, { onGift } = {}) {
     // megjelenítés
     // a célban: mindketten megállnak, egymás felé fordulnak és összebújnak (a másik unikornis is barát)
     const hug = S.phase === 'done' && S.endT > 1.3 ? Math.min(1, (S.endT - 1.3) / 0.8) : 0;
+    if (hug >= 1 && !S.hugged) { S.hugged = true; ctx.heart?.(); }        // a célban összebújnak: barátság = egy szív
     for (const [u, r, side] of [[me, S.me, 1], [rv, S.rv, -1]]) {
       if (hug > 0) { const z = Math.max(S.me.z, S.rv.z); r.z += (z - r.z) * Math.min(1, dt * 3); r.x = -side * (LANE - 0.8 * hug); }
       r.ang += ((-side * Math.PI / 2) * hug - r.ang) * Math.min(1, dt * 6);
@@ -173,18 +173,18 @@ export function run(container, { onGift } = {}) {
     mkMe.style.left = Math.min(100, (S.me.z / LEN) * 100) + '%'; mkRv.style.left = Math.min(100, (S.rv.z / LEN) * 100) + '%';
   }
 
+  // A futam vége: győzelemnél és vereségnél is jár az ajándék (a részvétel számít); a jutalomkörben az első futam adja
   function finish(result) {
-    S.phase = 'done'; S.result = result; S.endT = 0;
+    S.phase = 'done'; S.result = result; S.endT = 0; S.hugged = false;
     play('cheer');
     if (result === 'win') {
-      const gift = nextGift();
-      if (gift) onGift?.('race-' + Date.now());
-      centerEl.innerHTML = `<div class="race-card"><div class="big">🏆</div><h2>Nyertél!</h2>${gift ? `<p>Ajándékot kaptál:</p><div class="gift">${gift.icon}</div><b>${gift.name}</b><p class="sm">Az öltöztetőben ki is próbálhatod!</p>` : '<p>Te vagy a bajnok!</p>'}<button class="giant again">Még egyszer</button></div>`;
-      say(gift ? `Nyertél! Ajándékot kaptál: ${gift.name}!` : 'Nyertél! Te vagy a bajnok!');
+      centerEl.innerHTML = `<div class="race-card"><div class="big">🏆</div><h2>Nyertél!</h2><p>Szép futás volt!</p><button class="giant again">Még egyszer</button></div>`;
+      say('Nyertél! Szép futás volt!');
     } else {
       centerEl.innerHTML = `<div class="race-card"><div class="big">🦄💖🦄</div><h2>Szép futás volt!</h2><p>Most a barátod ért be előbb.</p><button class="giant again">Még egyszer</button></div>`;
       say('Szép futás volt! Most a barátod ért be előbb. Futunk még egyet?');
     }
+    ctx.gift?.();
     centerEl.querySelector('.again')?.addEventListener('click', () => { hurdles.forEach((h, i) => { h.hit = false; h.aiDecided = false; h.tip = 0; poseHurdle(h, i); }); reset(); });
   }
 

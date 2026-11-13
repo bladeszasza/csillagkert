@@ -1,7 +1,9 @@
 // Unikornis-öltöztető: sok szín, minta, sörény, szarv, szárny, fejdísz, nyakék, háttér és matrica.
-// Nincs jó vagy rossz. A zárolt elemeket versennyel és csillagokkal lehet megnyerni (js/gifts.js).
+// Nincs jó vagy rossz. A zárolt elemek ajándékok: bármelyik játék és minden 20. csillag hozhatja őket (js/economy.js).
+// A még meg nem nyert elem árnyképként látszik (lakat helyett), az újonnan kapott pedig felragyog.
 // Vektorgrafika (SVG): forgatásnál és bármilyen méretben éles, és nem kell vászonra emojit rajzolni.
-import { isUnlocked } from '../gifts.js';
+import { giftById } from '../gifts.js';
+import { owns } from '../economy.js';
 import { say } from '../voice.js';
 import { progress } from '../progress.js';
 
@@ -45,6 +47,15 @@ const DEFAULT = { body: 'c0', pattern: 'none', mane: 'c0', manestyle: 'wave', ho
 // A ruhatár a játszó gyerek profiljában él (mindenkinek saját unikornisa van)
 function load() { const d = progress.get().dress, s = { ...DEFAULT, ...(d && typeof d === 'object' ? d : {}) }; s.stickers = Array.isArray(s.stickers) ? s.stickers.slice() : []; return s; }
 function save(s) { progress.set({ dress: s }); }
+// Zárolt: ajándék-ruhadarab, amit ez a gyerek még nem nyert meg (a többi elem kezdettől szabad)
+const isLocked = id => giftById(id)?.kind === 'dress' && !owns(progress.get(), id);
+
+// Az ajándék-pillanat képe: a gyerek saját unikornisa, rajta az új ruhadarab ("csoport:elem"). Önálló SVG-dokumentum.
+export function preview(id) {
+  const s = load(), [key, val] = String(id).split(':');
+  if (key in DEFAULT && key !== 'stickers') s[key] = val;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 480">${scene(s)}</svg>`;
+}
 
 const colorOf = (key, id) => { const g = TABS.flatMap(t => t.groups).find(x => x.key === key); return g?.items.find(i => i.id === id)?.color; };
 const star = (x, y, r, fill) => { let d = ''; for (let i = 0; i < 10; i++) { const rad = i % 2 ? r * 0.45 : r, a = -Math.PI / 2 + i * Math.PI / 5; d += `${i ? 'L' : 'M'}${(x + Math.cos(a) * rad).toFixed(1)} ${(y + Math.sin(a) * rad).toFixed(1)}`; } return `<path d="${d}Z" fill="${fill}" stroke="#e69a00" stroke-width="2" stroke-linejoin="round"/>`; };
@@ -137,7 +148,10 @@ function scene(s) {
 
 export function run(container) {
   const sel = load();
-  let tab = 'test';
+  const fresh = new Set(progress.get().newDress || []);    // most nyert darabok: felragyognak, és az ő fülükön nyílik meg
+  progress.seenDress();
+  const firstTab = TABS.find(t => t.groups.some(g => g.items.some(it => fresh.has(`${g.key}:${it.id}`))));
+  let tab = firstTab ? firstTab.id : 'test';
   container.innerHTML = `<div class="dress2"><svg class="du-svg" viewBox="0 0 600 480" preserveAspectRatio="xMidYMid meet"></svg><div class="du-tabs"></div><div class="du-opts"></div><div class="du-msg"></div></div>`;
   const svg = container.querySelector('.du-svg'), tabsEl = container.querySelector('.du-tabs'), optsEl = container.querySelector('.du-opts'), msg = container.querySelector('.du-msg');
 
@@ -146,9 +160,9 @@ export function run(container) {
   function renderOpts() {
     const t = TABS.find(x => x.id === tab);
     optsEl.innerHTML = t.groups.map(g => `<div class="du-row">${g.items.map(it => {
-      const id = `${g.key}:${it.id}`, locked = !isUnlocked(id);
+      const id = `${g.key}:${it.id}`, locked = isLocked(id);
       const on = g.multi ? sel[g.key].includes(it.id) : sel[g.key] === it.id;
-      return `<button class="du-opt${on ? ' sel' : ''}${locked ? ' locked' : ''}" data-k="${g.key}" data-i="${it.id}" ${it.color ? `style="background:${it.color}"` : ''}>${it.icon || ''}${locked ? '<span class="lock">🔒</span>' : ''}</button>`;
+      return `<button class="du-opt${on ? ' sel' : ''}${locked ? ' locked' : ''}${fresh.has(id) ? ' fresh' : ''}" data-k="${g.key}" data-i="${it.id}" ${it.color && !locked ? `style="background:${it.color}"` : ''}>${it.icon ? `<span class="oi">${it.icon}</span>` : ''}</button>`;
     }).join('')}</div>`).join('');
   }
   function refresh() { draw(); renderTabs(); renderOpts(); }
@@ -156,7 +170,7 @@ export function run(container) {
   optsEl.addEventListener('click', e => {
     const b = e.target.closest('.du-opt'); if (!b) return;
     const key = b.dataset.k, id = b.dataset.i;
-    if (!isUnlocked(`${key}:${id}`)) { msg.textContent = '🔒 Ezt nyerd meg a Felhővár-versenyen vagy csillaggyűjtéssel!'; say('Ezt az ajándékot a versenyen vagy csillagokkal nyerheted meg!', { remember: false }); return; }
+    if (isLocked(`${key}:${id}`)) { msg.textContent = '🎁'; say('Ezt még meg kell nyerni! Bármelyik játékban ajándékba kaphatod.', { remember: false }); return; }
     msg.textContent = '';
     if (key === 'stickers') { const i = sel.stickers.indexOf(id); if (i >= 0) sel.stickers.splice(i, 1); else sel.stickers.push(id); if (sel.stickers.length > 4) sel.stickers.shift(); }
     else sel[key] = id;

@@ -5,8 +5,8 @@ import { say } from '../voice.js';
 export const SPARKHORN_URL = 'https://bladeszasza.github.io/sparkhorn-sprint/';
 const WAIT_MS = 15000;
 
-export function run(container, { src = SPARKHORN_URL, wait = WAIT_MS } = {}) {
-  let timer = 0, alive = true;
+export function run(container, { src = SPARKHORN_URL, wait = WAIT_MS, gift } = {}) {
+  let timer = 0, alive = true, watch = 0, wasBusy = false;
   function load() {
     clearTimeout(timer);
     container.innerHTML = `<div class="spark-wrap">
@@ -31,6 +31,8 @@ export function run(container, { src = SPARKHORN_URL, wait = WAIT_MS } = {}) {
   load();
   // a jutalomidő vége kivárja a futó kört (a Sparkhorn ugyanarról a címről jön, ezért belelátunk)
   container.__busy = () => { try { return !!container.querySelector('iframe')?.contentWindow?.__sparkhorn?.busy?.(); } catch (e) { return false; } };
+  // ajándék: az első befejezett kör után (a Sparkhorn jelzi, mikor fut egy kör: busy igazról hamisra vált)
+  watch = setInterval(() => { const b = container.__busy(); if (wasBusy && !b) gift?.(); wasBusy = b; }, 400);
   container.__spark = { state: () => { const c = container.querySelector('.spark-load'); return !c ? 'none' : c.hidden ? 'loaded' : c.classList.contains('bad') ? 'error' : 'loading'; }, reload: load };
-  return () => { alive = false; clearTimeout(timer); container.innerHTML = ''; };
+  return () => { alive = false; clearTimeout(timer); clearInterval(watch); container.innerHTML = ''; };
 }

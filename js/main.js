@@ -13,6 +13,10 @@ import { friendsFor, friendById, AREAS } from './friends.js';
 import { withArt } from './hu.js';
 import { createRewardTimer } from './reward-timer.js';
 import { play } from './sounds.js';
+import { nextGift, newRewardSession } from './economy.js';
+import { giftById } from './gifts.js';
+import { showGift, giftBusy, clearGifts, floatHeart, BOX_SVG } from './gift-moment.js';
+import { REWARDS } from './rewards/index.js';
 
 const $ = id => document.getElementById(id);
 
@@ -41,16 +45,7 @@ const activities = {
   feed: () => import('./activities/feed.js'),
   algo: () => import('./activities/algo.js'),
 };
-const rewards = {
-  sparkhorn: () => import('./rewards/sparkhorn.js'),
-  bubbles: () => import('./rewards/bubbles.js'),
-  foodcatch: () => import('./rewards/foodcatch.js'),
-  healthy: () => import('./rewards/healthy.js'),
-  race: () => import('./rewards/race.js'),
-  pet: () => import('./rewards/pet.js'),
-  openworld: () => import('./rewards/openworld.js'),
-  dressup: () => import('./rewards/dressup.js'),
-};
+const rewards = REWARDS;                                   // a jutalomjátékok listája (js/rewards/index.js; a füstteszt is ezt járja végig)
 // Hibanapló (csak ezen az eszközön): a szülői sarok megmutatja, ha valami elromlott
 function logError(e, where) {
   try {
@@ -79,12 +74,26 @@ try { const pick = sessionStorage.getItem(PICK); sessionStorage.removeItem(PICK)
 // A játszó gyerek kertje és csillagmérője. Több gyereknél csak a választás után töltjük fel (addig üres a kert).
 function fillFor() {
   garden?.setStars(progress.get().total, progress.get().friends);
+  garden?.setGifts(progress.get(), false);                  // kerti díszek, a Barátság fája, aranyvirágok
+  renderTreasure();
   renderMeter(Math.min(progress.get().meter, perReward()), perReward());
   garden?.setDay(progress.get().meter / perReward());        // a nap a csillagmérővel együtt halad a naplemente felé
   const many = progress.list().length > 1;
   $('switch').hidden = !many; $('switch').textContent = progress.get().mark;
   renderAreaButtons();
 }
+// --- Szívek és a következő ajándék a fejlécben (olvasni nem kell: kép és koppintásra Rozi mondja) ---
+$('gift-next').querySelector('.bow').innerHTML = BOX_SVG;
+function renderTreasure() {
+  const st = progress.get();
+  $('gift-next').querySelector('.ic').innerHTML = nextGift(st).icon;          // a következő ajándék árnyképe
+  $('hearts').querySelector('.n').textContent = String(st.hearts || 0);
+  document.querySelector('.choice[data-game="dressup"]')?.classList.toggle('new', (st.newDress || []).length > 0);
+}
+const bump = el => { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); };
+$('gift-next').addEventListener('click', () => { bump($('gift-next')); say(`A következő ajándékod: ${nextGift(progress.get()).nom}.`, { remember: false }); });
+$('hearts').addEventListener('click', () => { bump($('hearts')); say('A szíveket a jó tettekért kapod. Ettől nő a Barátság fája.', { remember: false }); });
+
 // --- Kertrészek: a tópart (balra) és a tanya (jobbra) lakóihoz egy-egy gomb visz, a kamera átsiklik ---
 // A gombon az ottani első barát képe van (olvasni nem kell); a szélső részen a másik oldali 🐱 gomb visz vissza a kert közepére.
 let areaTimer = 0, awayTimer = 0;
@@ -102,9 +111,13 @@ function renderAreaButtons() {
   for (const [btn, side] of [[$('go-left'), -1], [$('go-right'), 1]]) {
     let to, icon = '', label = '';
     if (here) { if (Math.sign(hereX) !== side) { to = ''; icon = '🐱'; label = 'Vissza a kert közepére'; } }
-    else { const a = list.find(r => Math.sign(r.x) === side); if (a) { to = a.id; icon = friendById(a.friends[0]).emoji; label = AREAS.find(r => r.id === a.id).name; } }
+    else { const a = list.find(r => Math.sign(r.x) === side); if (a) { to = a.id; icon = a.friends.length ? friendById(a.friends[0]).emoji : ''; label = AREAS.find(r => r.id === a.id).name; if (!icon) icon = { svg: giftById(a.decor[0]).icon }; } }
     btn.hidden = to === undefined;
-    if (to !== undefined) { btn.dataset.to = to; btn.querySelector('span').textContent = icon; btn.setAttribute('aria-label', label); }
+    if (to !== undefined) {                                  // ahol még csak kerti dísz áll, ott a dísz saját rajza van a gombon
+      btn.dataset.to = to; const sp = btn.querySelector('span');
+      if (typeof icon === 'object') sp.innerHTML = icon.svg; else sp.textContent = icon;
+      btn.setAttribute('aria-label', label);
+    }
   }
 }
 for (const id of ['go-left', 'go-right']) $(id).addEventListener('click', e => { unlockAudio(); goArea(e.currentTarget.dataset.to || null); });
@@ -231,6 +244,9 @@ async function runItem(item, station, via) {
   }
   const here = new Set(friendsFor(progress.get().total, progress.get().friends));
   const meter = progress.addStar(station, idOf(item));
+  if (inGarden) { progress.taskHeart(); floatHeart(); }     // etetés = gondoskodás: egy szív a Barátság fájának
+  const starGift = progress.starGift();                      // minden 20. csillag egy ajándék (a mentés már most megtörténik)
+  renderTreasure();
   record(item, { wrong: outcome.wrong || 0, help: outcome.help || 0 });   // az ütemező ebből hangolja a következő feladatot
   if (via === 'next') noteRound(item);
   const arrived = friendsFor(progress.get().total, progress.get().friends).filter(f => !here.has(f));   // ezzel a csillaggal érkezett barát
@@ -247,7 +263,16 @@ async function runItem(item, station, via) {
   if (arrived.length) say(`Új barát érkezett: ${withArt(friendById(arrived[0]).name)}!`, { remember: false });
   else if (!inGarden) say(lineNamed('star', name(), Math.random, meter >= perReward() ? 1 : 0.3), { remember: false });
   await flyStar(Math.min(meter, perReward()) - 1, Math.min(meter, perReward()));
-  await sleep(900);
+  garden?.setGifts(progress.get(), true);                    // az etetés szíve a Barátság fáján
+  if (starGift) {
+    await showGift(starGift, { name: name() });
+    garden?.setGifts(progress.get(), true);
+    const nd = progress.takeNewDecor();                      // a kertbe kapott dísz: a kamera odasiklik és megmutatja
+    if (nd.length && garden && !newcomer) {
+      const ar = garden.decorArea(nd[0]); goArea(ar);
+      areaTimer = setTimeout(() => { if (!running && garden.area() === ar) goArea(null); }, 6500);
+    }
+  } else await sleep(900);
   if (meter >= perReward()) openReward(); else $('home').hidden = false;
 }
 $('stage-x').addEventListener('click', () => currentAbort?.());
@@ -259,13 +284,14 @@ $('next').addEventListener('click', () => {
 // 3) Jutalom: elég csillag után egy időre szóló játék, utána magától visszatér
 function openReward() {
   $('reward').hidden = false;
-  say(`Megvan mind a ${perReward()} csillag! Válassz egy játékot!`);
+  renderTreasure();
+  say(named('Ügyes voltál{, N}! Válassz egy játékot!', name(), Math.random, 0.5));
 }
 $('reward-x').addEventListener('click', () => {      // ha nem akar játszani: a megszerzett csillagok megmaradnak
   $('reward').hidden = true; $('home').hidden = false;
   stopSpeaking(); say('Semmi baj! Minden megmarad, játszhatsz később is.', { remember: false });
 });
-let stopGame = null, rewardTimer = null, byeTimer = 0;
+let stopGame = null, rewardTimer = null, byeTimer = 0, rewardSess = null;
 // a játék törzséből minden teszt-kapaszkodót (__ow, __race, __busy…) leveszünk, hogy a lezárt jelenet ne maradjon a memóriában
 const clearGameBody = () => { const b = $('game-body'); b.innerHTML = ''; for (const k of Object.keys(b)) if (k.startsWith('__')) delete b[k]; };
 document.querySelectorAll('.choice').forEach(btn => btn.addEventListener('click', async () => {
@@ -274,11 +300,18 @@ document.querySelectorAll('.choice').forEach(btn => btn.addEventListener('click'
   $('reward').hidden = true; $('game').hidden = false; $('game-soon').hidden = true; $('game-bye').hidden = true;
   try {
     const mod = await rewards[btn.dataset.game]();
-    stopGame = mod.run($('game-body'), { onGift: id => progress.addGift(id) });
+    // Egy jutalomkör: legfeljebb egy ajándék (az első igazi játék-pillanatnál) és játékonként korlátos számú szív (js/economy.js)
+    const src = btn.dataset.game; rewardSess = newRewardSession();
+    const sess = rewardSess;
+    const ctx = {
+      gift() { if (sess !== rewardSess) return null; const g = progress.rewardGift(sess, src); if (g) { renderTreasure(); showGift(g, { name: name() }); } return g; },
+      heart(at) { if (sess !== rewardSess) return false; const ok = progress.rewardHeart(sess, src); if (ok) { renderTreasure(); floatHeart(at); } return ok; },
+    };
+    stopGame = mod.run($('game-body'), ctx);
     // szelíd vége: egy perccel előtte szól, a kör közepén nem vág bele (legfeljebb 45 mp-et vár), utána búcsúkártya
     rewardTimer = createRewardTimer({
       minutes: progress.get().rewardMinutes,
-      isBusy: () => !!$('game-body').__busy?.(),
+      isBusy: () => !!$('game-body').__busy?.() || giftBusy(),   // az ajándék-pillanat alatt sem ér véget
       onWarn: () => { $('game-soon').hidden = false; say('Még egy kicsit játszunk, aztán hazamegyünk!', { remember: false }); },
       onEnd: goodbye,
     });
@@ -299,9 +332,13 @@ $('game-bye-home').addEventListener('click', () => endReward(true));
 function endReward(fromBye = false) {
   if ($('game').hidden) return;
   rewardTimer?.stop(); rewardTimer = null; clearTimeout(byeTimer);
+  clearGifts(); rewardSess = null;                           // az ajándék-pillanat is azonnal eltűnik (a nyeremény már mentve)
   try { stopGame?.(); } catch (e) {}
   stopGame = null;
   clearGameBody(); $('game').hidden = true; $('game-soon').hidden = true; $('game-bye').hidden = true; garden?.pause(false);
+  garden?.setGifts(progress.get(), true); renderTreasure();  // a megnyert dísz és a szívek most bukkannak fel a kertben
+  const nd = progress.takeNewDecor();
+  if (nd.length && garden) { const ar = garden.decorArea(nd[0]); goArea(ar); areaTimer = setTimeout(() => { if (!running && garden.area() === ar) goArea(null); }, 6500); }
   progress.completeReward();                       // a következő jutalomhoz több csillag kell
   progress.resetMeter(); renderMeter(0, perReward());
   $('home').hidden = false;

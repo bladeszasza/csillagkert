@@ -10,11 +10,14 @@ const COLORS = [
   { c: '#c9a0ff', f: 880.0 },   // A
 ];
 
-export function run(container) {
+const GIFT_AT = 15;                       // ennyi pukkantás után jön az ajándék (jutalomkörönként egy)
+
+export function run(container, gameCtx = {}) {
   container.innerHTML = '<canvas></canvas>';
   const canvas = container.querySelector('canvas'), ctx = canvas.getContext('2d');
   let w = 0, h = 0, raf = 0;
   const bubbles = [], pops = [];
+  let popped = 0;
 
   function size() { const d = Math.min(devicePixelRatio || 1, 2); w = canvas.clientWidth; h = canvas.clientHeight; canvas.width = w * d; canvas.height = h * d; ctx.setTransform(d, 0, 0, d, 0, 0); }
   size();
@@ -30,13 +33,19 @@ export function run(container) {
   canvas.addEventListener('pointerdown', unlock); canvas.addEventListener('pointerup', unlock);
 
   function spawn() { bubbles.push({ x: 60 + Math.random() * Math.max(10, w - 120), y: h + 80, r: 36 + Math.random() * 44, vy: 40 + Math.random() * 60, ci: (Math.random() * COLORS.length) | 0, ph: Math.random() * 6 }); }
+  function pop(i) {
+    const b = bubbles[i]; pops.push({ x: b.x, y: b.y, r: b.r, t: 0, c: COLORS[b.ci].c }); bubbles.splice(i, 1); chime(b);
+    if (++popped === GIFT_AT) gameCtx.gift?.();
+  }
   canvas.addEventListener('pointerdown', e => {
     const r = canvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
     for (let i = bubbles.length - 1; i >= 0; i--) {
       const b = bubbles[i];
-      if ((b.x - x) ** 2 + (b.y - y) ** 2 < (b.r + 14) ** 2) { pops.push({ x: b.x, y: b.y, r: b.r, t: 0, c: COLORS[b.ci].c }); bubbles.splice(i, 1); chime(b); break; }
+      if ((b.x - x) ** 2 + (b.y - y) ** 2 < (b.r + 14) ** 2) { pop(i); break; }
     }
   });
+  // teszteléshez: pukkantások száma, egy buborék kipukkantása (nem része a játéknak)
+  container.__bub = { popped: () => popped, popOne: () => { if (!bubbles.length) spawn(); pop(bubbles.length - 1); }, GIFT_AT };
 
   let last = performance.now(), acc = 0;
   function frame(now) {

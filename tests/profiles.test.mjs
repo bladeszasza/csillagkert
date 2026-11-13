@@ -23,7 +23,10 @@ test('régi mentés: az 1. profil lesz belőle, semmi nem vész el, a régi kulc
   assert.equal(p.ready(), true); assert.equal(p.id(), 'p1'); assert.equal(p.list().length, 1);
   const s = p.get(), o = JSON.parse(oldSave);
   for (const k of ['total', 'meter', 'rewardsDone', 'name', 'nameAsked', 'introDone', 'rewardMinutes', 'perReward', 'feedGap', 'sinceFeed']) assert.deepEqual(s[k], o[k], k);
-  assert.deepEqual(s.done, o.done); assert.deepEqual(s.seen, o.seen); assert.deepEqual(s.gifts, o.gifts); assert.deepEqual(s.friends, o.friends);
+  assert.deepEqual(s.done, o.done); assert.deepEqual(s.seen, o.seen); assert.deepEqual(s.friends, o.friends);
+  // ajándékok: a régi szabály szerint 1 megnyert + 37/20 = 1 csillagos = 2 darab, név szerint; a 20-as csillag-ajándék kifizetettnek számít
+  assert.deepEqual(s.owned, ['head:crown', 'wing:rainbow']); assert.equal(s.starGifts, 1); assert.equal(s.gifts, undefined);
+  assert.equal(s.hearts, 1);                                                         // a megetetett panda: egy jó tett
   assert.deepEqual(s.dress, JSON.parse(oldDress));                                  // a ruhatár a profilba költözött
   assert.deepEqual(p.device.get(), { voiceURI: 'hang-1', speechVol: 2 });           // a hang az eszköz beállítása lett
   assert.equal(s.voiceURI, undefined);
@@ -76,11 +79,12 @@ test('két gyerek: külön csillagok, kert, látott feladatok és ruhatár; újr
   assert.equal(b.ready(), false); assert.equal(b.get().total, 0);
   b.set({ total: 99 }); assert.equal(st.getItem('csillagkert:p:p1'), firstBefore);   // választás előtt semmi nem íródik
   assert.equal(b.use(id2), true);
-  b.addStar('allat', 'feed-cat-hal'); b.addFriend('fox'); b.set({ dress: { body: 'c5' } }); b.addGift('wing:fairy');
+  b.addStar('allat', 'feed-cat-hal'); b.addFriend('fox'); b.set({ dress: { body: 'c5' } }); b.rewardGift({ gift: null, hearts: {} }, 'race');
   assert.equal(st.getItem('csillagkert:p:p1'), firstBefore);                         // az első gyerek adata bájtra változatlan
   const c = openProfiles(st);
   c.use('p1'); assert.equal(c.get().total, 37); assert.deepEqual(c.get().friends, ['panda']); assert.deepEqual(c.get().dress, JSON.parse(oldDress));
-  c.use(id2); assert.equal(c.get().total, 1); assert.deepEqual(c.get().friends, ['fox']); assert.deepEqual(c.get().dress, { body: 'c5' });
+  c.use(id2); assert.equal(c.get().total, 1); assert.deepEqual(c.get().friends, ['fox']); assert.deepEqual(c.get().dress, { body: 'c5' }); assert.deepEqual(c.get().owned, ['head:crown']);
+  c.use('p1'); assert.deepEqual(c.get().owned, ['head:crown', 'wing:rainbow']); c.use(id2);
   assert.deepEqual(Object.keys(c.get().seen), ['feed-cat-hal']); assert.equal(c.get().age, 6); assert.equal(c.get().name, 'Minta Kata');
   assert.equal(c.use('p77'), false);
 });
@@ -124,7 +128,8 @@ test('mentés fájlba és visszatöltés: másik eszközön ugyanaz az állás j
   dst.use(id);
   const a = src.get(), b = dst.get();
   for (const k of ['total', 'meter', 'rewardsDone', 'name', 'rewardMinutes', 'perReward', 'age', 'introDone']) assert.deepEqual(b[k], a[k], k);
-  assert.deepEqual(b.done, a.done); assert.deepEqual(b.seen, a.seen); assert.deepEqual(b.gifts, a.gifts); assert.deepEqual(b.friends, a.friends); assert.deepEqual(b.dress, a.dress);
+  assert.deepEqual(b.done, a.done); assert.deepEqual(b.seen, a.seen); assert.deepEqual(b.friends, a.friends); assert.deepEqual(b.dress, a.dress);
+  for (const k of ['owned', 'starGifts', 'hearts', 'gold']) assert.deepEqual(b[k], a[k], k);
   assert.notEqual(b.mark, openProfiles(st).list()[0].mark);                          // nem kap azonos jelet a meglévővel
   assert.equal(dst.importData(file), 'p3');                                          // kétszer betöltve két külön gyerek
 });
@@ -148,7 +153,8 @@ test('visszatöltés: csak ismert mezők kerülnek be, típus és méret szerint
   assert.equal(s.total, 12); assert.equal(s.meter, 0); assert.equal(s.rewardsDone, 100000); assert.equal(s.perReward, 10); assert.equal(s.rewardMinutes, 4); assert.equal(s.age, 5);
   assert.ok(MARKS.includes(s.mark));
   assert.ok(!/[<>\u0000-\u001f]/.test(s.name) && s.name.length <= 30 && s.name.startsWith('img src=x'), s.name);
-  assert.deepEqual(s.done, { szamol: 4 }); assert.deepEqual(s.seen, { ok: 5 }); assert.deepEqual(s.gifts, ['head:crown']); assert.deepEqual(s.friends, ['fox']);
+  assert.deepEqual(s.done, { szamol: 4 }); assert.deepEqual(s.seen, { ok: 5 }); assert.deepEqual(s.friends, ['fox']);
+  assert.deepEqual(s.owned, ['head:crown']); assert.equal(s.gifts, undefined);      // régi fájl: egy érvényes, egyedi bejegyzés = egy ajándék
   assert.deepEqual(s.dress, { body: 'c2', stickers: ['star'] });
   assert.equal(s.extra, undefined); assert.equal(s.hack, undefined); assert.equal(s.introDone, undefined); assert.equal(s.heardBell, undefined);
 });

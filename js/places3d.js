@@ -4,6 +4,7 @@
 import * as THREE from '../vendor/three.module.js';
 import { merge, part } from './geo.js';
 import { PLACES, FRIENDS } from './friends.js';
+import { DECOR } from './gifts.js';
 
 const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 const cyl = (rt, rb, h, n = 10) => new THREE.CylinderGeometry(rt, rb, h, n);
@@ -155,7 +156,8 @@ function buildAreas(at) {
   [[23.8, -2.2, 1.1], [11.4, -6.6, 1.0], [16.4, -8.4, 1.2], [24.6, -6.4, 1.05], [23.0, 2.6, 0.9]].forEach(([x, z, k], i) => at(x, z, tree(k, i)));
   at(11.9, 0.9, bush(0.8));
   const keep = [...FRIENDS.filter(f => f.area).map(f => [f.home[0], f.home[1], 1.3]), [POND.x, POND.z, 2.3], [21.8, -6.8, 2], [19.9, 0.3, 1], [20.6, 3.0, 1], [13.0, 3.4, 1.1],
-    [-21.1, 0.6, 0.8], [-14.4, -4.8, 1.2], [-12.4, 0.6, 0.9], [11.9, 0.9, 0.8], [-12.6, 3.2, 0.5], [-22.8, 2.6, 1]];
+    [-21.1, 0.6, 0.8], [-14.4, -4.8, 1.2], [-12.4, 0.6, 0.9], [11.9, 0.9, 0.8], [-12.6, 3.2, 0.5], [-22.8, 2.6, 1],
+    ...DECOR.map(d => [d.spot[1], d.spot[2], 1.0])];                  // a kerti díszek (ajándékok) helye is szabadon marad
   for (const cx of [-17, 17]) at(0, 0, wildflowers(cx, keep));
 }
 

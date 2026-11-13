@@ -10,7 +10,7 @@ const KIND = { cica: 'cat', nyuszi: 'bunny', kutya: 'dog', róka: 'fox', maci: '
 
 const FRIENDS = [['🐱', 'cica'], ['🐰', 'nyuszi'], ['🐶', 'kutya'], ['🦊', 'róka'], ['🐻', 'maci'], ['🐼', 'panda']];
 
-export function run(container) {
+export function run(container, ctx = {}) {
   let alive = true, raf = 0, cleanup = () => {};
   const root = document.createElement('div'); root.className = 'pet'; container.innerHTML = ''; container.appendChild(root);
   const view = document.createElement('div'); view.style.cssText = 'position:absolute;inset:0'; root.appendChild(view);
@@ -46,7 +46,8 @@ export function run(container) {
     const setJoy = d => { joy = Math.min(100, Math.max(0, joy + d)); fill.style.width = joy + '%'; if (joy >= 100) { joy = 0; fill.style.width = '0%'; celebrate(); } };
     // ünneplés: csak a 3D állat ugrál a helyén (a régi CSS-animáció felülírta a helyét, és a sarokba rántotta)
     const timers = new Set(), later = (fn, ms) => { const id = setTimeout(() => { timers.delete(id); fn(); }, ms); timers.add(id); };
-    function celebrate() { happy(emoji); later(() => happy(emoji), 500); hopUntil = performance.now() + 1500; spawn('🎉', 6); talk(`A ${name} nagyon boldog!`); }
+    function celebrate() { ctx.heart?.(); ctx.gift?.(); happy(emoji);   // a boldog barát: gondoskodás (szív) és ajándék
+      later(() => happy(emoji), 500); hopUntil = performance.now() + 1500; spawn('🎉', 6); talk(`A ${name} nagyon boldog!`); }
     function spawn(e, n = 1, x, y) {
       const R = rect();
       for (let i = 0; i < n; i++) {

@@ -4,10 +4,11 @@
 //   csillagkert:device        – az eszköz beállításai (felolvasó hang, beszéd hangereje): minden gyereknél ugyanaz
 // A régi, egyetlen mentés (csillagkert_v1) az első profil lesz; a régi kulcs érintetlenül megmarad biztonsági másolatnak.
 // Minden tároló-hívás védett: privát módban is működik, csak nem ment.
+import { migrateEconomy, payStarGift, sessionGift, sessionHeart } from './economy.js';
 
 const INDEX = 'csillagkert:profiles', DEVICE = 'csillagkert:device', PREFIX = 'csillagkert:p:';
 const OLD = 'csillagkert_v1', OLD_DRESS = 'csillagkert_dress_v1';
-const SCHEMA = 3;
+const SCHEMA = 4;                                       // 4: ajándékok név szerint (owned), szívek, csillag-ajándékok
 export const MARKS = ['⭐', '💖', '🌸', '🦋', '🌈', '🍓', '🐞', '🚀'];     // a gyerek jele a „Ki játszik?" kártyán
 export const AGES = [4, 5, 6, 7];
 
@@ -18,7 +19,11 @@ const fresh = () => ({
   done: {},          // kész feladatok állomásonként (szülői áttekintéshez)
   seen: {},          // megoldott feladatok {azonosító: időbélyeg} – ebből kerüljük az ismétlést
   sk: {}, rv: {}, hist: [], lastSt: [], stAt: {},   // az ütemező állása (js/scheduler-core.js): készségszintek, ismétlési napló, állomás-váltás
-  gifts: [],         // megszerzett ajándékok (öltöztető elemei)
+  owned: [],         // megszerzett ajándékok azonosítói (js/gifts.js): öltöztető elemei és kerti díszek
+  starGifts: 0,      // hány 20-csillagos ajándék jár már kifizetve
+  hearts: 0,         // szívek a jó tettekért (a Barátság fája ebből nő)
+  gold: 0,           // aranyvirágok (amikor a létra minden foka megvan)
+  newDress: [], newDecor: [],   // még meg nem nézett új ruhák (az öltöztetőnél jelzés) és még meg nem mutatott kerti díszek
   friends: [],       // akit már megetettek: a csillagoktól függetlenül is a kertben lakik
   rewardsDone: 0,    // hány jutalomjátékot játszott már: minden kör után több csillag kell
   dress: null,       // az öltöztető állása
@@ -33,7 +38,6 @@ function normalize(raw) {
   const s = { ...fresh(), ...(had ? raw : {}) };
   if (!s.done || typeof s.done !== 'object') s.done = {};
   if (!s.seen || typeof s.seen !== 'object') s.seen = {};      // nagyon régi mentésben nem volt: üresről indul
-  if (!Array.isArray(s.gifts)) s.gifts = [];
   if (!Array.isArray(s.friends)) s.friends = [];
   for (const k of ['sk', 'rv', 'stAt']) if (!s[k] || typeof s[k] !== 'object' || Array.isArray(s[k])) s[k] = {};
   for (const k of ['hist', 'lastSt']) if (!Array.isArray(s[k])) s[k] = [];
@@ -41,6 +45,7 @@ function normalize(raw) {
   if (!MARKS.includes(s.mark)) s.mark = MARKS[0];
   if (had && !raw.v2) s.perReward = 10;                         // korábbi mentés: 3 helyett 10 csillag
   delete s.index; delete s.sp; delete s.voiceURI; delete s.speechVol;   // az utóbbi kettő az eszköz beállítása lett
+  migrateEconomy(s, had ? raw : undefined);
   s.v2 = true; s.schema = SCHEMA;
   return s;
 }
@@ -69,13 +74,13 @@ function sanitize(raw) {
   if (Array.isArray(raw.hist)) s.hist = raw.hist.slice(-20).map(x => x === true);
   if (Array.isArray(raw.lastSt)) s.lastSt = raw.lastSt.filter(word).slice(-2);
   if (obj(raw.stAt)) for (const [k, v] of Object.entries(raw.stAt).slice(0, 60)) if (word(k) && Number.isFinite(+v)) s.stAt[k] = +v;
-  if (Array.isArray(raw.gifts)) s.gifts = [...new Set(raw.gifts.filter(word))].slice(0, 200);
   if (Array.isArray(raw.friends)) s.friends = [...new Set(raw.friends.filter(word))].slice(0, 60);
   if (raw.dress && typeof raw.dress === 'object' && !Array.isArray(raw.dress)) {
     s.dress = {};
     for (const k of DRESS_KEYS) if (word(raw.dress[k])) s.dress[k] = raw.dress[k];
     if (Array.isArray(raw.dress.stickers)) s.dress.stickers = raw.dress.stickers.filter(word).slice(0, 20);
   }
+  migrateEconomy(s, raw);                             // ajándékok és szívek: csak ismert azonosítók, korlátos számok (régi mentésfájlból is)
   return s;
 }
 
@@ -187,7 +192,13 @@ export function openProfiles(storage) {
     // Megszakított (X) feladat: csillag nem jár érte, de "látott"-nak számít, hogy a Tovább ne ugyanazt adja újra
     skip(sid) { if (sid) { state.seen[sid] = Date.now(); save(); } },
     completeReward() { state.rewardsDone = (state.rewardsDone || 0) + 1; save(); },
-    addGift(g) { if (!state.gifts.includes(g)) { state.gifts.push(g); save(); } },
+    // --- ajándékok és szívek (a szabályok: js/economy.js) ---
+    starGift() { const g = payStarGift(state); if (g) save(); return g; },               // 20-as csillaghatárnál
+    rewardGift(sess, source) { const g = sessionGift(state, sess, source); if (g) save(); return g; },
+    rewardHeart(sess, source) { const ok = sessionHeart(state, sess, source); if (ok) save(); return ok; },
+    taskHeart() { state.hearts++; save(); },                                             // etetés: gondoskodás
+    seenDress() { if (state.newDress.length) { state.newDress = []; save(); } },
+    takeNewDecor() { const d = state.newDecor.slice(); if (d.length) { state.newDecor = []; save(); } return d; },
     addFriend(f) { if (f && !state.friends.includes(f)) { state.friends.push(f); save(); } },
     resetMeter() { state.meter = 0; save(); },
     set(patch) { Object.assign(state, patch); save(); },

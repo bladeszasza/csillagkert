@@ -17,7 +17,7 @@ const BOX_CAP = 5;                           // szabad játékban ennyi édessé
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const rnd = a => a[(Math.random() * a.length) | 0];
 
-export function run(container) {
+export function run(container, ctx = {}) {
   const cap = BOX_CAP;
   container.innerHTML = `
     <div class="hd">
@@ -118,6 +118,7 @@ export function run(container) {
       item.el.style.transform = `translate(${a.left + a.width / 2 - (b.left + b.width / 2)}px, ${a.top + a.height / 2 - (b.top + b.height / 2)}px) scale(.3)`; item.el.style.opacity = 0;
       await sleep(320); item.el.remove(); current = null;
       fed++; fedEl.textContent = fed; ding(700 + (fed % 5) * 90);
+      ctx.heart?.(); if (fed === 3) ctx.gift?.();          // etetés = gondoskodás (szív); a harmadik etetés (vagy az első doboz) ajándékot hoz
       face.classList.add('happy'); ps[i].happy = performance.now() + 1300; ps[i].nom = performance.now() + 500; pal.querySelector('.hearts').textContent = '❤️❤️'; happy(PALS[i]);
       say2('❤️', Infinity);                    // etetés után csak az állat hangja szól
       await sleep(1100); face.classList.remove('happy'); pal.querySelector('.hearts').textContent = '';
@@ -147,6 +148,7 @@ export function run(container) {
     box.querySelector('.lid').textContent = '🎁'; box.classList.add('closed'); ding(660); await sleep(250); ding(880); happy('🦄');
     say2(`Ajándék ${who}!`);
     giftEl.innerHTML = `<div class="who">${emoji}</div><div class="pk">🎁</div>`; giftEl.classList.add('go');
+    ctx.heart?.(); ctx.gift?.();                         // ajándék másnak = kedvesség (szív), és a gyerek is kap egyet
     await sleep(2600); giftEl.classList.remove('go'); giftEl.innerHTML = '';
     gifts++; giftsEl.textContent = gifts; inBox = 0; cntEl.textContent = 0; box.classList.remove('closed'); box.querySelector('.lid').textContent = '📦';
     say2('🎁', Infinity);

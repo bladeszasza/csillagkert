@@ -10,7 +10,7 @@ import { makeGardenCat, animateCat, CAT_HEIGHT } from './cat3d.js';
 const FOODS = ['🐟', '🥛', '🍗', '🦐', '🧀'];
 const FULL_AT = 8;
 
-export function run(container) {
+export function run(container, ctx = {}) {
   container.innerHTML = `
     <div class="fc">
       <div class="fc-bar"><div class="fc-fill"></div><span class="fc-label">🍽️</span></div>
@@ -42,9 +42,18 @@ export function run(container) {
     drops.push({ el, x: 50 + Math.random() * Math.max(10, w - 100), y: -60, vy: 110 + Math.random() * 70, rot: Math.random() * 60 - 30 });
   }
   async function purr() {
+    ctx.heart?.(); ctx.gift?.();                         // jóllakott cica: gondoskodás (szív) és ajándék
     resting = true; hopUntil = performance.now() + 3000; cat.textContent = '😻'; cat.classList.add('purr'); msg.textContent = 'Jóllakott! ❤️';
     if (performance.now() - lastTalk > 15000) { lastTalk = performance.now(); say('Jóllakott a cica! Nyam-nyam!', { remember: false }); }   // szabad játékban ritkán beszél
     restTimer = setTimeout(() => { full = 0; fill.style.width = '0%'; cat.textContent = '🐱'; cat.classList.remove('purr'); cat.style.setProperty('--belly', 1); msg.textContent = ''; resting = false; }, 3000);
+  }
+
+  function eat() {                                     // egy elkapott falat
+    chime(600 + full * 60);
+    full++; fill.style.width = Math.min(100, (full / FULL_AT) * 100) + '%'; cat.style.setProperty('--belly', 1 + full * 0.05);
+    cat.classList.remove('nom'); void cat.offsetWidth; cat.classList.add('nom'); nomUntil = performance.now() + 500;
+    if (full % 3 === 0 && full < FULL_AT) happy('🐱');
+    if (full >= FULL_AT) { happy('🐱'); purr(); }
   }
 
   function frame(now) {
@@ -58,11 +67,7 @@ export function run(container) {
       d.el.style.transform = `translate(${d.x}px, ${d.y}px) rotate(${d.rot + d.y * 0.2}deg)`;
       const dcx = d.x + 30, dcy = d.y + 30;
       if (!resting && Math.abs(dcx - cx) < catSize * 0.55 && dcy > catTop && dcy < catTop + catSize) {
-        d.el.remove(); drops.splice(i, 1); chime(600 + full * 60);
-        full++; fill.style.width = Math.min(100, (full / FULL_AT) * 100) + '%'; cat.style.setProperty('--belly', 1 + full * 0.05);
-        cat.classList.remove('nom'); void cat.offsetWidth; cat.classList.add('nom'); nomUntil = performance.now() + 500;
-        if (full % 3 === 0 && full < FULL_AT) happy('🐱');
-        if (full >= FULL_AT) { happy('🐱'); purr(); }
+        d.el.remove(); drops.splice(i, 1); eat();
         continue;
       }
       if (d.y > h + 40) { d.el.remove(); drops.splice(i, 1); }
@@ -78,6 +83,6 @@ export function run(container) {
     raf = requestAnimationFrame(frame);
   }
   raf = requestAnimationFrame(frame);
-  container.__fc = { stats: () => ({ full, resting, drops: drops.length }) };
+  container.__fc = { stats: () => ({ full, resting, drops: drops.length }), feed: () => { if (!resting) eat(); }, FULL_AT };   // teszteléshez
   return () => { cancelAnimationFrame(raf); clearTimeout(restTimer); st3?.dispose(); ro?.disconnect(); window.removeEventListener('resize', size); };
 }

@@ -25,7 +25,8 @@ Feladatok → csillagok → jutalomjáték. Hibázásért nincs büntetés: szel
   szabály szerinti színezés, térbeli szavak matricával, színező, szabad rajz).
   Nyolc állomás feladatai sablonokból készülnek, állomásonként több száz (lásd lent).
 - **Jutalomjátékok:** Unikornis-futás, Felhővár-verseny, szabad futás procedurális világban, hami-adagoló (3D cica),
-  cica-etetés, Barátom (fésülés, simogatás, labdázás), unikornis-öltöztető (ajándékokkal), buborékpukkasztás.
+  cica-etetés, Barátom (fésülés, simogatás, labdázás), unikornis-öltöztető (a megnyert ruhákkal), buborékpukkasztás.
+  Minden játék ajándékot ad, a jó tettek szívet (lásd „Ajándékok és szívek").
 - Nincs build lépés: sima HTML + ES modulok + three.js (`vendor/`). GitHub Pages-en fut. A haladás csak az eszközön tárolódik.
 
 ## Tananyag és sorrend
@@ -141,6 +142,51 @@ A jóváhagyott terv ezeket rögzítette: nyuszi 3, kutya 8, róka 15, kacsa 25,
 **A többi küszöb (béka, tyúk, mókus, egér, malac, bárány, teknős, póni, tehén) az én beállításom**, szabadon átírható
 a `js/friends.js` táblájában. Etetéssel bárki hamarabb is beköltözik.
 
+## Ajándékok és szívek
+
+Két külön jutalom van, két külön értékért (`js/economy.js`):
+
+- **⭐ csillag a tudásért:** minden kész feladat egy csillag. A csillagok a kertet virágoztatják, a jutalomkaput nyitják,
+  és **minden 20. csillag** egy ajándék.
+- **❤ szív a jó tettért:** etetés, gondoskodás, ajándék másnak, barátság. A szívekből nő a **Barátság fája** a kert
+  hátsó részén: 40 szívnél éri el a teljes méretét, és a lombján legfeljebb 40 szív látszik. A szívet nem lehet
+  gyűjtögetni: egy jutalomkörben játékonként legfeljebb néhány jár (hami-adagoló 3, Barátom 3, verseny 3,
+  csillagfogó cica 2, szabad futás 4). Minden etetős feladat után is jár egy szív.
+
+**Minden játék ad ajándékot**, jutalomkörönként egyet: amelyik játék előbb adja. Mindig egy igazi játék-pillanatnál jön,
+nem a belépéskor:
+
+| Játék | Mikor jön az ajándék | Mikor jár szív |
+|---|---|---|
+| Felhővár-verseny | a célba éréskor, akár nyert, akár nem | amikor a végén összebújnak |
+| hami-adagoló | a harmadik etetésnél, vagy az első becsomagolt ajándékdoboznál | minden etetésnél és ajándékdoboznál |
+| Barátom | amikor a barát örül (a gondozás végén) | ugyanekkor |
+| csillagfogó cica | amikor jóllakott | ugyanekkor |
+| buborékok | a 15. kipukkasztott buboréknál | – |
+| szabad futás | amikor az első barát csatlakozik | minden új útitársnál |
+| unikornis-futás (Sparkhorn) | az első végigfutott kör után | – |
+| öltöztető | nem ad: itt várnak a megnyert ruhák | – |
+
+- **Az ajándéklétra** (`js/gifts.js`) rögzített sorrendű, véletlen nincs benne: a tíz ruhadarab és tizenkét kerti dísz
+  felváltva jön (korona, lámpás, szivárványszárny, kerti pad, …). Ami megvan, nem jön újra.
+  Ha a létra elfogyott, **aranyvirág** nyílik a kertben, így soha nincs üres ajándék.
+- **A következő ajándék** sziluettje a jobb felső sarokban látszik; koppintásra Rozi megmondja, mi lesz az.
+  A bal felső ❤ jel a szívek száma; koppintásra Rozi elmondja, mire valók.
+- **Az ajándék-pillanat** (`js/gift-moment.js`): egy doboz megremeg és kinyílik, kiugrik belőle az ajándék
+  (ruhánál a saját unikornis, rajta az új darab), Rozi egy mondatban elmondja, mit kapott (a csillagokat nem számolja),
+  aztán az ajándék a „következő ajándék" jelhez repül. Koppintásra azonnal továbbmegy, játék közben átengedi az érintést.
+  **Eltérés a tervtől:** a terv 3D jelenetet írt; ez 2D réteg lett, hogy ne nyíljon egy harmadik 3D-vászon a játék
+  és a kert mellé (régebbi iPaden ez kockázat).
+- **Kerti díszek:** a tópart és a tanya szabad zugaiba kerülnek, úgy, hogy egyik barátot se takarják (a füstteszt
+  mindkét tájolásban ellenőrzi). Új dísz után a kamera odanéz.
+- **Öltöztető:** a még meg nem nyert darabok sziluettként látszanak (lakat nélkül); koppintásra Rozi elmondja, hogy
+  bármelyik játékban megnyerhető. Az új darabot csillogás jelzi, és a választóban egy ❤ jel mutatja, hogy új ruha vár.
+- **A régi mentés átvétele:** aki már játszott, megtartja, amit addig nyert (a régi sorrend szerinti ruhákat).
+  A csillagokért eddig járó ajándékok kifizetettnek számítanak: nem jönnek újra, és egy sem marad ki.
+  A szívek a már megetetett barátokkal indulnak (minden etetés egy jó tett volt).
+- **Minden szám saját beállítás** (20 csillagonként egy ajándék, a szív-korlátok, a 40 szíves fa, a 15 buborék),
+  szabadon átírható a `js/economy.js`, `js/decor3d.js` és a játékok fájljaiban.
+
 ## Több gyerek, mentés
 
 - **Mindenkinek saját világa van:** külön csillagok, kert, barátok, látott feladatok, ruhatár és beállítások.
@@ -169,6 +215,8 @@ ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba ment
   legalább 10; pontosan egy helyes válasz; nincs ismétlődő kép vagy név; a helyes válasz helye egyenletes; minden válasz
   valahol helyes is; a gépi megoldó mindet megoldja; a kimondott szövegben nincs számjegy, jel vagy emoji, egy mondat
   legfeljebb 12 szó).
+- Ajándékok és szívek: `node --test tests/economy.test.mjs` (a régi mentés átvétele, a létra sorrendje, aranyvirág a végén,
+  20 csillagonként egy ajándék, jutalomkörönként egy ajándék, a szív-korlátok, Rozi ajándék-mondatai számok nélkül).
 - Ütemező: `node --test tests/scheduler.test.mjs` (300 feladatos szimuláció ismétlés nélkül, 90 szimulált
   gyereknél is: 5–7 évesek, gyenge–erős; szintlépés és visszalépés; kezdőnek csak a szintjéhez illő készség, egy állomás
   a bevezető készséggel kezd; ismétlési napok; gyakorló feladatok).
@@ -177,7 +225,8 @@ ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba ment
 - Böngészős füstteszt: `http://localhost:8080/tests/smoke.html` (hangerő-mérés, a jó válasz helye, megszakítás utáni csend,
   minden feladattípus elindul, a kert lakói és rajzolási terhe, a tópart és a tanya, koppintás minden barátra,
   etetés a 3D állattal minden úton, a tanyáról is). A füstteszt memóriában élő tárolóval fut, a valódi mentéshez nem nyúl.
-  Csak egy részét is lehet futtatni: `?only=games` (szabad futás és jutalomjátékok), `?only=generated` (a gépi megoldó
+  Csak egy részét is lehet futtatni: `?only=games` (szabad futás, jutalomjátékok, ajándékok), `?only=gifts` (minden játék
+  ad-e ajándékot és szívet, az ajándék-pillanat, a kerti díszek helye és rajzolási terhe), `?only=generated` (a gépi megoldó
   minden sablon minden szintjén a valódi feladatot oldja meg), vagy `?only=` és egy tesztnév-részlet.
 - Szabad futás (a füstteszt része): egy futó-robot három különböző világban 2000 egységet tesz meg; nem ragadhat be,
   nem futhat bele fába, a követő barátok nem tűnhetnek el, és a világ széle nem látszhat. Ellenőrzi a koppintást,

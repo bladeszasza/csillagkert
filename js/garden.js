@@ -8,6 +8,8 @@ import { friendById, friendsFor, flowerSpot, MAX_FLOWERS, FEED_SPOT, FEED_GATE, 
 import { animalVoice } from './sounds.js';
 import { merge } from './geo.js';
 import { buildPlaces } from './places3d.js';
+import { DECOR, giftById } from './gifts.js';
+import { buildDecorGeo, createFriendTree } from './decor3d.js';
 
 const FOV = 50, TAN = Math.tan(FOV * Math.PI / 360);
 const SCALE = 1.35;                                  // a barátok mérete a kertben
@@ -96,6 +98,33 @@ export function createGarden(canvas) {
     setFlower(i, animate ? 0.01 : 1);
     if (animate) growing.push({ i, born: performance.now() });
     stems.count = petals.count = i + 1;
+  }
+
+  // --- ajándékok a kertben: kerti díszek (tópart, tanya), aranyvirágok és a szívekből növő Barátság fája ---
+  const decorMat = new THREE.MeshLambertMaterial({ vertexColors: true }), decor = new Map(), popping = [];
+  const tree = createFriendTree(scene);
+  const GOLD_MAX = 60;
+  const goldStems = new THREE.InstancedMesh(stemGeo, swaying(new THREE.MeshLambertMaterial({ vertexColors: true })), GOLD_MAX);
+  const goldPetals = new THREE.InstancedMesh(petalGeo, swaying(new THREE.MeshLambertMaterial({ color: 0xffc21a, emissive: 0x6a4300 })), GOLD_MAX);
+  goldStems.count = goldPetals.count = 0; goldStems.frustumCulled = goldPetals.frustumCulled = false; scene.add(goldStems, goldPetals);
+  function addDecor(id, animate) {
+    const g = giftById(id); if (!g?.spot || decor.has(id)) return;
+    const geo = buildDecorGeo(id); if (!geo) return;
+    const m = new THREE.Mesh(geo, decorMat), [, x, z, rot, k = 1] = g.spot;
+    m.position.set(x, 0, z); m.rotation.y = rot || 0; m.frustumCulled = false; m.userData.k = k;
+    m.scale.setScalar(animate ? 0.01 : k); scene.add(m); decor.set(id, m);
+    if (animate) popping.push({ m, t0: performance.now() + 500 });
+  }
+  // owned: a megszerzett ajándékok; hearts: szívek; gold: aranyvirágok; animate: az új díszek és szívek kipattannak
+  function setGifts({ owned = [], hearts = 0, gold = 0 } = {}, animate = false) {
+    for (const id of owned) if (giftById(id)?.kind === 'garden') addDecor(id, animate);
+    tree.setHearts(hearts, animate);
+    const n = Math.min(GOLD_MAX, gold | 0);
+    for (let k = goldPetals.count; k < n; k++) {
+      const p = flowerSpot(MAX_FLOWERS + k * 3), s = 1.25;
+      m4.makeScale(s, s, s).setPosition(p.x, 0, p.z); goldStems.setMatrixAt(k, m4); goldPetals.setMatrixAt(k, m4);
+    }
+    goldStems.count = goldPetals.count = n; goldStems.instanceMatrix.needsUpdate = goldPetals.instanceMatrix.needsUpdate = true;
   }
 
   // --- szívek (koppintásra és evés után): rajzolt szív, nem emoji ---
@@ -273,6 +302,12 @@ export function createGarden(canvas) {
       if (age >= 1) { setFlower(g.i, 1); growing.splice(k, 1); }
       else setFlower(g.i, Math.max(0.01, 1 - Math.pow(1 - age, 3)) * (1 + Math.sin(age * 3.14) * 0.3));
     }
+    for (let k = popping.length - 1; k >= 0; k--) {                // új kerti dísz: kipattan a helyén
+      const p = popping[k], a = (now - p.t0) / 700;
+      if (a < 0) continue;
+      if (a >= 1) { p.m.scale.setScalar(p.m.userData.k); popping.splice(k, 1); } else p.m.scale.setScalar(p.m.userData.k * Math.max(0.01, Math.sin(a * Math.PI / 2) * (1 + Math.sin(a * Math.PI) * 0.25)));
+    }
+    tree.update(now);
     for (const h of hearts) {
       const k = (now - h.t0) / 1300;
       if (k < 0 || k > 1) { h.s.visible = false; continue; }
@@ -373,17 +408,20 @@ export function createGarden(canvas) {
 
   // A kert szélső részei, ahol már lakik valaki: [{ id, x, friends: [azonosítók] }] – ehhez jelennek meg az átsikló gombok
   function areas() {
-    return AREAS.map(r => ({ id: r.id, x: r.x, friends: [...actors.values()].filter(a => a.def.area === r.id).map(a => a.id) })).filter(r => r.friends.length);
+    return AREAS.map(r => ({ id: r.id, x: r.x, friends: [...actors.values()].filter(a => a.def.area === r.id).map(a => a.id), decor: [...decor.keys()].filter(id => giftById(id).spot[0] === r.id) }))
+      .filter(r => r.friends.length || r.decor.length);          // ahol már lakik valaki, vagy kerti dísz áll
   }
 
   return {
-    setStars, beginFeed, endFeed, places, setDay, goTo, areas,
+    setStars, setGifts, beginFeed, endFeed, places, setDay, goTo, areas,
+    decorArea: id => giftById(id)?.spot?.[0] || null,
     area: () => pan.area,
     cheer() { const now = performance.now(); let k = 0; actors.forEach(a => { a.hop = now + 900 + (k++ % 3) * 70; }); },   // új csillag: mindenki ugrik egyet
     pause(p) { paused = !!p; if (!paused && !raf) raf = requestAnimationFrame(loop); },    // tesztekhez és hibakereséshez: rajzolási hívások, lakók, virágok, a barátok helye a képernyőn
     debug() {
       draw(performance.now());
-      return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, flowers: flowerCount, friends: [...actors.keys()], zoom: zoomAt(performance.now()), pan: panAt(performance.now()), feeding: feeding && !feeding.done ? feeding.a.id : null,
+      return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, flowers: flowerCount, decor: [...decor.keys()], treeHearts: tree.count(), treeScale: tree.group.scale.x, gold: goldPetals.count,
+        decorScreen: Object.fromEntries([...decor].map(([id, m]) => { v3.set(m.position.x, 0.8, m.position.z).project(camera); return [id, { x: (v3.x + 1) / 2 * W, y: (1 - v3.y) / 2 * H }]; })), friends: [...actors.keys()], zoom: zoomAt(performance.now()), pan: panAt(performance.now()), feeding: feeding && !feeding.done ? feeding.a.id : null,
         awake: Object.fromEntries([...actors.values()].filter(a => a.def.sleepy).map(a => [a.id, a.g.userData.eyes[0].scale.y > 0.5])),
         screen: Object.fromEntries([...actors.values()].map(a => [a.id, screenOf(a)])) };
     },
