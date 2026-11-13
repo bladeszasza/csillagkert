@@ -460,14 +460,13 @@ button { touch-action: none; }
 #home.map .station small { display: none; }
 #switch { top: auto; right: 16px; bottom: 16px; }
 
-/* --- M2b: kertrészek – átsikló gombok a tópartra (balra) és a tanyára (jobbra); ott a térkép jelei elhalványulnak --- */
+/* --- M2b: kertrészek – átsikló gombok a tópartra (balra) és a tanyára (jobbra); a térkép jelei ott is koppinthatók --- */
 .area-btn { position: fixed; bottom: max(16px, env(safe-area-inset-bottom)); width: 108px; height: 72px; border-radius: 36px; display: flex; align-items: center; justify-content: center; gap: 4px;
   font-size: 38px; line-height: 1; background: rgba(255,255,255,.95); box-shadow: 0 5px 0 #cdb8f2, 0 10px 18px rgba(60,20,120,.25); z-index: 11; transition: transform .1s; }
 .area-btn b { font-size: 44px; color: var(--purple); margin-top: -6px; }
 .area-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #cdb8f2; }
 #go-left { left: 68px; } #go-right { right: 88px; }
 #home .station { transition: transform .1s, opacity .35s; }
-#home.away .station { opacity: 0; pointer-events: none; }
 .who-card small { max-width: 250px; line-height: 1.25; }
 
 /* --- Generált feladatok (M4): kérdés-kép, csoportok, számsor, számkártya --- */

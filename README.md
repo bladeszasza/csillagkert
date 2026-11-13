@@ -14,6 +14,9 @@ Feladatok → csillagok → jutalomjáték. Hibázásért nincs büntetés: szel
   jobbra a tanya (tyúk, unikornis, malac, bárány, póni, tehén) kerítéssel, pajtával, szénabálával és szivárvánnyal.
   Alul a két szélső gomb (rajta az ottani első barát képe) viszi át oda a kamerát, a 🐱 gomb hozza vissza a kert közepére.
   Ha valaki a tópartra vagy a tanyára érkezik, a kamera odasiklik megnézni, aztán magától visszatér.
+  A feladatok jelei (a szülő kérésére) a tópartról és a tanyáról is elérhetők: a helyükön maradnak, és onnan is egy koppintással
+  indul a feladat. Fekvő és álló képernyőn mérve egyik jel sem takar gombot, és egyik barátot sem (legfeljebb a koppintási
+  területe 7%-át), így a barátok is koppinthatók maradnak.
 - **A kert a térkép:** az állomások helyek a kertben (ceruzatorony, házikó, almafa, földgömb, robot, festőállvány,
   számolókockák, harangok, piknik…), a jelükre koppintva lehet odamenni. A „Tovább" gomb megmaradt annak, aki nem akar választani.
 - **Rozi, a robot** beszél (böngésző-hang), bemutatkozik, ő osztja a csillagokat; az arca a hangulathoz igazodik.

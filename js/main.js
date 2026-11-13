@@ -102,13 +102,12 @@ $('hearts').addEventListener('click', () => { bump($('hearts')); say('A szíveke
 
 // --- Kertrészek: a tópart (balra) és a tanya (jobbra) lakóihoz egy-egy gomb visz, a kamera átsiklik ---
 // A gombon az ottani első barát képe van (olvasni nem kell); a szélső részen a másik oldali 🐱 gomb visz vissza a kert közepére.
-let areaTimer = 0, awayTimer = 0;
+// A térkép jelei a szélső részeken is a helyükön maradnak és koppinthatók (a szülő kérésére): ott a kertrész barátai
+// fölött lebegnek, de egyiket sem takarják el (fekvő és álló képernyőn mérve, lásd README).
+let areaTimer = 0;
 function goArea(id = null) {
-  clearTimeout(areaTimer); clearTimeout(awayTimer);
-  const ms = garden?.goTo(id) || 0;
-  // a térkép jelei induláskor eltűnnek, visszafelé csak a siklás végén jönnek elő (ne lebegjenek rossz tárgyak fölött)
-  if (garden?.area?.()) $('home').classList.add('away');
-  else awayTimer = setTimeout(() => $('home').classList.remove('away'), Math.max(0, ms - 300));
+  clearTimeout(areaTimer);
+  garden?.goTo(id);
   renderAreaButtons();
 }
 function renderAreaButtons() {

@@ -205,6 +205,13 @@ async function testGarden() {
         if (!since(n).some(x => x.kind === VOICE[id])) mute.push(id);
       }
       ok(`kertrész (${area.id}): minden lakó a képen van, a gombsor fölött`, bad.length === 0 && area.friends.length >= 6, bad.join(' · ') || area.friends.join(', '));
+      // a térkép jelei itt is a helyükön maradnak (66 px-es körök): egyik lakót sem takarhatják el (koppintható marad)
+      const cover = [];
+      for (const [k, p] of Object.entries(garden.places() || {})) for (const id of area.friends) {
+        const r = g.screen[id], ox = Math.max(0, Math.min(p.x + 33, r.right) - Math.max(p.x - 33, r.left)), oy = Math.max(0, Math.min(p.y + 33, r.bottom) - Math.max(p.y - 33, r.top));
+        const part = ox * oy / ((r.right - r.left) * (r.bottom - r.top)); if (part > 0.15) cover.push(`${k}×${id} ${Math.round(part * 100)}%`);
+      }
+      ok(`kertrész (${area.id}): a feladatok jelei itt is koppinthatók, és egyik lakót sem takarják el`, cover.length === 0, cover.join(', ') || 'egyik sem');
       ok(`kertrész (${area.id}): koppintásra mindenki a saját hangján szól`, mute.length === 0, mute.length ? `néma: ${mute.join(', ')}` : 'mind megszólalt');
     }
     const owlAfter = garden.debug().awake.owl;

@@ -31,7 +31,7 @@ export const FRIENDS = [
 ];
 export const friendById = id => FRIENDS.find(f => f.id === id);
 
-// A kert két szélső része: ide az alsó sarkokban lévő gombokkal lehet átsiklani (a térkép jelei közben elbújnak).
+// A kert két szélső része: ide az alsó sarkokban lévő gombokkal lehet átsiklani (a térkép jelei közben is koppinthatók).
 // x: a kamera vízszintes eltolása; a zugok úgy vannak, hogy fekvő és álló képernyőn is mind látsszon, egymást nem takarva.
 export const AREAS = [
   { id: 'to', name: 'tópart', x: -17 },
