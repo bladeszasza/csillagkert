@@ -70,7 +70,7 @@ Az M4 mérföldkő kész: **mind a 8 generálható állomás** sablonokból kés
 ## Hang
 
 - Minden játékhang egyetlen közös hangmotoron megy át (`js/audio.js`): hangerő, kompresszor, torzítás elleni védelem.
-- A beszéd és a játékhangok hangereje külön állítható a szülői sarokban (bal alsó ⚙ gomb, 3 mp-ig nyomva tartva).
+- A beszéd és a játékhangok hangereje külön állítható a szülői sarokban (bal alsó fogaskerék gomb, 3 mp-ig nyomva tartva).
 - Ha a zene nem szól, de Rozi beszél: kapcsold ki az iPad néma módját, és hangosítsd fel.
 - Ha nincs magyar hang: Beállítások → Kisegítő lehetőségek → Felolvasott tartalom → Hangok → Magyar.
 
@@ -191,7 +191,7 @@ nem a belépéskor:
 ## Az én unikornisom
 
 - **3D öltöztető** (`js/rewards/dressup.js`): a gyerek saját unikornisa áll a választott háttér előtt. Ujjal jobbra-balra
-  húzva forgatható; ha nem nyúlnak hozzá, lassan körbefordul. A 🔍 gomb közelebb hozza a fejét (a böngésző nagyítása
+  húzva forgatható; ha nem nyúlnak hozzá, lassan körbefordul. A nagyító gomb közelebb hozza a fejét (a böngésző nagyítása
   továbbra is tiltva). Minden választás rögtön rajta van, egy ugrással és integetéssel (a szárnyas unikornis csapkod).
 - **Választható:** testszín és minta (pötty, csík, csillag, szív), a sörény színe és fazonja, a szarv színe és formája
   (egyenes, spirál), szárny, fejdísz (korona, virágkoszorú, masni, varázssüveg), szem (napszemüveg, szívszem),
@@ -206,7 +206,7 @@ nem a belépéskor:
   (külön repó, külön feltöltéssel) ebből teszi a választható unikornisok elejére „Az én unikornisom"-at, ha az adat
   ellenőrzött; ha nincs vagy hibás, minden a régi. A régebbi Sparkhorn-változat nem olvassa, a Csillagkert vele is működik.
 - **Mérések:** az alap unikornis 34 alkatrész és kb. 5,3 ezer háromszög, a legnehezebb öltözet 101 alkatrész és kb. 9,3 ezer;
-  az öltöztető 7–9 rajzolási hívás. A teljes kert (a virágplafonig, minden dísszel) a legnehezebb öltözettel kb. 242 ezer háromszög és 45 rajzolási hívás
+  az öltöztető 7–9 rajzolási hívás. A teljes kert (a virágplafonig, minden dísszel) a legnehezebb öltözettel kb. 242 ezer háromszög és 46 rajzolási hívás
   (saját határ: 250 ezer).
 - **Eltérések a tervtől:**
   - A saját unikornis a kertbe továbbra is 90 csillagnál érkezik (a terv küszöbe); addig a játékokban és az öltöztetőben látszik.
@@ -216,10 +216,48 @@ nem a belépéskor:
     a meglévő csoportok mind 3D-ben működnek.
 - **A gyerek neve:** Rozi kb. feleannyiszor mondja, mint korábban (a szülő kérésére; `NAME_RATE` a `js/lines.js`-ben).
 
+## Megjelenés: ikonok, betű, gombok, 3D
+
+- **Saját ikonok** (`js/icons.js`, galéria: `tests/icons.html`): 74 egyforma stílusú rajz (tinta-kontúr, pasztell kitöltés):
+  a 13 állomás jele, a 8 jutalomjáték csempéje, az öltöztető 8 füle és minden választható eleme (minták, sörény- és
+  szarvformák, szárnyak, fejdíszek, szemek, nyakdíszek, hátterek; a színek színes körként, a matricák a saját rajzukkal),
+  a gombok (hangszóró, vissza, haza, bezárás, fogaskerék, nagyító, ugrás) és a Barátom eszközei. Minden eszközön ugyanúgy néz ki (az emoji
+  eszközönként más). A Barátom „másik barát" gombja két barát-fej, nem ugyanaz a nyíl, mint a kilépés.
+- **Betű:** Nunito (SIL Open Font License 1.1, `fonts/OFL.txt`), a repóban tárolva, két részhalmaz (latin és latin-ext,
+  együtt kb. 73 KB), nincs külső kérés. A terv a Fredokát javasolta, de abból mérhetően hiányzik az ő, ű, Ő, Ű
+  (tartalék betűvel jelent volna meg), ezért Nunito lett. A számjegyek és a betűk alakja (1, 4, 7, 9, I, J, G, a, g)
+  ugyanaz, mint a korábbi betűé, csak kerekebb, ezért a tananyag betűi és a vásznon rajzolt számok is erre álltak át.
+  A sormagasság a régi betűéhez igazítva (1,2), így egyik feladat sem lett magasabb: mind a 311 mintafeladatot (minden
+  sablon minden szintje és a régi feladatok) fekvő és álló iPad-méretben lemértük, levágott felirat nincs.
+- **Gombok:** egységes, rugós nyomás (lenyomva kicsit összemegy, elengedve visszapattan; `js/motion.js`). Minden
+  gomb legalább 56 px: a kezdő-, fő- és jutalomképernyőn, mind a 311 mintafeladatban és minden jutalomjátékban, fekvő
+  és álló iPad-méretben mérve. A kijelző szélén a gombok kihagyják a biztonságos sávot (home-sáv, állapotsor).
+- **Kevesebb mozgás:** szülői sarok → „Mozgás a képernyőn" (a rendszer beállítása szerint / teljes / kevesebb). Bekapcsolva
+  a végtelenített díszmozgások (ugrálás, pislogó fények, a húzást mutató kéz) egyszer futnak le vagy állnak, a gombok
+  nem rugóznak, és az öltöztető unikornisa nem forog magától. Ami jelzés, az állóképként marad: a segítségként felragyogó
+  jó válasz és a szóló harang arany keretet kap, Rozi szája beszéd közben mozog. A visszajelzések (csillag, szív, ajándék)
+  és a 3D-figurák élete (séta, pislogás) megmaradnak. Az eszköz beállítása, nem a gyereké.
+- **Közös 3D-megjelenés** (`js/three/look.js`): minden jelenet ugyanazt a fényt (ég, nap, erősség) és anyagot kapja; csak
+  a föld felől visszavert szín más (rét, felhő, lila pálya). A kertben minden lakó alatt puha foltárnyék van (egyetlen közös
+  hálóban, egy rajzolási hívás).
+- **Automatikus minőség:** ha a képkocka-idő tartósan (3 mp-ig) 20 ms fölött van, a felbontás egy lépcsővel csökken
+  (2 → 1,75 → 1,5 → 1,25 → 1). A kiugró képkockák (pl. háttérbe tett lap) nem számítanak. Minden lépcső után 2 mp-ig
+  méri, segített-e: ha a képkocka nem lett legalább 15%-kal rövidebb (a lassúság oka nem a felbontás, hanem pl. egy 30 fps-es
+  energiatakarékos mód), visszalép, és többé nem nyúl hozzá; különben nem ugrál a felbontás. Mind az öt 3D-vászon ugyanazt
+  a figyelőt használja. 2-es pixelarányú (iPad-szerű) kijelzőt utánozva kipróbálva: a kép felbontása csökken, a mérete és a
+  koppintási helyek nem változnak. A valódi iPades viselkedést a szülő próbája mutatja meg.
+- **Eltérések a tervtől:**
+  - Toon-árnyalás nincs: ugyanazokon a jeleneteken kipróbálva a fehér és pasztell figurák szürkévé fakultak (a fehér
+    unikornis bézs lett), ezért maradt a matt anyag. Kontúr sincs, mert megduplázná a háromszögeket.
+  - Továbbra is emoji: a feladatok képei és jelei (ételek, tárgyak, állatok, a robotpálya parancsai, a kérdés melletti kis
+    jel), a Barátom állatválasztója, a hami-adagoló számlálói, a szülői sarok gombjai és néhány visszajelzés (🎁, ❤️). A saját
+    rajz egyelőre a felület állandó jeleire és az öltöztetőre készült.
+  - A foltárnyék csak a kertben van (sík talaj); a hullámos terepű szabad futásban és a versenyen nincs.
+
 ## Több gyerek, mentés
 
 - **Mindenkinek saját világa van:** külön csillagok, kert, barátok, látott feladatok, ruhatár és beállítások.
-  Új gyereket a szülői sarokban lehet felvenni (bal alsó ⚙ gomb, 3 mp-ig nyomva tartva → „＋ Új gyerek").
+  Új gyereket a szülői sarokban lehet felvenni (bal alsó fogaskerék gomb, 3 mp-ig nyomva tartva → „＋ Új gyerek").
 - **Ki játszik?** Ha több gyerek van, induláskor mindenki a saját jelére koppint (olvasni nem kell hozzá).
   Játék közben a jobb alsó, jelet mutató gombbal lehet átadni a helyet a testvérnek.
 - **A korábbi, egyetlen mentés** az első gyerek lesz, semmi nem vész el belőle; a régi mentés biztonsági másolatként megmarad.
@@ -247,6 +285,10 @@ ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba ment
 - Az én unikornisom: `node --test tests/avatar.test.mjs` (minden választható elem látszik az unikornison vagy a háttéren,
   a meg nem nyert ajándék lekerül, a talaján áll és elfér, a legnehezebb öltözet is a háromszög-kereten belül, a Sparkhorn
   csak színeket kap, a Barátom mondatai magyarosak).
+- Ikonok és betű: `node --test tests/icons.test.mjs` (minden állomásnak, játéknak, öltöztető-fülnek és öltöztető-elemnek saját rajza van,
+  a rajzokban nincs külső hivatkozás, azonosító vagy szöveg, a betűfájlok helyben vannak, licenccel).
+- Automatikus minőség: `node --test tests/quality.test.mjs` (60 fps mellett nem csökken, tartós akadozásnál lépcsőnként,
+  ha a lépcső nem segít, visszalép és megáll, a kiugró képkockák nem számítanak, 1 alá nem megy).
 - Ajándékok és szívek: `node --test tests/economy.test.mjs` (a régi mentés átvétele, a létra sorrendje, aranyvirág a végén,
   20 csillagonként egy ajándék, jutalomkörönként egy ajándék, a szív-korlátok, Rozi ajándék-mondatai számok nélkül).
 - Ütemező: `node --test tests/scheduler.test.mjs` (300 feladatos szimuláció ismétlés nélkül, 90 szimulált
@@ -266,13 +308,16 @@ ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba ment
 - Jutalomjátékok (a füstteszt része): mindegyik elindul és kilép; kilépés után nem marad 3D-jelenet, hang-kontextus,
   időzítő és beszéd; a hangjaik a közös hangmotoron szólnak. A saját unikornis ruhája látszik a futásban, a versenyen,
   a Barátomban és a kertben; az öltöztető ujjal forgatható, nagyítható, és választásra rögtön átöltözik; a Sparkhorn-kulcsba
-  csak színek kerülnek.
+  csak színek kerülnek. A gombok saját ikont mutatnak és legalább 56 px-esek.
+- Megjelenés (a füstteszt része): a Nunito betöltődik, és az ő/ű is a sajátja; a „kevesebb mozgás" leállítja a díszmozgást
+  és a rugózást, a jelzések állóképként maradnak; a kertben minden lakó alatt van árnyék, és a felbontást a minőség-figyelő
+  adja; minden jutalomjátékban minden gomb legalább 56 px.
 - A jutalomidő vége: `node --test tests/reward-timer.test.mjs` (figyelmeztetés, a futó verseny kivárása, türelmi idő).
 - Állatgaléria: `http://localhost:8080/tests/characters.html` (`?kind=cow`, `?page=2`, `?wave=1`, `?side=1`) – minden faj
   egyenként, a mért és a táblázatban álló magassággal.
 - A barátok egyetlen közös, példányosított hálócsomagból rajzolódnak (`js/three/characters.js`): a teljes kert
   19 baráttal 12–30 rajzolási hívás. Háromszögből 300 csillagnál (300 virággal) kb. 194 ezer van; a tervben szereplő
   kb. 150 ezres keretet ez a sok virág miatt átlépi. A teljes kert (a virágplafonig, minden kerti dísszel, a Barátság fájával
-  és aranyvirágokkal) kb. 239 ezer háromszög és 45 rajzolási hívás; a saját unikornis legnehezebb öltözetével kb. 242 ezer.
+  és aranyvirágokkal) kb. 239 ezer háromszög és 46 rajzolási hívás (ebből egy a foltárnyékoké); a saját unikornis legnehezebb öltözetével kb. 242 ezer.
   A teszt saját határa 250 ezer, ez alatt már kevés a hely (új kertrészhez a nem látszó részeket el kell rejteni);
   az iPades próbán érdemes figyelni, nem lassul-e.

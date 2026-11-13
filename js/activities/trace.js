@@ -61,7 +61,7 @@ export function run(container, item) {
     }
     function badge(p, num, active) {
       gctx.fillStyle = active ? '#4cc38a' : '#d9c8fb'; gctx.beginPath(); gctx.arc(p.x, p.y, Math.max(13, tolPx * 0.55), 0, 7); gctx.fill();
-      if (n > 1) { gctx.fillStyle = active ? '#fff' : '#6b4bb5'; gctx.font = `800 ${Math.round(Math.max(13, tolPx * 0.55) * 1.1)}px system-ui, sans-serif`; gctx.textAlign = 'center'; gctx.textBaseline = 'middle'; gctx.fillText(String(num), p.x, p.y + 1); }
+      if (n > 1) { gctx.fillStyle = active ? '#fff' : '#6b4bb5'; gctx.font = `800 ${Math.round(Math.max(13, tolPx * 0.55) * 1.1)}px Nunito, system-ui, sans-serif`; gctx.textAlign = 'center'; gctx.textBaseline = 'middle'; gctx.fillText(String(num), p.x, p.y + 1); }
     }
     function draw() {
       const r = guide.getBoundingClientRect();

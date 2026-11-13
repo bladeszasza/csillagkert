@@ -111,6 +111,8 @@ export const backdropSvg = s => `<svg xmlns="http://www.w3.org/2000/svg" viewBox
 // A matricák az öltöztetőben: a nézethez mért helyen (százalékban), így álló és fekvő képernyőn is mind látszik,
 // és nem kerülnek a vissza- és a nagyító gomb alá.
 const STK_SPOTS = [[12, 32], [88, 16], [10, 66], [88, 56]];
+// Egy matrica kis ikonként (az öltöztető választógombján ugyanaz a rajz, ami a képre kerül)
+export const stickerSvg = id => STK[id] ? `<svg class="ico" viewBox="-30 -30 60 60" width="1em" height="1em" aria-hidden="true">${STK[id](0, 0)}</svg>` : '';
 export const stickerLayer = s => s.stickers.map((id, i) => {
   const [x, y] = STK_SPOTS[i % STK_SPOTS.length];
   return STK[id] ? `<svg class="du-stk" style="left:${x}%;top:${y}%" viewBox="-30 -30 60 60" aria-hidden="true">${STK[id](0, 0)}</svg>` : '';

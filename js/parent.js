@@ -4,6 +4,8 @@ import { progress, MARKS } from './progress.js';
 import { say, hasHungarianVoice, listHuVoices, chooseVoice, currentVoiceName } from './voice.js';
 import { STATIONS } from './curriculum.js';
 import { unlock, getLevel, setLevel, playNote, isRunning } from './audio.js';
+import { calmChoice, setCalm } from './motion.js';
+import { icon } from './icons.js';
 
 // restart(profil-azonosító?): újratölti az oldalt; ha kap azonosítót, azzal a gyerekkel indul
 export function setupParent(restart) {
@@ -11,7 +13,7 @@ export function setupParent(restart) {
   const btn = $('parent-btn'), panel = $('parent');
   const name = $('p-name'), minutes = $('p-minutes'), perReward = $('p-per'), age = $('p-age'), mark = $('p-mark');
   const voiceInfo = $('p-voice'), voiceSel = $('p-voicesel'), stats = $('p-stats');
-  const volume = $('p-volume'), speech = $('p-speech'), errors = $('p-errors');
+  const volume = $('p-volume'), speech = $('p-speech'), errors = $('p-errors'), calmSel = $('p-calm');
   const kids = $('p-kids'), del = $('p-del'), newBox = $('p-new'), file = $('p-file');
   let timer = null;
   mark.textContent = ''; for (const m of MARKS) { const o = document.createElement('option'); o.value = o.textContent = m; mark.append(o); }
@@ -38,6 +40,7 @@ export function setupParent(restart) {
     perReward.value = String(p.perReward || 10);
     volume.value = String(getLevel());
     speech.value = String(dev.speechVol ?? 1);
+    const cc = calmChoice(); calmSel.value = cc === null ? '' : cc ? '1' : '0';
     const heard = p.heardBell === false ? ' A legutóbbi zenei hallás-próbánál a gyerek azt jelezte, hogy NEM hallja a csengőt.' : '';
     voiceInfo.textContent = (hasHungarianVoice()
       ? `✅ Magyar felolvasóhang: ${currentVoiceName()}.`
@@ -46,7 +49,7 @@ export function setupParent(restart) {
     voiceSel.parentElement.hidden = voices.length < 1;
     voiceSel.textContent = ''; for (const v of voices) { const o = document.createElement('option'); o.value = v.voiceURI; o.textContent = v.name; voiceSel.append(o); }
     if (dev.voiceURI) voiceSel.value = dev.voiceURI;
-    stats.innerHTML = `<b>Összes csillag: ${p.total || 0}</b>` + STATIONS.map(s => `<div class="stat"><span>${s.emoji} ${s.name}</span><b>${p.done[s.id] || 0}</b></div>`).join('');
+    stats.innerHTML = `<b>Összes csillag: ${p.total || 0}</b>` + STATIONS.map(s => `<div class="stat"><span>${icon('st-' + s.id) || s.emoji} ${s.name}</span><b>${p.done[s.id] || 0}</b></div>`).join('');
     let log = [];
     try { log = JSON.parse(localStorage.getItem('csillagkert_errors') || '[]'); } catch (e) {}
     errors.textContent = log.length ? `Hibanapló (${log.length}): ` + log.slice(-3).map(x => `${x.where}: ${x.msg}`).join(' · ') : '';
@@ -87,6 +90,7 @@ export function setupParent(restart) {
 
   voiceSel.addEventListener('change', () => chooseVoice(voiceSel.value));
   volume.addEventListener('change', () => { setLevel(+volume.value); unlock(); playNote(784, { inst: 'bell', dur: 0.8 }); });
+  calmSel.addEventListener('change', () => setCalm(calmSel.value === '' ? null : calmSel.value === '1'));
   speech.addEventListener('change', () => { progress.device.set({ speechVol: +speech.value }); say('Így beszélek.', { remember: false }); });
   // Hangpróba: előbb Rozi beszél, utána megszólal a csengő – így összehasonlítható a kettő hangereje
   $('p-test').addEventListener('click', async () => {

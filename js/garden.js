@@ -10,6 +10,7 @@ import { merge } from './geo.js';
 import { buildPlaces } from './places3d.js';
 import { DECOR, giftById } from './gifts.js';
 import { buildDecorGeo, createFriendTree } from './decor3d.js';
+import { mat as lookMat, addLights, createQuality } from './three/look.js';
 
 const FOV = 50, TAN = Math.tan(FOV * Math.PI / 360);
 const SCALE = 1.35;                                  // a barátok mérete a kertben
@@ -21,17 +22,16 @@ const angDiff = (to, from) => { let d = (to - from) % (Math.PI * 2); if (d > Mat
 
 export function createGarden(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  const quality = createQuality(renderer, { max: 2 });          // a felbontás gazdája: tartós akadozásnál lépcsőzetesen csökkenti
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(SKY);
   scene.fog = new THREE.Fog(SKY, 14, 34);
   const fogHome = [14, 34];
   const camera = new THREE.PerspectiveCamera(FOV, 1, 0.1, 100);
 
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xcfe8b8, 1.5));
-  const sun = new THREE.DirectionalLight(0xfff2d0, 1.6); sun.position.set(4, 8, 5); scene.add(sun);
+  const { sun } = addLights(scene, { ground: 0xcfe8b8, sunAt: [4, 8, 5] });
 
-  const ground = new THREE.Mesh(new THREE.CylinderGeometry(14, 14, 0.6, 64), new THREE.MeshLambertMaterial({ color: 0xa8e6a0 }));
+  const ground = new THREE.Mesh(new THREE.CylinderGeometry(14, 14, 0.6, 64), lookMat({ color: 0xa8e6a0 }));
   ground.position.y = -0.3; ground.scale.x = 1.9; scene.add(ground);           // széles rét: balra a tópart, jobbra a tanya
 
   // Az állomások helyei (ceruzatorony, házikó, harangos pavilon…) és a háttér fái: egyetlen háló, egyetlen rajzolási hívás
@@ -54,7 +54,7 @@ export function createGarden(canvas) {
     cloudX.push(-12 + i * 5); cloudY.push(5 + Math.random() * 2); cloudZ.push(-8 - Math.random() * 4);
     for (let j = 0; j < 3; j++) puffs.push({ c: i, ox: j * 0.8 - 0.8, oy: Math.random() * 0.3, r: 0.7 + Math.random() * 0.4 });
   }
-  const clouds = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 12, 10), new THREE.MeshLambertMaterial({ color: 0xffffff }), puffs.length);
+  const clouds = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 12, 10), lookMat({ color: 0xffffff }), puffs.length);
   clouds.frustumCulled = false; scene.add(clouds);
   function placeClouds() {
     puffs.forEach((p, k) => { m4.makeScale(p.r, p.r, p.r).setPosition(cloudX[p.c] + p.ox, cloudY[p.c] + p.oy, cloudZ[p.c]); clouds.setMatrixAt(k, m4); });
@@ -81,8 +81,8 @@ export function createGarden(canvas) {
     };
     return mat;
   };
-  const stems = new THREE.InstancedMesh(stemGeo, swaying(new THREE.MeshLambertMaterial({ vertexColors: true })), MAX_FLOWERS);
-  const petals = new THREE.InstancedMesh(petalGeo, swaying(new THREE.MeshLambertMaterial({ color: 0xffffff })), MAX_FLOWERS);
+  const stems = new THREE.InstancedMesh(stemGeo, swaying(lookMat({ vertexColors: true })), MAX_FLOWERS);
+  const petals = new THREE.InstancedMesh(petalGeo, swaying(lookMat({ color: 0xffffff })), MAX_FLOWERS);
   stems.count = petals.count = 0; stems.frustumCulled = petals.frustumCulled = false; scene.add(stems, petals);
   const colors = [0xff8fc8, 0xffcf3f, 0x8e5be8, 0x7fe0c0, 0xff9f6b].map(c => new THREE.Color(c));
   const growing = [];
@@ -101,11 +101,11 @@ export function createGarden(canvas) {
   }
 
   // --- ajándékok a kertben: kerti díszek (tópart, tanya), aranyvirágok és a szívekből növő Barátság fája ---
-  const decorMat = new THREE.MeshLambertMaterial({ vertexColors: true }), decor = new Map(), popping = [];
+  const decorMat = lookMat({ vertexColors: true }), decor = new Map(), popping = [];
   const tree = createFriendTree(scene);
   const GOLD_MAX = 60;
-  const goldStems = new THREE.InstancedMesh(stemGeo, swaying(new THREE.MeshLambertMaterial({ vertexColors: true })), GOLD_MAX);
-  const goldPetals = new THREE.InstancedMesh(petalGeo, swaying(new THREE.MeshLambertMaterial({ color: 0xffc21a, emissive: 0x6a4300 })), GOLD_MAX);
+  const goldStems = new THREE.InstancedMesh(stemGeo, swaying(lookMat({ vertexColors: true })), GOLD_MAX);
+  const goldPetals = new THREE.InstancedMesh(petalGeo, swaying(lookMat({ color: 0xffc21a, emissive: 0x6a4300 })), GOLD_MAX);
   goldStems.count = goldPetals.count = 0; goldStems.frustumCulled = goldPetals.frustumCulled = false; scene.add(goldStems, goldPetals);
   function addDecor(id, animate) {
     const g = giftById(id); if (!g?.spot || decor.has(id)) return;
@@ -146,14 +146,14 @@ export function createGarden(canvas) {
   }
 
   // --- a kert lakói: a cica saját modell, a többi barát alkatrészei közös, példányosított hálókban (pár rajzolási hívás) ---
-  const actors = new Map(), crowd = createCharacterBatch(scene);
+  const actors = new Map(), crowd = createCharacterBatch(scene, { shadows: true });
   let avatarCfg = null;                                 // a saját unikornis ruhája (js/avatar.js); setAvatar() állítja
   function spawn(id, enter) {
     if (actors.has(id)) return actors.get(id);
     const def = friendById(id); if (!def) return null;
     const isCat = id === 'cat', g = isCat ? makeGardenCat() : makeCharacter(id, id === 'unicorn' ? avatarCfg : undefined), size = isCat ? 1 : SCALE;
     g.scale.setScalar(size);
-    if (!isCat) crowd.add(g);
+    if (!isCat) crowd.add(g); else crowd.shadow(g, 0.8, 0.66);
     const u = g.userData, now = performance.now();
     const a = { id, def, g, isCat, size, face0: isCat ? 0 : Math.PI, x: def.home[0], z: def.home[1], heading: isCat ? 0 : Math.PI, want: isCat ? 0 : Math.PI,
       state: 'idle', move: null, until: now + rnd(1500, 5000), seed: rnd(0, 9), last: now, hop: 0, chew: 0, nod: 0, turn: 0, turnSide: 1, wave: 0,
@@ -317,7 +317,7 @@ export function createGarden(canvas) {
     renderer.render(scene, camera);
   }
   let paused = false, raf = 0;
-  function loop(now) { raf = 0; if (paused) return; draw(now); raf = requestAnimationFrame(loop); }
+  function loop(now) { raf = 0; if (paused) return; quality.tick(); draw(now); raf = requestAnimationFrame(loop); }
 
   window.addEventListener('resize', resize); window.addEventListener('orientationchange', () => setTimeout(resize, 250));
   if ('ResizeObserver' in window) new ResizeObserver(resize).observe(canvas);
@@ -430,10 +430,11 @@ export function createGarden(canvas) {
     decorArea: id => giftById(id)?.spot?.[0] || null,
     area: () => pan.area,
     cheer() { const now = performance.now(); let k = 0; actors.forEach(a => { a.hop = now + 900 + (k++ % 3) * 70; }); },   // új csillag: mindenki ugrik egyet
-    pause(p) { paused = !!p; if (!paused && !raf) raf = requestAnimationFrame(loop); },    // tesztekhez és hibakereséshez: rajzolási hívások, lakók, virágok, a barátok helye a képernyőn
+    pause(p) { paused = !!p; if (!paused && !raf) raf = requestAnimationFrame(loop); },
+    qualityTick: ms => { quality.tick(ms); return { ...quality.state(), buffer: [renderer.domElement.width, renderer.domElement.height] }; },   // teszthez: egy képkocka adott idővel    // tesztekhez és hibakereséshez: rajzolási hívások, lakók, virágok, a barátok helye a képernyőn
     debug() {
       draw(performance.now());
-      return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, flowers: flowerCount, decor: [...decor.keys()], treeHearts: tree.count(), treeScale: tree.group.scale.x, gold: goldPetals.count,
+      return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, shadows: crowd.shadows, quality: quality.state(), flowers: flowerCount, decor: [...decor.keys()], treeHearts: tree.count(), treeScale: tree.group.scale.x, gold: goldPetals.count,
         decorScreen: Object.fromEntries([...decor].map(([id, m]) => { v3.set(m.position.x, 0.8, m.position.z).project(camera); return [id, { x: (v3.x + 1) / 2 * W, y: (1 - v3.y) / 2 * H }]; })), friends: [...actors.keys()], zoom: zoomAt(performance.now()), pan: panAt(performance.now()), feeding: feeding && !feeding.done ? feeding.a.id : null,
         awake: Object.fromEntries([...actors.values()].filter(a => a.def.sleepy).map(a => [a.id, a.g.userData.eyes[0].scale.y > 0.5])),
         screen: Object.fromEntries([...actors.values()].map(a => [a.id, screenOf(a)])) };

@@ -11,6 +11,8 @@
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <title>Csillagkert</title>
+<link rel="preload" href="fonts/nunito-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/nunito-latin-ext.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -40,15 +42,15 @@
   <div id="meter" aria-label="Csillagok">
     
   </div>
-  <button id="hearts" aria-label="Szívek a jó tettekért"><b>❤</b><span class="n">0</span></button>
+  <button id="hearts" aria-label="Szívek a jó tettekért"><b data-icon="ui-heart">❤</b><span class="n">0</span></button>
   <button id="gift-next" class="round" aria-label="A következő ajándék"><span class="ic"></span><span class="bow"></span></button>
-  <button id="again" class="round" aria-label="Mondd újra">🔊</button>
+  <button id="again" class="round" aria-label="Mondd újra" data-icon="ui-speaker">🔊</button>
 </header>
 
 <!-- Első koppintás: ez oldja fel a hangot az iPaden -->
 <section id="start">
   <div class="card">
-    <div class="big-emoji">🐱⭐🦄</div>
+    <div class="big-emoji"><span data-icon="g-foodcatch">🐱</span><span data-icon="tab-matrica">⭐</span><span data-icon="g-sparkhorn">🦄</span></div>
     <h1>Csillagkert</h1>
     <button id="start-btn" class="giant">Koppints ide!</button>
     <div id="who" class="who" hidden></div>
@@ -67,12 +69,12 @@
 
 <!-- Feladat -->
 <section id="stage" hidden></section>
-<button id="stage-x" class="round xbtn" aria-label="Kilépek" hidden>✕</button>
+<button id="stage-x" class="round xbtn" aria-label="Kilépek" data-icon="ui-close" hidden>✕</button>
 
 <!-- Név (elsőre; átugorható) -->
 <section id="name-screen" hidden>
   <div class="card">
-    <button id="name-skip" class="round xbtn in" aria-label="Átugrom">✕</button>
+    <button id="name-skip" class="round xbtn in" aria-label="Átugrom" data-icon="ui-close">✕</button>
     <h2>Hogy hívnak? 🌟</h2>
     <input id="name-input" type="text" autocomplete="off" maxlength="30" placeholder="Írd ide a neved">
     <div style="margin-top:18px"><button id="name-ok" class="giant">Kész</button></div>
@@ -82,28 +84,28 @@
 <!-- Jutalom -->
 <section id="reward" hidden>
   <div class="card wide">
-    <button id="reward-x" class="round xbtn in" aria-label="Nem kérek">✕</button>
-    <h2>🎉 Megvan az összes csillag!</h2>
+    <button id="reward-x" class="round xbtn in" aria-label="Nem kérek" data-icon="ui-close">✕</button>
+    <h2><span data-icon="tab-matrica">🎉</span> Megvan az összes csillag!</h2>
     <div class="choices">
-      <button class="choice" data-game="sparkhorn"><span>🦄</span>Unikornis-futás</button>
-      <button class="choice" data-game="bubbles"><span>🫧</span>Buborékpukkasztás</button>
-      <button class="choice" data-game="foodcatch"><span>🐱</span>Etesd a cicát</button>
-      <button class="choice" data-game="healthy"><span>🍎</span>Hami-adagoló</button>
-      <button class="choice" data-game="race"><span>🏁</span>Felhővár-verseny</button>
-      <button class="choice" data-game="openworld"><span>🌈</span>Szabad futás</button>
-      <button class="choice" data-game="pet"><span>🐾</span>Barátom</button>
-      <button class="choice" data-game="dressup"><span>👑</span>Unikornis-öltöztető</button>
+      <button class="choice" data-game="sparkhorn"><span data-icon="g-sparkhorn">🦄</span>Unikornis-futás</button>
+      <button class="choice" data-game="bubbles"><span data-icon="g-bubbles">🫧</span>Buborék&shy;pukkasztás</button>
+      <button class="choice" data-game="foodcatch"><span data-icon="g-foodcatch">🐱</span>Etesd a cicát</button>
+      <button class="choice" data-game="healthy"><span data-icon="g-healthy">🍎</span>Hami-adagoló</button>
+      <button class="choice" data-game="race"><span data-icon="g-race">🏁</span>Felhővár-verseny</button>
+      <button class="choice" data-game="openworld"><span data-icon="g-openworld">🌈</span>Szabad futás</button>
+      <button class="choice" data-game="pet"><span data-icon="g-pet">🐾</span>Barátom</button>
+      <button class="choice" data-game="dressup"><span data-icon="g-dressup">👑</span>Unikornis-öltöztető</button>
     </div>
   </div>
 </section>
 <section id="game" hidden>
-  <div id="game-bar"><button id="game-back" class="round" aria-label="Vissza">⬅</button><span id="game-soon" title="Mindjárt hazamegyünk" hidden>🌅</span></div>
+  <div id="game-bar"><button id="game-back" class="round" aria-label="Vissza" data-icon="ui-back">⬅</button><span id="game-soon" title="Mindjárt hazamegyünk" data-icon="ui-sunset" hidden>🌅</span></div>
   <div id="game-body"></div>
-  <div id="game-bye" hidden><div class="card"><div class="bye-icon">🌟🏡🌟</div><h2>Ez nagyon jó volt!</h2><button id="game-bye-home" class="giant">🏡 Haza</button></div></div>
+  <div id="game-bye" hidden><div class="card"><div class="bye-icon"><span data-icon="tab-matrica">🌟</span><span data-icon="ui-home">🏡</span><span data-icon="tab-matrica">🌟</span></div><h2>Ez nagyon jó volt!</h2><button id="game-bye-home" class="giant"><span data-icon="ui-home">🏡</span> Haza</button></div></div>
 </section>
 
 <!-- Szülői sarok: 3 mp-ig nyomva tartva nyílik -->
-<button id="parent-btn" aria-label="Szülői beállítások (tartsd nyomva)">⚙</button>
+<button id="parent-btn" aria-label="Szülői beállítások (tartsd nyomva)" data-icon="ui-gear">⚙</button>
 <div id="parent" hidden>
   <div class="card wide">
     <h2>Szülői sarok</h2>
@@ -142,6 +144,9 @@
     </label>
     <label>Rozi beszédének hangereje
       <select id="p-speech"><option value="0">halk</option><option value="1">közepes</option><option value="2">hangos</option></select>
+    </label>
+    <label>Mozgás a képernyőn
+      <select id="p-calm"><option value="">a rendszer beállítása szerint</option><option value="0">teljes mozgás</option><option value="1">kevesebb mozgás</option></select>
     </label>
     <label hidden>Felolvasó hang
       <select id="p-voicesel"></select>

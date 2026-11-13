@@ -3,6 +3,7 @@
 // Egy dísz = egy összeolvasztott háló (csúcsszínekkel), így a 12 dísz legfeljebb 12 rajzolási hívás.
 import * as THREE from '../vendor/three.module.js';
 import { merge, part } from './geo.js';
+import { mat as lookMat } from './three/look.js';
 
 const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 const cyl = (rt, rb, h, n = 10) => new THREE.CylinderGeometry(rt, rb, h, n);
@@ -127,7 +128,7 @@ export function createFriendTree(scene) {
     part(cyl(0.26, 0.4, 2.3, 10), C.brown, [0, 1.15, 0]), part(cyl(0.1, 0.16, 1.0, 8), C.brown, [-0.42, 2.25, 0.05], [0, 0, 0.75]), part(cyl(0.1, 0.16, 1.0, 8), C.brown, [0.45, 2.3, 0.05], [0, 0, -0.7]),
     part(ball(1.35, 14, 10), 0x7fd88a, [0, 3.35, 0]), part(ball(0.95, 12, 9), 0x96e39c, [-1.05, 2.95, 0.25]), part(ball(0.95, 12, 9), 0x96e39c, [1.1, 3.0, 0.2]), part(ball(0.85, 12, 8), 0xa9ecae, [0, 4.25, 0.1]),
     part(ball(0.5, 10, 6), C.green, [0, 0.12, 0], [0, 0, 0], [1.6, 0.3, 1.6]),
-  ]), new THREE.MeshLambertMaterial({ vertexColors: true }));
+  ]), lookMat({ vertexColors: true }));
   g.add(body);
   // a szívek helye: a lomb elülső, a néző felé eső felén, determinisztikusan szórva
   const spots = [], blobs = [[0, 3.35, 0, 1.35], [-1.05, 2.95, 0.25, 0.95], [1.1, 3.0, 0.2, 0.95], [0, 4.25, 0.1, 0.85]];
@@ -139,7 +140,7 @@ export function createFriendTree(scene) {
     if (spots.some(q => q.distanceTo(p) < 0.42)) continue;
     spots.push(p);
   }
-  const hearts = new THREE.InstancedMesh(heartGeo(0.12, 5), new THREE.MeshLambertMaterial({ color: 0xff5d8f }), TREE_HEARTS);
+  const hearts = new THREE.InstancedMesh(heartGeo(0.12, 5), lookMat({ color: 0xff5d8f }), TREE_HEARTS);
   hearts.count = 0; hearts.frustumCulled = false; g.add(hearts);
   scene.add(g);
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), sc = new THREE.Vector3();

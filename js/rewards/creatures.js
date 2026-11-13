@@ -1,9 +1,10 @@
 // Közös, saját tervezésű 3D szereplők a Barátom játékhoz (three.js primitívekből): barátságos állatok.
 // A figurák előre néznek (-z irány). Minden állatnak mosolya van; némelyik integet.
 import * as THREE from '../../vendor/three.module.js';
+import { mat as lookMat } from '../three/look.js';
 
 const at = (m, x, y, z) => { m.position.set(x, y, z); return m; };
-const mat = (color, extra = {}) => new THREE.MeshLambertMaterial({ color, ...extra });
+const mat = (color, extra = {}) => lookMat({ color, ...extra });
 const ball = (r, color, sx = 1, sy = 1, sz = 1) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), mat(color)); m.scale.set(sx, sy, sz); return m; };
 
 function legPair(group, color, hoof, positions, h = 0.5) {

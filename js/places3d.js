@@ -3,6 +3,7 @@
 // Minden tárgy a saját origójában épül (talp: y = 0), a néző felé (+z) néz; a helyét a js/friends.js PLACES táblája adja.
 import * as THREE from '../vendor/three.module.js';
 import { merge, part } from './geo.js';
+import { mat as lookMat } from './three/look.js';
 import { PLACES, FRIENDS } from './friends.js';
 import { DECOR } from './gifts.js';
 
@@ -167,7 +168,7 @@ export function buildPlaces() {
   for (const p of PLACES) at(p.x, p.z, BUILD[p.id](), p.scale || 1);
   TREES.forEach(([x, z, k], i) => at(x, z, tree(k, i)));
   buildAreas(at);
-  const mesh = new THREE.Mesh(merge(parts), new THREE.MeshLambertMaterial({ vertexColors: true }));
+  const mesh = new THREE.Mesh(merge(parts), lookMat({ vertexColors: true }));
   mesh.frustumCulled = false;
   return mesh;
 }

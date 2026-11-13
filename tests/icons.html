@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Csillagkert – ikonok</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+  html, body { height: auto; overflow: visible; background: #f4f0ff; }
+  body { padding: 16px; touch-action: auto; }
+  h2 { margin: 18px 0 8px; font-size: 20px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 10px; }
+  .cell { width: 132px; padding: 8px; border-radius: 16px; background: #fff; text-align: center; box-shadow: 0 2px 6px rgba(60,20,120,.15); }
+  .cell .big { font-size: 64px; line-height: 1; } .cell .small { font-size: 28px; line-height: 1; margin-left: 6px; }
+  .cell small { display: block; font-size: 11px; margin-top: 4px; color: #6b5a99; word-break: break-all; }
+  .font { background: #fff; border-radius: 16px; padding: 12px 16px; font-size: 30px; line-height: 1.4; }
+  .font.old { font-family: "Trebuchet MS", system-ui, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Saját ikonok</h1>
+<div id="out"></div>
+<h2>Betűk (Nunito, fent) és a régi betű (lent)</h2>
+<div class="font">ABCDEFGHIJKLMNOPQRSTUVWXYZ ÁÉÍÓÖŐÚÜŰ<br>abcdefghijklmnopqrstuvwxyz áéíóöőúüű<br>0123456789 ★ Tovább · Szép munka!</div>
+<div class="font old">ABCDEFGHIJKLMNOPQRSTUVWXYZ ÁÉÍÓÖŐÚÜŰ<br>abcdefghijklmnopqrstuvwxyz áéíóöőúüű<br>0123456789 ★ Tovább · Szép munka!</div>
+<script type="module">
+import { ICONS, icon } from '../js/icons.js';
+const groups = {};
+for (const id of Object.keys(ICONS)) (groups[id.split('-')[0]] ||= []).push(id);
+const NAMES = { st: 'Állomások', g: 'Jutalomjátékok', tab: 'Öltöztető fülei', ui: 'Gombok', pat: 'Minták', mane: 'Sörény', horn: 'Szarv', head: 'Fejdísz', neck: 'Nyakdísz' };
+document.getElementById('out').innerHTML = Object.entries(groups).map(([g, ids]) => `<h2>${NAMES[g] || g}</h2><div class="grid">${ids.map(id => `<div class="cell"><span class="big">${icon(id)}</span><span class="small">${icon(id)}</span><small>${id}</small></div>`).join('')}</div>`).join('');
+await document.fonts.ready;
+window.__ready = true;
+</script>
+</body>
+</html>

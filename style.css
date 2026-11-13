@@ -1,3 +1,9 @@
+/* Nunito (SIL Open Font License 1.1, fonts/OFL.txt): kerek végű betű, a repóban tárolva, nincs külső kérés.
+   Két részhalmaz: latin + latin-ext (ebben van az ő, ű); a böngésző csak azt tölti le, amelyik kell. */
+@font-face { font-family: "Nunito"; font-style: normal; font-weight: 400 900; font-display: swap;
+  src: url("fonts/nunito-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Nunito"; font-style: normal; font-weight: 400 900; font-display: swap;
+  src: url("fonts/nunito-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 :root {
   --sky: #bfefff; --ink: #3b2a63; --card: rgba(255,255,255,.92);
   --pink: #ff8fc8; --purple: #8e5be8; --gold: #ffcf3f; --mint: #7fe0c0;
@@ -5,7 +11,8 @@
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html, body { height: 100%; overflow: hidden; background: var(--sky); }
 body {
-  font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif; color: var(--ink);
+  font-family: "Nunito", "Trebuchet MS", "Segoe UI", system-ui, sans-serif; color: var(--ink);
+  line-height: 1.2;   /* a Nunito alap sormagassága (1,36) nagyobb a régi betűénél (1,16): így a feladatok nem nőnek meg */
   touch-action: none; overscroll-behavior: none;
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
 }
@@ -506,7 +513,7 @@ button { touch-action: none; }
 .seq.long svg { width: clamp(30px, 6vmin, 48px) !important; }
 .answer.pic .trio { display: flex; gap: 2px; font-size: .5em; }
 .big1 { font-size: clamp(80px, 16vmin, 130px); line-height: 1; }
-.letter1 { font-size: clamp(90px, 18vmin, 150px); line-height: 1; font-weight: 800; color: #6b3fd4; font-family: "Trebuchet MS", system-ui, sans-serif; }
+.letter1 { font-size: clamp(90px, 18vmin, 150px); line-height: 1; font-weight: 800; color: #6b3fd4; }
 .analog { display: inline-flex; align-items: center; gap: 8px; font-size: clamp(40px, 8vmin, 70px); }
 .analog i { font-style: normal; } .analog b { color: var(--purple); font-size: .7em; } .analog s { width: 28px; }
 .analog b.next { border: 4px dashed #c9b3f5; border-radius: 14px; padding: 0 12px; }
@@ -629,3 +636,47 @@ button { touch-action: none; }
 @keyframes heartup { 0% { opacity: 0; transform: translate(-50%, 0) scale(.5) } 20% { opacity: 1; transform: translate(-50%, -10px) scale(1.2) } 100% { opacity: 0; transform: translate(-50%, -90px) scale(.9) } }
 .du-opt.locked { filter: none; opacity: 1; } .du-opt.locked > :not(.lock) { filter: brightness(0); opacity: .28; }
 .du-opt.fresh { animation: glowp 1s 4 alternate; } @keyframes glowp { to { box-shadow: 0 0 0 8px rgba(255,61,127,.55); } }
+
+/* M5/3 – saját ikonok (js/icons.js): a betűmérethez igazodnak, mint az emoji, de minden eszközön egyformák */
+.ico { display: inline-block; width: 1.1em; height: 1.1em; vertical-align: -0.2em; pointer-events: none; overflow: visible; }
+.ico.flip { transform: scaleX(-1); }
+.round, .xbtn, #parent-btn { display: inline-flex; align-items: center; justify-content: center; }
+.big-emoji { display: flex; justify-content: center; gap: .1em; }
+.bye-icon .ico { margin: 0 .04em; }
+#game-bye-home .ico { vertical-align: -0.16em; }
+.choice span { line-height: 1; }
+.du-tab { height: 56px; } .du-tab .ico { font-size: 32px; } .du-tab.sel .ico { filter: drop-shadow(0 0 2px #fff); }
+.pet-tool .ico { margin-bottom: 2px; }
+.race-track .mk .ico, .race-track .finish .ico { display: block; }
+#game-soon { display: inline-flex; padding: 6px; border-radius: 50%; background: rgba(255,255,255,.92); line-height: 0; }
+.pet-back .ico { font-size: 46px; }
+
+/* M5/3 – egységes, rugós gombnyomás (js/motion.js: elengedéskor rövid rugózás) */
+:is(.giant, .round, .choice, .station, .answer, .who-card, .area-btn, .du-tab, .du-opt, .pet-tool, .pet-friend, #hearts):active { scale: .94; }
+/* „Kevesebb mozgás" (szülői sarok, vagy a rendszer beállítása): a végtelenített díszmozgások egyszer futnak le */
+.calm *, .calm *::before, .calm *::after { animation-iteration-count: 1 !important; }
+.calm .du-hint, .calm #game-soon, .calm .spark-icon, .calm #robot.intro { animation: none !important; }
+/* ami nem dísz, hanem jelzés, az kevesebb mozgásnál is látszik, csak állóképként: a felragyogó jó válasz (segítség),
+   és hogy melyik harang / billentyű szól éppen. Rozi szája beszéd közben tovább mozog (így látszik, hogy ő beszél). */
+.calm .answer.glow { animation: none !important; box-shadow: 0 0 0 10px rgba(255,207,63,.7), 0 8px 0 #cdb8f2; }
+.calm .answer.key.playing, .calm .mbell.playing, .calm .answer.playing { animation: none !important; outline: 8px solid #ffcf3f; outline-offset: 3px; }
+.calm #robot.talking .mouth { animation-iteration-count: infinite !important; }
+.calm :is(.giant, .round, .choice, .station, .answer, .who-card, .area-btn, .du-tab, .du-opt, .pet-tool, .pet-friend, #hearts):active { scale: 1; }
+
+/* M5/3 – legalább 56 px-es érintési célok és a kijelző biztonságos széle (iPad: kezdőképernyős mód, home-sáv) */
+#hearts { height: 56px; }
+.xbtn.in { width: 56px; height: 56px; }
+#parent-btn { width: 56px; height: 56px; }
+.answer, .giant { min-height: 56px; justify-content: center; }   /* a kevés tárgyas képes válasz és a robot Indítás gombja is */
+.amul { min-width: 56px; min-height: 56px; }
+.draw .swatch { width: 56px; height: 56px; }
+#hud { top: env(safe-area-inset-top, 0px); left: env(safe-area-inset-left, 0px); right: env(safe-area-inset-right, 0px); }
+#stage { padding-top: calc(100px + env(safe-area-inset-top, 0px)); padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+.xbtn:not(.in) { top: calc(100px + env(safe-area-inset-top, 0px)); right: calc(16px + env(safe-area-inset-right, 0px)); }
+#game-bar { top: calc(104px + env(safe-area-inset-top, 0px)); left: calc(12px + env(safe-area-inset-left, 0px)); }
+#parent-btn { left: calc(8px + env(safe-area-inset-left, 0px)); bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+.ow-jump { right: calc(22px + env(safe-area-inset-right, 0px)); bottom: calc(22px + env(safe-area-inset-bottom, 0px)); }
+.pet-tools { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+.du-opts { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+@media (max-height: 560px) { #stage { padding-top: calc(84px + env(safe-area-inset-top, 0px)); } .du-tab { height: 48px; } }   /* kis telefon fekvő helyzetben (nem iPad) */
+#reward h2 { padding: 0 54px; } #reward h2 .ico { vertical-align: -0.12em; }

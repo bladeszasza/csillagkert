@@ -43,7 +43,7 @@ export function run(container, item) {
         const p = at(reached);
         gctx.strokeStyle = hint ? '#ff5d8f' : '#4cc38a'; gctx.lineWidth = hint ? 8 : 6; gctx.beginPath(); gctx.arc(p.x, p.y, hitR * 0.9, 0, 7); gctx.stroke();
       }
-      gctx.font = `800 ${Math.round(Math.max(18, hitR * 0.72))}px system-ui, sans-serif`; gctx.textAlign = 'center'; gctx.textBaseline = 'middle';
+      gctx.font = `800 ${Math.round(Math.max(18, hitR * 0.72))}px Nunito, system-ui, sans-serif`; gctx.textAlign = 'center'; gctx.textBaseline = 'middle';
       pts.forEach((p, i) => {
         const hit = i < reached || done, next = !done && i === reached % dots.length;
         gctx.fillStyle = hit ? '#e69a00' : next ? '#4cc38a' : '#6b4bb5'; gctx.beginPath(); gctx.arc(p.x, p.y, Math.max(7, hitR * 0.28), 0, 7); gctx.fill();

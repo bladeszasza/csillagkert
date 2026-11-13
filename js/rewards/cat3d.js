@@ -1,15 +1,16 @@
 // A kertből ismert 3D cica (saját tervezés), újrahasználható a játékokban. A talpa az origóban van (y = 0),
 // előre a +z irányba néz (a kamera felé). Magassága kb. 3.1 egység.
 import * as THREE from '../../vendor/three.module.js';
+import { mat as lookMat } from '../three/look.js';
 
 export const CAT_HEIGHT = 3.1;
 
 export function makeGardenCat() {
   const cat = new THREE.Group();
-  const fur = new THREE.MeshLambertMaterial({ color: 0xffb870 });
-  const white = new THREE.MeshLambertMaterial({ color: 0xffffff });
+  const fur = lookMat({ color: 0xffb870 });
+  const white = lookMat({ color: 0xffffff });
   const dark = new THREE.MeshBasicMaterial({ color: 0x3b2a63 });
-  const pink = new THREE.MeshLambertMaterial({ color: 0xff8fc8 });
+  const pink = lookMat({ color: 0xff8fc8 });
   const body = new THREE.Mesh(new THREE.SphereGeometry(0.9, 24, 18), fur); body.scale.set(1, 0.95, 1.1); body.position.y = 0.9; cat.add(body);
   const head = new THREE.Group(); head.position.set(0, 2.1, 0.2);
   head.add(new THREE.Mesh(new THREE.SphereGeometry(0.75, 24, 18), fur));

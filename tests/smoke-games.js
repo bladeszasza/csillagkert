@@ -165,15 +165,17 @@ export async function testOpenWorld(ok) {
 // szabad játékban Rozi ritkán szól; plusz játékonként a javított hibák ellenőrzése.
 const spoken = () => window.__spoken.length;
 const kinds = n => soundLog.filter(x => x.n > n).map(x => x.kind);
+const tinyButtons = h => [...h.querySelectorAll('button')].filter(b => { const q = b.getBoundingClientRect(); return q.width > 0 && q.height > 0 && (q.width < 56 || q.height < 56); }).map(b => `${b.className.split(' ')[0]} ${Math.round(b.getBoundingClientRect().width)}×${Math.round(b.getBoundingClientRect().height)}`);
 async function lifecycle(ok, name, load, { opts = {}, during, settle = 700 } = {}) {
   const errs = [], onErr = e => errs.push(e.message || String(e.reason?.message || e.reason));
   window.addEventListener('error', onErr); window.addEventListener('unhandledrejection', onErr);
-  const h = box(); let dispose = null, gls = [];
+  const h = box(); let dispose = null, gls = [], tiny = [];
   try {
     const mod = await load();
     dispose = mod.run(h, opts);
     await wait(settle);
     if (during) await during(h);
+    tiny = tinyButtons(h);                                          // ujjbarát érintési cél: minden látható gomb legalább 56 px
     h.style.width = '768px'; h.style.height = '1024px'; window.dispatchEvent(new Event('resize')); await wait(250);   // forgatás (álló)
     gls = [...h.querySelectorAll('canvas')].map(c => c.getContext('webgl2') || c.getContext('webgl')).filter(Boolean);
   } catch (e) { errs.push(e.stack || e.message); }
@@ -181,6 +183,7 @@ async function lifecycle(ok, name, load, { opts = {}, during, settle = 700 } = {
   await wait(400);                                                // kilépés után se fusson semmi hibára
   window.removeEventListener('error', onErr); window.removeEventListener('unhandledrejection', onErr);
   ok(`${name}: indul, forgatható, kilép hiba nélkül; utána nincs élő 3D-kontextus`, errs.length === 0 && gls.every(gl => gl.isContextLost()), errs.join(' · ') || `${gls.length} 3D-vászon, mind elengedve`);
+  ok(`${name}: minden gomb legalább 56 px`, !tiny.length, tiny.join(', ') || 'rendben');
   h.remove();
 }
 
@@ -208,6 +211,9 @@ export async function testMinigames(ok) {
         const P = h.__pet, s0 = spoken();
         P.choose(1); await wait(300);
         const cv1 = [...h.querySelectorAll('canvas.stage3d')];
+        const tools = [...h.querySelectorAll('.pet-tool')], back = h.querySelector('.pet-back');
+        ok('Barátom: az eszközök és a „másik barát" gomb saját ikont kapnak (nem ugyanaz a nyíl, mint a kilépés), és legalább 56 px-esek',
+          tools.length === 3 && tools.every(b => b.querySelector('svg.ico')) && back.querySelector('svg.ico') && !back.innerHTML.includes('M52 32H14') && !tinyButtons(h).length, tinyButtons(h).join(', ') || 'rendben');
         const before = P.animalRect(); P.celebrate(); await wait(350); const mid = P.animalRect();
         ok('Barátom: ünnepléskor az állat a helyén marad (nem ugrik a sarokba)', Math.abs(mid.left - before.left) < 3 && Math.abs(mid.top - before.top) < 3 && !h.querySelector('.joy'), `elmozdulás ${Math.round(mid.left - before.left)}, ${Math.round(mid.top - before.top)} px`);
         const s1 = spoken(); P.tool('pet'); await wait(80); P.tool('ball'); await wait(80); P.tool('brush'); await wait(80);
@@ -275,6 +281,11 @@ export async function testMinigames(ok) {
         D.render(); const calls = D.calls(), height = D.height();
         ok('öltöztető 3D: ujjal forgatható, nagyítható, választásra rögtön átöltözik; kevés rajzolási hívás', turned > 1.5 && z1 === 1 && z2 === 0 && changed && D.sel().body === was && calls <= 20 && height > 2 && height < 2.5,
           `fordulás ${turned.toFixed(2)} rad, nagyítás ${z1}→${z2}, átöltözött: ${changed}, hívások ${calls}, magasság ${height.toFixed(2)}`);
+        const tabsIc = h.querySelectorAll('.du-tab svg.ico').length, nTabs = h.querySelectorAll('.du-tab').length;
+        h.querySelector('.du-tab[data-t="matrica"]').click(); await wait(20);
+        const stk = [...h.querySelectorAll('.du-opt[data-k="stickers"]')].every(b => b.querySelector('svg'));
+        ok('öltöztető: a fülek és a matricák saját rajzot mutatnak, minden gomb legalább 56 px', tabsIc === nTabs && nTabs === 8 && stk && !tinyButtons(h).length,
+          `ikonos fülek ${tabsIc}/${nTabs}, matricák rajzzal: ${stk}; kicsi: ${tinyButtons(h).join(', ') || '–'}`);
       },
     });
     // Sparkhorn-keret: betöltés után eltűnik a kártya; hálózat nélkül kedves hibaüzenet és Újra gomb

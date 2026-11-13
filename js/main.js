@@ -17,8 +17,13 @@ import { nextGift, newRewardSession } from './economy.js';
 import { giftById } from './gifts.js';
 import { showGift, giftBusy, clearGifts, floatHeart, BOX_SVG } from './gift-moment.js';
 import { REWARDS } from './rewards/index.js';
+import { icon } from './icons.js';
+import { applyCalm, setupPress } from './motion.js';
 
 const $ = id => document.getElementById(id);
+// A felület saját ikonjai: a [data-icon] elemek emojija csak tartalék (ha a modul nem töltődne be)
+for (const el of document.querySelectorAll('[data-icon]')) { const s = icon(el.dataset.icon); if (s) el.innerHTML = s; }
+applyCalm(); setupPress();
 
 // --- Nagyítás letiltása (iPaden a viewport-meta nem elég): csípés és gesztusok tiltva ---
 ['gesturestart', 'gesturechange', 'gestureend'].forEach(ev => document.addEventListener(ev, e => e.preventDefault(), { passive: false }));
@@ -127,7 +132,7 @@ setupParent(restart);
 $('switch').addEventListener('click', () => restart());      // a „Ki játszik?" képernyőre visz
 
 // Állomások: a gyerek szabadon is választhat (a "Tovább" gomb a sorrendet követi)
-$('stations').innerHTML = STATIONS.map(st => `<button class="station" data-st="${st.id}" aria-label="${st.name}"><span>${st.emoji}</span><small>${st.name}</small></button>`).join('');
+$('stations').innerHTML = STATIONS.map(st => `<button class="station" data-st="${st.id}" aria-label="${st.name}"><span>${icon('st-' + st.id) || st.emoji}</span><small>${st.name}</small></button>`).join('');
 $('stations').addEventListener('click', e => {
   const b = e.target.closest('.station'); if (!b) return;
   const item = stationItem(b.dataset.st); if (!item) return;

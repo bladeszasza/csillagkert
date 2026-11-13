@@ -1,5 +1,6 @@
 // Barátom: válassz egy barátot, majd fésüld, simogasd, vagy játssz vele labdázni.
 // Az állat minden gondoskodásra boldog hangokat ad (kuncog, dorombol, kacag...). Nincs hiba, nincs vége.
+import { icon } from '../icons.js';
 import { happy, unlockAudio, play } from '../sounds.js';
 import { say } from '../voice.js';
 import { FRIEND_ACC, withArt } from '../hu.js';
@@ -34,11 +35,11 @@ export function run(container, ctx = {}) {
 
   function care(emoji, name) {
     view.innerHTML = `<div class="pet-stage" id="pet-stage">
-        <button class="round pet-back" aria-label="Másik barát">🔙</button>
+        <button class="round pet-back" aria-label="Másik barát">${icon('ui-friends')}</button>
         <div class="pet-meter"><span class="fill"></span><span class="heart">❤️</span></div>
         <div class="pet-animal" id="pet-animal">${emoji}</div>
         <div class="pet-fx" id="pet-fx"></div>
-        <div class="pet-tools"><button class="pet-tool sel" data-m="brush">🖌️<small>fésülés</small></button><button class="pet-tool" data-m="pet">✋<small>simogatás</small></button><button class="pet-tool" data-m="ball">⚽<small>labdázás</small></button></div>
+        <div class="pet-tools"><button class="pet-tool sel" data-m="brush">${icon('ui-comb')}<small>fésülés</small></button><button class="pet-tool" data-m="pet">${icon('ui-hand')}<small>simogatás</small></button><button class="pet-tool" data-m="ball">${icon('ui-ball')}<small>labdázás</small></button></div>
       </div>`;
     const stage = view.querySelector('#pet-stage'), animal = view.querySelector('#pet-animal'), fx = view.querySelector('#pet-fx'), fill = view.querySelector('.pet-meter .fill');
     // a 3D állat az emoji helyén jelenik meg (az emoji csak a hely és az érintés célpontja)
@@ -82,7 +83,7 @@ export function run(container, ctx = {}) {
     // --- labdázás: dobd el a labdát, az állat elhozza ---
     function ensureBall() {
       if (ballEl) return; const R = rect();
-      ballEl = document.createElement('div'); ballEl.className = 'pet-ball'; ballEl.textContent = '⚽'; stage.appendChild(ballEl);
+      ballEl = document.createElement('div'); ballEl.className = 'pet-ball'; ballEl.innerHTML = icon('ui-ball'); stage.appendChild(ballEl);
       ball = { x: R.width * 0.5, y: R.height * 0.82, vx: 0, vy: 0, held: false, carried: false, hist: [] }; place();
     }
     const place = () => { if (ballEl) ballEl.style.transform = `translate(${ball.x - 36}px, ${ball.y - 36}px)`; };

@@ -168,6 +168,8 @@ async function testGarden() {
   const onFriend = ids.filter(k => Object.values(center).some(r => pl[k].x > r.left + 10 && pl[k].x < r.right - 10 && pl[k].y > r.top + 10 && pl[k].y < r.bottom - 10));
   ok('térkép: mind a 13 állomásnak van megkoppintható helye a kertben', ids.length === 13 && !near.length && !off.length && !onFriend.length, `jelek: ${ids.length}; egymáson: ${near.join(' ') || '–'}; képen kívül: ${off.join(' ') || '–'}; baráton: ${onFriend.join(' ') || '–'}`);
   ok('kert: 70 csillagnál tizenkét barát lakik itt', d.friends.join() === ['cat', 'bunny', 'dog', 'fox', 'duck', 'bear', 'frog', 'hedgehog', 'hen', 'panda', 'squirrel', 'owl'].join() && d.flowers === 70, `lakók: ${d.friends.join(', ')}`);
+  ok('kert: puha foltárnyék minden lakó alatt (egy közös hálóban), a felbontást a minőség-figyelő adja', d.shadows === d.friends.length && d.quality.ratio === Math.max(1, Math.min(devicePixelRatio || 1, 2)) && d.quality.drops === 0,
+    `árnyékok: ${d.shadows}/${d.friends.length}; felbontás: ${d.quality.ratio}, lépcső: ${d.quality.drops}`);
   ok('kert: legfeljebb 150 rajzolási hívás (régen 70 virággal kb. 600 volt)', d.calls <= 150, `hívások: ${d.calls}, háromszögek: ${d.triangles}`);
   const out = Object.entries(center).filter(([, r]) => r.left < 0 || r.right > 900 || r.top < 0 || r.bottom > 650).map(([k]) => k);
   ok('kert: a kert közepén lakó minden barát a kezdő képen van', out.length === 0 && Object.keys(center).length === 6, out.length ? `kilóg: ${out.join(', ')}` : Object.entries(center).map(([k, r]) => `${k} ${Math.round(r.cx)},${Math.round(r.cy)}`).join(' · '));
@@ -294,6 +296,36 @@ async function testGarden() {
 }
 
 // --- 7. minden hang valóban lejátszódik (a játékban a play() elnyeli a hibát, itt nem) ---
+// Megjelenés (M5/3): a saját betű betöltődik (ő/ű is), a „kevesebb mozgás" és a rugós gombnyomás működik
+async function testLook() {
+  await document.fonts.load('800 40px Nunito', 'aőűŐŰ');
+  const c = document.createElement('canvas').getContext('2d'), w = (f, s) => { c.font = f; return c.measureText(s).width; };
+  const wN = w('800 40px Nunito, monospace', 'őűŐŰ'), wS = w('800 40px Nunito, serif', 'őűŐŰ'), wM = w('800 40px monospace', 'őűŐŰ');
+  ok('betű: a Nunito betöltődik, és az ő, ű, Ő, Ű is a sajátja (nem tartalék betűvel jelenik meg)', document.fonts.check('800 40px Nunito', 'őű') && Math.abs(wN - wS) < 0.01 && Math.abs(wN - wM) > 1,
+    `szélesség Nunito/monospace ${wN.toFixed(1)} · Nunito/serif ${wS.toFixed(1)} · monospace ${wM.toFixed(1)}`);
+  const bodyRule = [...document.styleSheets].flatMap(x => { try { return [...x.cssRules]; } catch (e) { return []; } }).find(r => r.selectorText === 'body' && r.style.fontFamily);
+  ok('betű: a felület betűje (style.css) a Nunito, tartalékkal', /^"?Nunito"?, "Trebuchet MS"/.test(bodyRule?.style.fontFamily || ''), bodyRule?.style.fontFamily || 'nincs body-szabály');
+  const { setCalm, calmChoice, setupPress } = await import('../js/motion.js');
+  const was = calmChoice(), html = document.documentElement;
+  const hint = document.createElement('div'); hint.className = 'du-hint'; const b = document.createElement('button'); b.className = 'round';
+  const box = host(); box.append(hint, b); setupPress(box);
+  setCalm(false); const loop0 = getComputedStyle(hint).animationIterationCount;
+  b.dispatchEvent(new PointerEvent('pointerup', { bubbles: true })); const spring = b.getAnimations().length;
+  const glow = document.createElement('button'); glow.className = 'answer glow'; const bell = document.createElement('span'); bell.className = 'mbell playing';
+  box.append(glow, bell);
+  const robot = document.getElementById('robot') || Object.assign(box.appendChild(document.createElement('div')), { id: 'robot', innerHTML: '<i class="mouth"></i>' }), wasTalking = robot.classList.contains('talking'); robot.classList.add('talking');
+  setCalm(true); const calmOn = html.classList.contains('calm'), loop1 = getComputedStyle(hint).animationName;
+  const gS = getComputedStyle(glow), bS = getComputedStyle(bell), mouth = getComputedStyle(robot.querySelector('.mouth'));
+  const signals = gS.animationName === 'none' && gS.boxShadow.includes('10px') && bS.animationName === 'none' && parseFloat(bS.outlineWidth) >= 6 && mouth.animationIterationCount === 'infinite';
+  const sigInfo = `ragyogás: ${gS.animationName}/${gS.boxShadow.includes('10px') ? 'áll' : 'nincs'}, szóló harang: ${bS.animationName}/${bS.outlineWidth}, Rozi szája: ${mouth.animationIterationCount}`;
+  robot.classList.toggle('talking', wasTalking);
+  b.getAnimations().forEach(a => a.cancel()); b.dispatchEvent(new PointerEvent('pointerup', { bubbles: true })); const springCalm = b.getAnimations().length;
+  setCalm(was);
+  ok('kevesebb mozgás: a szülői beállítás leállítja a díszmozgást és a gombok rugózását; kikapcsolva minden mozog', loop0 === 'infinite' && spring === 1 && calmOn && loop1 === 'none' && springCalm === 0,
+    `díszmozgás: ${loop0} → ${loop1}; rugózás: ${spring} → ${springCalm}`);
+  ok('kevesebb mozgás: a jelzések megmaradnak állóképként (a segítő ragyogás, a szóló harang), és Rozi szája beszéd közben mozog', signals, sigInfo);
+  box.remove();
+}
 async function testVoices() {
   const { playStrict, SOUND_KINDS } = await import('../js/sounds.js'), bad = [];
   let state = '';
@@ -312,7 +344,7 @@ async function testGiftsAndHearts() { await testGifts(ok); }
 
 export async function runAll() {
   const only = new URLSearchParams(location.search).get('only');      // pl. smoke.html?only=games – csak a játékok tesztje
-  const all = [testHarness, testLoudness, testPositions, testClap, testStart, testGeneratedContent, testAbort, testVoices, testGarden, testOpenWorldGame, testMinigameList, testGiftsAndHearts];
+  const all = [testHarness, testLoudness, testPositions, testClap, testStart, testLook, testGeneratedContent, testAbort, testVoices, testGarden, testOpenWorldGame, testMinigameList, testGiftsAndHearts];
   // ?only=rest: minden, ami nem a generált tartalom (a teljes futás két részletben fér az időkeretbe)
   const list = only === 'games' ? [testOpenWorldGame, testMinigameList, testGiftsAndHearts] : only === 'rest' ? all.filter(t => t !== testGeneratedContent) : only ? all.filter(t => t.name.toLowerCase().includes(only)) : all;   // pl. ?only=garden
   for (const t of list) { try { await t(); } catch (e) { ok(t.name, false, e.stack || e.message); } }

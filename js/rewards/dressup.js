@@ -6,13 +6,16 @@
 // elem árnyképként látszik (lakat helyett), az újonnan kapott felragyog. Ugyanez az unikornis fut a szabad futásban,
 // a versenyen, lakik a kertben és választható a Barátom játékban (js/avatar.js, js/three/characters.js).
 import * as THREE from '../../vendor/three.module.js';
+import { mat as lookMat, addLights, createQuality } from '../three/look.js';
 import { giftById } from '../gifts.js';
 import { owns } from '../economy.js';
 import { say } from '../voice.js';
 import { play } from '../sounds.js';
 import { progress } from '../progress.js';
 import { TABS, DEFAULT, MAX_STICKERS } from '../avatar.js';
-import { dressSvg, backdropSvg, stickerLayer } from '../avatar-svg.js';
+import { dressSvg, backdropSvg, stickerLayer, stickerSvg } from '../avatar-svg.js';
+import { icon, DRESS_ICON } from '../icons.js';
+import { calm } from '../motion.js';
 import { makeCharacter, animateCharacter, measureCharacter, createCharacterBatch } from '../three/characters.js';
 
 // A ruhatár a játszó gyerek profiljában él (mindenkinek saját unikornisa van)
@@ -40,23 +43,23 @@ export function run(container) {
   const firstTab = TABS.find(t => t.groups.some(g => g.items.some(it => fresh.has(`${g.key}:${it.id}`))));
   let tab = firstTab ? firstTab.id : 'test';
   container.innerHTML = `<div class="dress2"><div class="du-view"><div class="du-bg"></div><div class="du-stks"></div><canvas class="du-canvas"></canvas>
-    <button class="round du-zoom" aria-label="Közelebb">🔍</button><div class="du-hint" aria-hidden="true">👆</div></div>
+    <button class="round du-zoom" aria-label="Közelebb">${icon('ui-zoom')}</button><div class="du-hint" aria-hidden="true">${icon('ui-point')}</div></div>
     <div class="du-tabs"></div><div class="du-opts"></div><div class="du-msg"></div></div>`;
   const view = container.querySelector('.du-view'), bgEl = container.querySelector('.du-bg'), stkEl = container.querySelector('.du-stks'), canvas = container.querySelector('.du-canvas');
   const tabsEl = container.querySelector('.du-tabs'), optsEl = container.querySelector('.du-opts'), msg = container.querySelector('.du-msg');
   const zoomBtn = container.querySelector('.du-zoom'), hint = container.querySelector('.du-hint');
 
   // --- 3D: átlátszó vászon a rajzolt háttér előtt; a talaj egy korong puha árnyékkal ---
-  let renderer = null, scene = null, camera = null, crowd = null, model = null, ground = null, raf = 0, alive = true;
+  let renderer = null, scene = null, camera = null, crowd = null, model = null, ground = null, raf = 0, alive = true, quality = null;
+  const still = calm();                                    // kevesebb mozgásnál nem forog magától (megnyitáskor dől el)
   let rotY = Math.PI - 0.6, spinT = performance.now(), hopT = -1e9, zoom = 0, zoomGoal = 0, size = { w: 1, h: 1 };
   try {
     renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); renderer.setClearColor(0x000000, 0);
+    quality = createQuality(renderer, { max: 2 }); renderer.setClearColor(0x000000, 0);
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(35, 1, 0.1, 50);
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xcfe8b8, 1.5));
-    const sun = new THREE.DirectionalLight(0xfff2d0, 1.6); sun.position.set(3, 7, 6); scene.add(sun);
-    ground = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.7, 0.12, 48), new THREE.MeshLambertMaterial({ color: GROUND.garden }));
+    addLights(scene, { ground: 0xcfe8b8, sunAt: [3, 7, 6] });
+    ground = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.7, 0.12, 48), lookMat({ color: GROUND.garden }));
     ground.position.y = -0.06; scene.add(ground);
     const shadow = new THREE.Mesh(new THREE.CircleGeometry(1, 32), new THREE.MeshBasicMaterial({ color: 0x3b2a63, transparent: true, opacity: 0.16, depthWrite: false }));
     shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.005; shadow.scale.set(0.55, 1.15, 1); scene.add(shadow);
@@ -85,13 +88,13 @@ export function run(container) {
   }
   function frame(now) {
     raf = 0; if (!alive || !renderer) return;
-    if (now - spinT > IDLE_MS && !drag) rotY += SPIN * 0.016;
+    if (now - spinT > IDLE_MS && !drag && !still) rotY += SPIN * 0.016;
     zoom += (zoomGoal - zoom) * 0.15;
     const t = now / 1000, hop = Math.max(0, 1 - (now - hopT) / 900);
     model.rotation.y = rotY;
     model.position.y = hop > 0 ? Math.abs(Math.sin(hop * Math.PI * 2)) * 0.35 : 0;
     animateCharacter(model, t, 0, hop > 0);               // új darabnál ugrik egyet és integet (szárnnyal csapkod)
-    crowd.update(); placeCamera(); renderer.render(scene, camera);
+    quality.tick(); crowd.update(); placeCamera(); renderer.render(scene, camera);
     raf = requestAnimationFrame(frame);
   }
 
@@ -108,13 +111,15 @@ export function run(container) {
   zoomBtn.addEventListener('click', () => { zoomGoal = zoomGoal ? 0 : 1; zoomBtn.classList.toggle('sel', !!zoomGoal); play('plop'); spinT = performance.now(); });
   setTimeout(() => hint.classList.add('gone'), 4500);
 
-  function renderTabs() { tabsEl.innerHTML = TABS.map(t => `<button class="du-tab${t.id === tab ? ' sel' : ''}" data-t="${t.id}">${t.icon}</button>`).join(''); }
+  // saját rajz, ha van (minta, sörényforma, szarvforma, néhány dísz, matricák); a többi elem emoji vagy színkorong
+  const optIcon = (key, it) => { const s = icon(DRESS_ICON[key + ':' + it.id]) || (key === 'stickers' ? stickerSvg(it.id) : '') || it.icon; return s ? `<span class="oi">${s}</span>` : ''; };
+  function renderTabs() { tabsEl.innerHTML = TABS.map(t => `<button class="du-tab${t.id === tab ? ' sel' : ''}" data-t="${t.id}">${icon('tab-' + t.id) || t.icon}</button>`).join(''); }
   function renderOpts() {
     const t = TABS.find(x => x.id === tab);
     optsEl.innerHTML = t.groups.map(g => `<div class="du-row">${g.items.map(it => {
       const id = `${g.key}:${it.id}`, locked = isLocked(id);
       const on = g.multi ? sel[g.key].includes(it.id) : sel[g.key] === it.id;
-      return `<button class="du-opt${on ? ' sel' : ''}${locked ? ' locked' : ''}${fresh.has(id) ? ' fresh' : ''}" data-k="${g.key}" data-i="${it.id}" ${it.color && !locked ? `style="background:${it.color}"` : ''}>${it.icon ? `<span class="oi">${it.icon}</span>` : ''}</button>`;
+      return `<button class="du-opt${on ? ' sel' : ''}${locked ? ' locked' : ''}${fresh.has(id) ? ' fresh' : ''}" data-k="${g.key}" data-i="${it.id}" ${it.color && !locked ? `style="background:${it.color}"` : ''}>${optIcon(g.key, it)}</button>`;
     }).join('')}</div>`).join('');
   }
   tabsEl.addEventListener('click', e => { const b = e.target.closest('.du-tab'); if (!b) return; tab = b.dataset.t; renderTabs(); renderOpts(); });

@@ -3,7 +3,9 @@
 // A másik unikornis a barátod: a célban mindketten megállnak, egymás felé fordulnak és együtt ünnepelnek.
 // A futam végén (győzelemnél és vereségnél is) ajándék jár, a célban összebújás egy szív (js/economy.js).
 // A díszlet példányosított (közös geometria és anyag), így kevés rajzolási hívással fut.
+import { icon } from '../icons.js';
 import * as THREE from '../../vendor/three.module.js';
+import { mat as lookMat, addLights, createQuality } from '../three/look.js';
 import { makeCharacter, animateRunner, createCharacterBatch } from '../three/characters.js';
 // az ellenfél: kék barát-unikornis (az öltöztető színeiből)
 const RIVAL_LOOK = { body: 'c2', mane: 'c2', horn: 'ice' }, RIVAL_ALT = { body: 'c5', mane: 'c3', horn: 'pink' };   // ha a gyereké is kék: menta
@@ -18,24 +20,23 @@ const GRAV = -26, JUMP = 9.5;
 
 export function run(container, ctx = {}) {
   container.innerHTML = `<div class="race"><canvas class="race-gl"></canvas>
-    <div class="race-hud"><div class="race-track"><span class="mk me">🦄</span><span class="mk rv">🦄</span><span class="finish">🏁</span></div></div>
-    <div class="race-center"></div><div class="race-hint">Koppints, hogy ugorj! ⬆️</div></div>`;
+    <div class="race-hud"><div class="race-track"><span class="mk me">${icon('g-sparkhorn')}</span><span class="mk rv">${icon('g-sparkhorn')}</span><span class="finish">${icon('g-race')}</span></div></div>
+    <div class="race-center"></div><div class="race-hint">Koppints, hogy ugorj! ${icon('ui-jump')}</div></div>`;
   const root = container.querySelector('.race'), canvas = root.querySelector('.race-gl');
   const centerEl = root.querySelector('.race-center'), hint = root.querySelector('.race-hint');
   const mkMe = root.querySelector('.mk.me'), mkRv = root.querySelector('.mk.rv');
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  const quality = createQuality(renderer, { max: 2 });
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0xbfe9ff); scene.fog = new THREE.Fog(0xbfe9ff, 30, 120);
   const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 200);
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xcdb7ff, 1.5));
-  const sun = new THREE.DirectionalLight(0xfff0d0, 1.4); sun.position.set(6, 12, 4); scene.add(sun);
+  const { sun } = addLights(scene, { ground: 0xcdb7ff, sunAt: [6, 12, 4] });
 
   // --- pálya és díszlet: felhőpálya, felhővár tornyok, szivárványívek, felhők (mind példányosítva) ---
   const geos = [], mats = [];
   const G = g => { geos.push(g); return g; }, Mt = m => { mats.push(m); return m; };
-  const lambert = Mt(new THREE.MeshLambertMaterial({ color: 0xffffff })), basic = Mt(new THREE.MeshBasicMaterial({ color: 0xffffff }));
+  const lambert = Mt(lookMat({ color: 0xffffff })), basic = Mt(new THREE.MeshBasicMaterial({ color: 0xffffff }));
   const tmp = new THREE.Object3D(), col = new THREE.Color();
   // egy fajta díszletelem az összes helyén, egyetlen rajzolással; items: [x, y, z, sx, sy, sz, szín, (rx)]
   function inst(geo, mat, items) {
@@ -43,7 +44,7 @@ export function run(container, ctx = {}) {
     items.forEach(([x, y, z, sx, sy, sz, c, rx = 0], i) => { tmp.position.set(x, y, z); tmp.scale.set(sx, sy, sz); tmp.rotation.set(rx, 0, 0); tmp.updateMatrix(); m.setMatrixAt(i, tmp.matrix); m.setColorAt(i, col.setHex(c)); });
     scene.add(m); return m;
   }
-  const track = new THREE.Mesh(G(new THREE.BoxGeometry(LANE * 2 + 3.2, 0.5, LEN + 60)), Mt(new THREE.MeshLambertMaterial({ color: 0xf4eeff })));
+  const track = new THREE.Mesh(G(new THREE.BoxGeometry(LANE * 2 + 3.2, 0.5, LEN + 60)), Mt(lookMat({ color: 0xf4eeff })));
   track.position.set(0, -0.3, -LEN / 2 + 10); scene.add(track);
   inst(G(new THREE.PlaneGeometry(0.1, LEN + 60)), basic, [-LANE, LANE].map(x => [x, -0.04, -LEN / 2 + 10, 1, 1, 1, 0xd9c8ff, -Math.PI / 2]));
   const towerColors = [0xffd6ea, 0xe6d6ff, 0xd6e6ff, 0xfff0b8], towers = [], roofs = [], flags = [], wins = [], puffs = [];
@@ -181,10 +182,10 @@ export function run(container, ctx = {}) {
     S.phase = 'done'; S.result = result; S.endT = 0; S.hugged = false;
     play('cheer');
     if (result === 'win') {
-      centerEl.innerHTML = `<div class="race-card"><div class="big">🏆</div><h2>Nyertél!</h2><p>Szép futás volt!</p><button class="giant again">Még egyszer</button></div>`;
+      centerEl.innerHTML = `<div class="race-card"><div class="big">${icon('ui-trophy')}</div><h2>Nyertél!</h2><p>Szép futás volt!</p><button class="giant again">Még egyszer</button></div>`;
       say('Nyertél! Szép futás volt!');
     } else {
-      centerEl.innerHTML = `<div class="race-card"><div class="big">🦄💖🦄</div><h2>Szép futás volt!</h2><p>Most a barátod ért be előbb.</p><button class="giant again">Még egyszer</button></div>`;
+      centerEl.innerHTML = `<div class="race-card"><div class="big">${icon('g-sparkhorn')}${icon('ui-heart')}${icon('g-sparkhorn', 'flip')}</div><h2>Szép futás volt!</h2><p>Most a barátod ért be előbb.</p><button class="giant again">Még egyszer</button></div>`;
       say('Szép futás volt! Most a barátod ért be előbb. Futunk még egyet?');
     }
     ctx.gift?.();
@@ -197,7 +198,7 @@ export function run(container, ctx = {}) {
 
   let raf = 0, last = performance.now();
   const draw = () => { crowd.update(); renderer.render(scene, camera); };
-  function frame(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; step(dt); draw(); raf = requestAnimationFrame(frame); }
+  function frame(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; step(dt); quality.tick(); draw(); raf = requestAnimationFrame(frame); }
   raf = requestAnimationFrame(frame);
 
   // teszteléshez: gyorsított léptetés és állapot (nem része a játéknak)

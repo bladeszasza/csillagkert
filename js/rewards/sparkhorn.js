@@ -3,6 +3,7 @@
 // A régi és az új Sparkhorn-változattal is működik: a kártya a betöltéskor (vagy időtúllépéskor) tűnik el.
 // „Az én unikornisom": indulás előtt a gyerek unikornisának SZÍNEI a közös `csillagkert_avatar` kulcsba kerülnek
 // (ugyanaz a github.io cím, így a Sparkhorn beolvashatja). Név és más adat nincs benne (js/avatar.js, sparkPalette).
+import { icon } from '../icons.js';
 import { say } from '../voice.js';
 import { SPARK_KEY, sparkPalette } from '../avatar.js';
 export const SPARKHORN_URL = 'https://bladeszasza.github.io/sparkhorn-sprint/';
@@ -14,7 +15,7 @@ export function run(container, { src = SPARKHORN_URL, wait = WAIT_MS, gift, avat
   function load() {
     clearTimeout(timer);
     container.innerHTML = `<div class="spark-wrap">
-      <div class="spark-load"><div class="spark-icon">🦄</div><div class="spark-msg">Töltődik…</div><button class="giant spark-retry" hidden>🔄 Újra</button></div></div>`;
+      <div class="spark-load"><div class="spark-icon">${icon('g-sparkhorn')}</div><div class="spark-msg">Töltődik…</div><button class="giant spark-retry" hidden>${icon('ui-retry')} Újra</button></div></div>`;
     const card = container.querySelector('.spark-load'), msg = container.querySelector('.spark-msg'), retry = container.querySelector('.spark-retry');
     const frame = document.createElement('iframe'); frame.allow = 'autoplay'; frame.title = 'Unikornis-futás';
     let done = false;

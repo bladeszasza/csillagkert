@@ -3,7 +3,9 @@
 // Irányítás: rövid koppintás = oda fut, és ott megáll; tartott ujj (vagy Pencil) = arra fut, amerre mutat.
 // Ugrás: a nagy gomb, de a kis akadályokat (kő, rönk) magától is átugorja, és a tetejükre is felérhet.
 // Barátok: némelyik csatlakozik és veled fut (legfeljebb négy, V alakban), némelyik csak integet.
+import { icon } from '../icons.js';
 import * as THREE from '../../vendor/three.module.js';
+import { mat as lookMat, addLights, createQuality } from '../three/look.js';
 import { makeCharacter, animateCharacter, animateRunner, createCharacterBatch, CHARACTER_KINDS } from '../three/characters.js';
 import { say } from '../voice.js';
 import { play, animalVoice } from '../sounds.js';
@@ -63,17 +65,16 @@ export function run(container, opts = {}) {
   const seed = Number.isFinite(opts.seed) ? opts.seed | 0 : (Math.random() * 1e9) | 0, manual = !!opts.manual;
   const { hash2, noise, heightAt } = makeTerrain(seed);
   container.innerHTML = `<div class="ow"><canvas class="ow-gl"></canvas><div class="ow-load">🌍 Világ építése…</div>
-    <div class="ow-hint">Koppints oda, ahová fusson az unikornis! 👆</div><button class="ow-jump round" aria-label="Ugrás">⬆️</button></div>`;
+    <div class="ow-hint">Koppints oda, ahová fusson az unikornis! ${icon('ui-point')}</div><button class="ow-jump round" aria-label="Ugrás">${icon('ui-jump')}</button></div>`;
   const root = container.querySelector('.ow'), canvas = root.querySelector('.ow-gl');
   const loadEl = root.querySelector('.ow-load'), hint = root.querySelector('.ow-hint'), jumpBtn = root.querySelector('.ow-jump');
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+  const quality = createQuality(renderer, { max: 1.5 });
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0xbfe9ff); scene.fog = new THREE.Fog(0xbfe9ff, FOG_NEAR, FOG_FAR);
   const camera = new THREE.PerspectiveCamera(55, 1, 0.1, FOG_FAR + 15);
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xb6e0a0, 1.5));
-  const sun = new THREE.DirectionalLight(0xfff0d0, 1.4); sun.position.set(20, 40, 10); scene.add(sun, sun.target);
+  const { sun } = addLights(scene, { ground: 0xb6e0a0, sunAt: [20, 40, 10] }); scene.add(sun.target);
 
   // közös geometriák / anyagok (minden chunk ezeket használja)
   const G = {
@@ -82,11 +83,11 @@ export function run(container, opts = {}) {
     puddle: new THREE.CircleGeometry(1, 16), heart: heartGeometry(),
   };
   const M = {
-    ground: new THREE.MeshLambertMaterial({ vertexColors: true }),
-    trunk: new THREE.MeshLambertMaterial({ color: 0x8a5a3c }), crown: new THREE.MeshLambertMaterial({ color: 0xffffff }),
-    flower: new THREE.MeshLambertMaterial({ color: 0xffffff }), rock: new THREE.MeshLambertMaterial({ color: 0xb8b0c8, flatShading: true }),
-    log: new THREE.MeshLambertMaterial({ color: 0x9b6b43 }), puddle: new THREE.MeshLambertMaterial({ color: 0x8fd0ff, transparent: true, opacity: 0.7 }),
-    heart: new THREE.MeshLambertMaterial({ color: 0xff4f8f, emissive: 0x661030 }),
+    ground: lookMat({ vertexColors: true }),
+    trunk: lookMat({ color: 0x8a5a3c }), crown: lookMat({ color: 0xffffff }),
+    flower: lookMat({ color: 0xffffff }), rock: lookMat({ color: 0xb8b0c8, flatShading: true }),
+    log: lookMat({ color: 0x9b6b43 }), puddle: lookMat({ color: 0x8fd0ff, transparent: true, opacity: 0.7 }),
+    heart: lookMat({ color: 0xff4f8f, emissive: 0x661030 }),
   };
   const tmp = new THREE.Object3D(), col = new THREE.Color(), UP = new THREE.Vector3(0, 1, 0), dirV = new THREE.Vector3();
   function instanced(geo, mat, list, place, colors) {
@@ -464,7 +465,7 @@ export function run(container, opts = {}) {
     else { spawnPals(); start(); }
   }
   if (manual) { ensure(0, 0, 99); spawnPals(); start(); } else preload();
-  function frame(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; if (ready) update(dt); render(); raf = requestAnimationFrame(frame); }
+  function frame(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; if (ready) { update(dt); quality.tick(); } render(); raf = requestAnimationFrame(frame); }
   if (!manual) raf = requestAnimationFrame(frame);
 
   // tesztekhez

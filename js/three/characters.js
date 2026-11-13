@@ -4,6 +4,7 @@
 // A kert az összes barát összes alkatrészét alapformánként EGY példányosított hálóval rajzolja ki
 // (createCharacterBatch), így 19 barát is csak néhány rajzolási hívás. A figurák előre (-z) néznek, a talpuk y = 0-n van.
 import * as THREE from '../../vendor/three.module.js';
+import { mat as lookMat } from './look.js';
 import { resolveAvatar, mix, INK as INK_HEX } from '../avatar.js';
 
 const BALL = 0, BEAD = 1, CONE = 2, PYR = 3, CYL = 4, ARC = 5, RING = 6, STAR = 7, HEART = 8;
@@ -526,8 +527,37 @@ export function measureCharacter(g) {
 
 // Példányosított rajzolás: alapformánként egy háló, a barátok alkatrészei a hálók egy-egy példányai.
 // update(): minden képkockában a csontok világ-mátrixából számolja az alkatrészek helyét (a rejtett csont alkatrésze eltűnik).
-export function createCharacterBatch(scene) {
-  const geos = unitGeometries(), mat = new THREE.MeshLambertMaterial({ color: 0xffffff }), white = new THREE.Color(0xffffff);
+// Puha foltárnyék textúrája (számolt, nincs rajzvászon): középen sötétebb tinta-lila, a széle felé elhalványul
+let blobTex = null;
+function blobTexture() {
+  if (blobTex) return blobTex;
+  const N = 32, d = new Uint8Array(N * N * 4);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const r = Math.hypot(x + 0.5 - N / 2, y + 0.5 - N / 2) / (N / 2), t = Math.min(1, Math.max(0, (r - 0.3) / 0.7));
+    d.set([59, 42, 99, Math.round((1 - t * t * (3 - 2 * t)) * 0.42 * 255)], (y * N + x) * 4);
+  }
+  blobTex = new THREE.DataTexture(d, N, N, THREE.RGBAFormat); blobTex.magFilter = blobTex.minFilter = THREE.LinearFilter; blobTex.needsUpdate = true;
+  return blobTex;
+}
+
+// shadows: puha foltárnyék minden figura alatt (egyetlen példányosított korong, +1 rajzolási hívás). A talajon (groundY)
+// marad, és ha a figura a talaj fölé emelkedik, kisebb lesz. Sík talajú jelenetnek való (a kert); a hullámos terepen nincs.
+export function createCharacterBatch(scene, { shadows = false, groundY = 0 } = {}) {
+  const geos = unitGeometries(), mat = lookMat({ color: 0xffffff }), white = new THREE.Color(0xffffff);
+  let shadowMesh = null; const shaded = [];
+  const makeShadows = cap => {
+    const m = new THREE.InstancedMesh(new THREE.CircleGeometry(1, 20).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: blobTexture(), transparent: true, depthWrite: false }), cap);
+    m.count = 0; m.frustumCulled = false; m.renderOrder = -1; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(m); return m;
+  };
+  if (shadows) shadowMesh = makeShadows(32);
+  // árnyék egy figurához (a köteg figuráié magától jön; a saját modellű cicának ezzel kérhető). rx, rz: fél-szélesség, fél-mélység
+  function shadow(g, rx, rz) {
+    if (!shadowMesh || shaded.some(s => s.g === g)) return;
+    if (rx == null) { const b = measureCharacter(g); rx = b.width * 0.58; rz = b.depth * 0.5; }
+    if (shaded.length >= shadowMesh.instanceMatrix.count) { const old = shadowMesh; shadowMesh = makeShadows(old.instanceMatrix.count * 2); scene.remove(old); old.geometry.dispose(); old.material.dispose(); old.dispose(); }
+    shaded.push({ g, rx, rz }); shadowMesh.count = shaded.length;
+  }
+  const unshadow = g => { const i = shaded.findIndex(s => s.g === g); if (i >= 0) { shaded.splice(i, 1); if (shadowMesh) shadowMesh.count = shaded.length; } };
   const make = (geo, cap) => {
     const m = new THREE.InstancedMesh(geo, mat, cap);
     m.count = 0; m.visible = false; m.frustumCulled = false; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.setColorAt(0, white);
@@ -548,13 +578,13 @@ export function createCharacterBatch(scene) {
     need.forEach((n, i) => { if (n) ensure(i, meshes[i].count + n); });
     for (const p of parts) { const m = meshes[p.prim]; p.slot = m.count++; owners[p.prim][p.slot] = p; m.setColorAt(p.slot, p.color); }
     meshes.forEach(m => { m.instanceColor.needsUpdate = true; m.visible = m.count > 0; });
-    chars.push(g);
+    chars.push(g); shadow(g);
   }
   // Barát eltávolítása (a végtelen világban jönnek-mennek): a helyére a háló utolsó példánya költözik, így nincs lyuk
   // és a példányszám nem nő a végtelenségig.
   function remove(g) {
     const i = chars.indexOf(g); if (i < 0) return false;
-    chars.splice(i, 1);
+    chars.splice(i, 1); unshadow(g);
     for (const p of g.userData.parts) {
       const m = meshes[p.prim], own = owners[p.prim], last = --m.count;
       if (p.slot !== last) { const q = own[last]; q.slot = p.slot; own[p.slot] = q; m.setColorAt(p.slot, q.color); }
@@ -563,7 +593,7 @@ export function createCharacterBatch(scene) {
     meshes.forEach(m => { m.instanceColor.needsUpdate = true; m.visible = m.count > 0; });
     return true;
   }
-  const M = new THREE.Matrix4(), ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
+  const M = new THREE.Matrix4(), ZERO = new THREE.Matrix4().makeScale(0, 0, 0), Q = new THREE.Quaternion(), P = new THREE.Vector3(), S = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0);
   const shown = (n, root) => { for (let o = n; o; o = o.parent) { if (!o.visible) return false; if (o === root) return true; } return true; };
   function update() {
     for (const g of chars) {
@@ -573,7 +603,20 @@ export function createCharacterBatch(scene) {
       for (const p of parts) meshes[p.prim].setMatrixAt(p.slot, shown(p.node, g) ? M.multiplyMatrices(p.node.matrixWorld, p.m) : ZERO);
     }
     for (const m of meshes) m.instanceMatrix.needsUpdate = true;
+    if (shadowMesh) {
+      shaded.forEach((s, i) => {
+        const g = s.g; if (!g.visible || !g.parent) { shadowMesh.setMatrixAt(i, ZERO); return; }
+        g.updateMatrixWorld(); const e = g.matrixWorld.elements, sc = Math.hypot(e[0], e[1], e[2]);
+        const lift = Math.max(0, e[13] - groundY), k = Math.max(0.35, 1 - lift * 0.5) * sc;
+        Q.setFromAxisAngle(UP, Math.atan2(e[8], e[10])); P.set(e[12], groundY + 0.015, e[14]); S.set(s.rx * k, 1, s.rz * k);
+        shadowMesh.setMatrixAt(i, M.compose(P, Q, S));
+      });
+      shadowMesh.instanceMatrix.needsUpdate = true;
+    }
   }
-  function dispose() { for (const m of meshes) { scene.remove(m); m.dispose(); } geos.forEach(g => g.dispose()); mat.dispose(); chars.length = 0; }
-  return { add, remove, update, dispose, get meshes() { return meshes; }, get size() { return chars.length; } };
+  function dispose() {
+    for (const m of meshes) { scene.remove(m); m.dispose(); } geos.forEach(g => g.dispose()); mat.dispose(); chars.length = 0;
+    if (shadowMesh) { scene.remove(shadowMesh); shadowMesh.geometry.dispose(); shadowMesh.material.dispose(); shadowMesh.dispose(); shaded.length = 0; }
+  }
+  return { add, remove, update, dispose, shadow, get meshes() { return meshes; }, get size() { return chars.length; }, get shadows() { return shaded.length; } };
 }
