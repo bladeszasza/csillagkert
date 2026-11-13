@@ -509,3 +509,9 @@ button { touch-action: none; }
 .rcard i.titi b { width: 40%; aspect-ratio: 1; border-radius: 50%; background: #ff9f43; }
 .rcard i.sz { background: transparent; border: 3px dashed #c9b8ee; }
 .contour { display: block; }
+/* Ceruzavár: vonalkövetés, útvesztő, pöttyösszekötő (a cica, a csillag és a kép DOM-elem a lap fölött) */
+.mz-tok, .dt-pic { position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none; line-height: 1; }
+.mz-cat { transition: transform .15s ease-out; }
+.maze.done .mz-cat { animation: wig .45s 3; }
+.dt-pic { opacity: 0; transition: opacity .7s; }
+.dt-pic.show { opacity: 1; animation: wig .5s 2; }

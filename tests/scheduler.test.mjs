@@ -15,7 +15,8 @@ function play(state, n, { ability = 3, seed = 7, step = 2 * MIN } = {}) {
     assert.ok(e, `nincs feladat a(z) ${i}. körben`);
     const isFeed = e.item?.type === 'feed';
     const wrong = isFeed || e.graded === false ? 0 : (e.level || 0) <= ability ? (r() < 0.1 ? 1 : 0) : (r() < 0.7 ? 2 : 1);
-    core.record(state, e, { wrong }, now);
+    const help = e.graded === false && (e.level || 0) > ability ? 2 : 0;
+    core.record(state, e, { wrong, help }, now);
     if (isFeed) { state.sinceFeed = 0; state.feedGap = state.feedGap === 2 ? 3 : 2; } else state.sinceFeed = (state.sinceFeed || 0) + 1;
     log.push({ ...e, wrong, isFeed });
     now += step;
@@ -104,11 +105,15 @@ test('kimerült szint: ha egy készség minden feladata megvolt, akkor is ad fel
   assert.equal(core.chooseInStation(s, list, rng(2), 100).level, 1);
 });
 
-test('gyakorló feladat (vonal, rajz): nincs hibaszám, három befejezés után feljebb lép, vissza nem', () => {
+test('gyakorló feladat (vonal, rajz): nincs hibaszám, három befejezés után feljebb lép; tévedéstől nem lép vissza, elakadástól igen', () => {
   const s = { age: 5, seen: {} }, e = { id: 'c.t:1', station: 'ceruza', skill: 'c.s', level: 1, graded: false };
   for (let i = 0; i < 3; i++) core.record(s, e, { wrong: 0 }, i);
   assert.equal(s.sk['st.ceruza'].lv, 2);
   for (let i = 0; i < 6; i++) core.record(s, e, { wrong: 5 }, 10 + i);
   assert.equal(s.sk['st.ceruza'].lv, 2);
   assert.deepEqual(s.hist, []);
+  // elakadás: egy segítség semleges, két segítséggel befejezett feladat után egy szinttel könnyebb jön
+  core.record(s, e, { help: 1 }, 20); assert.equal(s.sk['st.ceruza'].lv, 2);
+  core.record(s, e, { help: 2 }, 21); core.record(s, e, { help: 3 }, 22); assert.equal(s.sk['st.ceruza'].lv, 1);
+  assert.equal(s.rv[e.id].b, 0, 'elakadás után másnap visszajön');
 });

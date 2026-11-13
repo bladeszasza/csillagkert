@@ -17,20 +17,19 @@ Feladatok → csillagok → jutalomjáték. Hibázásért nincs büntetés: szel
 - **A kert a térkép:** az állomások helyek a kertben (ceruzatorony, házikó, almafa, földgömb, robot, festőállvány,
   számolókockák, harangok, piknik…), a jelükre koppintva lehet odamenni. A „Tovább" gomb megmaradt annak, aki nem akar választani.
 - **Rozi, a robot** beszél (böngésző-hang), bemutatkozik, ő osztja a csillagokat; az arca a hangulathoz igazodik.
-- **Feladatok:** vonalkövetés és betűk, számolás 20-ig, összeadás/kivonás, formák, színek és téri viszonyok,
+- **Feladatok:** vonalkövetés, számok, nagybetűk és szavak átírása, útvesztő, pöttyösszekötő, számolás 20-ig, összeadás/kivonás, formák, színek és téri viszonyok,
   gondolkodtató feladatok (sorminta, kakukktojás, ellentétek, párok, „Mi tűnt el?", memória), hangok és rímek
   (szótagtaps, rím, kezdő- és véghang, betű), zene (harangok, feljebb–lejjebb, dallamív, ritmuskártyák, halk–hangos,
   hosszú–rövid, gyors–lassú, dallam-visszhang), állatetetés (a kert valódi 3D lakóját etetjük), testünk, időutazás,
   robotprogramozás (építés, ismétlés, hibakeresés, „Hová ér?", ha–akkor), rajz.
-  Hat állomás feladatai sablonokból készülnek, állomásonként több száz (lásd lent).
+  Hét állomás feladatai sablonokból készülnek, állomásonként több száz (lásd lent).
 - **Jutalomjátékok:** Unikornis-futás, Felhővár-verseny, szabad futás procedurális világban, hami-adagoló (3D cica),
   cica-etetés, Barátom (fésülés, simogatás, labdázás), unikornis-öltöztető (ajándékokkal), buborékpukkasztás.
 - Nincs build lépés: sima HTML + ES modulok + three.js (`vendor/`). GitHub Pages-en fut. A haladás csak az eszközön tárolódik.
 
 ## Tananyag és sorrend
 
-Az M4 mérföldkő második harmada kész: **6 állomás generált** (a 8 generálhatóból); a Ceruzavár és a Rajzasztal az M4
-harmadik részében jön.
+Az M4 mérföldkő harmadik része folyamatban: **7 állomás generált** (a 8 generálhatóból); a Rajzasztal következik.
 
 | Állomás | Önálló feladat | Készség |
 |---|---:|---:|
@@ -40,6 +39,7 @@ harmadik részében jön.
 | Hangok háza | 618 | 7 |
 | Zenevár | 293 | 7 |
 | Robotpálya | 464 | 6 |
+| Ceruzavár | 259 | 9 |
 
 - **Sablonok** (`js/content/`): egy sablon egy feladatfajta; a „cél" az, ami a választ meghatározza (darabszám, minta,
   tárgy). Egy önálló feladat egy (sablon, cél) pár: a tárgy fajtája, a színe, a rossz válaszok és a sorrend díszítés,
@@ -48,6 +48,9 @@ harmadik részében jön.
   után feljebb, 2 segítséggel megoldott után lejjebb lép; egy tévedés semleges. A sikerült feladat 1, 3, 7, 14 nap múlva
   tér vissza, a készségek és az állomások váltakoznak. **Ezek a számok saját kiinduló beállítások**, nem kutatásból
   átvett értékek; az indoklás és a források: [`docs/pedagogia.md`](docs/pedagogia.md).
+- **Ceruzavár**: a vonalat ceruzával vagy ujjal kell követni, hibajelzés nélkül; vonalnál bármelyik végéről, számnál,
+  betűnél és szónál a zöld pöttytől, a számozott sorrendben. A betűformák saját összeállítások: a feladat-galéria
+  betűlapján (`tests/gallery.html?st=ceruza`) átnézhetők.
 - **Rozi mondatai** (`js/lines.js`): melegebb, kevesebb csillag-emlegetés, több közös felfedezés; a gyerek nevét néha
   kimondja, ha meg van adva (a név csak az eszközön tárolódik).
 - **A régi feladatok**: a generált állomások régi, kézzel írt feladatai kikerültek; aki azokból sokat megoldott, az új

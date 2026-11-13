@@ -123,7 +123,10 @@ export function record(state, entry, outcome = {}, now = Date.now(), legacySolve
   state.stAt[entry.station] = now;
   state.lastSt = [...state.lastSt.filter(s => s !== entry.station), entry.station].slice(-2);
   if (outcome.aborted) return;
-  const wrong = Math.max(0, Math.floor(+outcome.wrong || 0)), first = wrong === 0;
+  // gyakorló feladatnál nincs tévedés; a "help" azt számolja, hányszor kellett a feladatnak segítenie (tétlenség után
+  // felvillanó következő pont). Két segítségtől elakadásnak számít: nem lép feljebb, és két ilyen után könnyebb jön.
+  const wrong = Math.max(0, Math.floor(+outcome.wrong || 0)), help = Math.max(0, Math.floor(+outcome.help || 0));
+  const stuck = entry.graded === false && help >= 2, first = wrong === 0 && !stuck;
   // ismétlés: elsőre jó → a következő dobozba (1, 3, 7, 14 nap); különben holnap újra
   const box = state.rv[entry.id]?.b || 0, b = first ? Math.min(INTERVALS.length, box + 1) : 0;
   state.rv[entry.id] = { b, due: now + INTERVALS[Math.max(0, b - 1)] * DAY };
@@ -135,8 +138,9 @@ export function record(state, entry, outcome = {}, now = Date.now(), legacySolve
   // a gyerek szintjén (vagy a készség legnehezebb szintjén, ha az alacsonyabb) megoldott feladat számít a szintlépéshez
   const atLevel = (entry.level || 0) >= Math.min(s.lv, entry.top ?? Infinity);
   if (entry.graded === false) {                   // gyakorló feladat (vonal, betű, rajz, memória): nincs hibaszám, a befejezés számít
-    if (atLevel && ++s.ok >= UP_AFTER) { s.lv = Math.min(MAX_LEVEL, s.lv + 1); s.ok = 0; }
-    return;
+    if (stuck) { s.ok = 0; if (++s.bad >= DOWN_AFTER) { s.lv = Math.max(1, s.lv - 1); s.bad = 0; } }
+    else if (help === 0) { s.bad = 0; if (atLevel && ++s.ok >= UP_AFTER) { s.lv = Math.min(MAX_LEVEL, s.lv + 1); s.ok = 0; } }
+    return;                                       // egy segítség: semleges
   }
   state.hist = [...state.hist, first].slice(-HIST);
   if (first) {

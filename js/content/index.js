@@ -3,8 +3,8 @@
 import { entries, build, GENERATED } from './engine.js';
 import { BASE_ITEMS, FEED_ITEMS, stationOf, idOf } from '../curriculum.js';
 
-// gyakorló feladatok: nincs bennük hibaszám (vonal, betű, rajz, memória) – az ütemező a befejezést számolja
-export const PRACTICE = new Set(['trace', 'betu', 'draw', 'memory']);
+// gyakorló feladatok: nincs bennük hibaszám (vonal, betű, útvesztő, pöttyök, rajz, memória) – az ütemező a befejezést számolja
+export const PRACTICE = new Set(['trace', 'maze', 'dots', 'draw', 'memory']);
 const legacyEntry = it => ({ id: idOf(it), station: stationOf(it), skill: 'legacy.' + stationOf(it), level: 0, graded: !PRACTICE.has(it.type), item: it });
 
 // a kézzel írt feladatok közül csak azok maradnak, amelyek állomása még nem generált
@@ -22,6 +22,7 @@ const OLD = {
   okos: [/^memory\|/, /^pick\|(Melyik nem illik|Mi jön ezután\?\|)/],
   hang: [/^clap\|/, /^betu-[A-Z]$/, /^pick\|(Mi rímel|Melyik állat neve kezdődik)/],
   zene: [/^music\|/],
+  ceruza: [/^trace\|/, /^betu\|/],
   algo: [/^algo\|/, /^order\|Hogyan készítünk szendvicset/, /^pick\|(Hány taps lesz|Mi jön ezután\? Találd ki|Ha sötét van)/],
 };
 export function legacySolvedIn(seen, station) {

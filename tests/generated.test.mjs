@@ -8,6 +8,8 @@ import { pickSpeech, resetLines } from '../js/lines.js';
 import { STATIONS } from '../js/curriculum.js';
 import { NOTES } from '../js/notes.js';
 import { simulate, solve as robotSolve, compress, keyOf } from '../js/robot-path.js';
+import { compose, known } from '../js/glyphs.js';
+import { decode, solveMaze } from '../js/maze-core.js';
 
 const SEEDS = [1, 2, 3];
 const answerOf = o => o.n ?? (o.name || o.key);
@@ -109,6 +111,40 @@ test('minden feladat megoldható: a független megoldó ugyanazt a választ tal�
         if (f.why !== 'short') assert.ok(simulate(it, it.prefill.filter((_, i) => i !== f.step)).ok, `nem a megjelölt lépés a hibás: ${where}`);
       }
       spoken(it.say, where);
+    } else if (it.type === 'trace') {
+      // vonalkövetés: sűrűn pontozott vonások (a feladat-modul ezt követi), értelmes tűrés; írásnál a vonások a szövegből
+      // újra felépíthetők (a megoldó a szövegből rakja össze, nem a make() adatából), és a vonás iránya kötött
+      assert.ok(Array.isArray(it.strokes) && it.strokes.length >= 1 && it.strokes.length <= 40, `rossz vonásszám: ${where}`);
+      for (const st of it.strokes) {
+        assert.ok(st.length >= 1 && st.every(p => p.length === 2 && p.every(Number.isFinite)), `rossz vonás: ${where}`);
+        for (let i = 1; i < st.length; i++) assert.ok(Math.hypot(st[i][0] - st[i - 1][0], st[i][1] - st[i - 1][1]) <= 0.08, `ritka pontok egy vonásban: ${where}`);
+      }
+      assert.ok(it.tol >= 0.1 && it.tol <= 0.3, `rossz tűrés: ${where}`);
+      if (it.text !== undefined) {
+        assert.ok([...it.text].every(known) && it.free === false, `ismeretlen betű vagy szabad irány íráskor: ${where}`);
+        assert.deepEqual(ans, it.strokes, `a vonások nem a szövegből jönnek: ${where}`);
+      } else assert.ok(it.free === true, `vonalnál és formánál bármelyik irány jó: ${where}`);
+      spoken(it.say, where);
+    } else if (it.type === 'maze') {
+      // útvesztő: tökéletes labirintus (minden mező elérhető, pontosan mezőszám − 1 átjáró), a megoldás a kulcs
+      const cells = decode(it.rows);
+      assert.ok(cells.length === it.h && cells.every(r => r.length === it.w), `rossz méret: ${where}`);
+      let open = 0; for (const r of cells) for (const v of r) open += [1, 2, 4, 8].filter(b => v & b).length;
+      assert.equal(open / 2, it.w * it.h - 1, `nem tökéletes labirintus: ${where}`);
+      for (let y = 0; y < it.h; y++) for (let x = 0; x < it.w; x++) assert.ok(solveMaze(it.rows, it.start, [x, y]), `elérhetetlen mező: ${where}`);
+      const sol = solveMaze(it.rows, it.start, it.goal);
+      assert.equal(sol.letters, x.id.split(':')[1], `a kulcs nem a megoldás: ${where}`);
+      assert.deepEqual(ans, sol.path, where);
+      spoken(it.say, where);
+    } else if (it.type === 'dots') {
+      // pöttyösszekötő: a pöttyök száma a szinthez illik, és két pötty nem esik túl közel egymáshoz (külön koppintható)
+      const [lo, hi] = [[4, 6], [7, 9], [9, 11], [12, 14], [15, 20]][it.level - 1];
+      assert.ok(it.dots.length >= lo && it.dots.length <= hi, `${it.dots.length} pötty a(z) ${it.level}. szinten: ${where}`);
+      for (let i = 0; i < it.dots.length; i++) for (let j = i + 1; j < it.dots.length; j++)
+        assert.ok(Math.hypot(it.dots[i][0] - it.dots[j][0], it.dots[i][1] - it.dots[j][1]) >= 0.9, `túl közeli pöttyök (${i + 1}, ${j + 1}): ${where}`);
+      assert.ok(/^egy /.test(it.name) && it.pic, `hiányzó kép vagy név: ${where}`);
+      assert.deepEqual(ans, it.dots.map((_, i) => i), where);
+      spoken(it.say, where); spoken(`Kész! ${it.name} lett belőle!`, where);
     } else assert.fail(`ismeretlen feladattípus: ${it.type} (${where})`);
   }
 });
@@ -117,7 +153,7 @@ test('Rozi minden mondata kimondható: nincs számjegy, jel, emoji, és rövidek
   resetLines();
   for (const t of TEMPLATES) for (const x of targetsOf(t)) {
     const it = build(x.id, rng(x.id));
-    if (it.type === 'algo') { spoken(it.say, x.id); continue; }
+    if (['algo', 'trace', 'maze', 'dots'].includes(it.type)) { spoken(it.say, x.id); continue; }
     if (it.type !== 'pick') continue;
     const sp = pickSpeech(it);
     if (it.memo) spoken(it.memo.say, x.id);

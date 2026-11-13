@@ -31,7 +31,8 @@ const activities = {
   memory: () => import('./activities/memory.js'),
   clap: () => import('./activities/clap.js'),
   draw: () => import('./activities/draw.js'),
-  betu: () => import('./activities/betu.js'),
+  maze: () => import('./activities/maze.js'),
+  dots: () => import('./activities/dots.js'),
   seq: () => import('./activities/seq.js'),
   echo: () => import('./activities/echo.js'),
   feed: () => import('./activities/feed.js'),
@@ -227,7 +228,7 @@ async function runItem(item, station, via) {
   }
   const here = new Set(friendsFor(progress.get().total, progress.get().friends));
   const meter = progress.addStar(station, idOf(item));
-  record(item, { wrong: outcome.wrong || 0 });               // az ütemező ebből hangolja a következő feladatot
+  record(item, { wrong: outcome.wrong || 0, help: outcome.help || 0 });   // az ütemező ebből hangolja a következő feladatot
   if (via === 'next') noteRound(item);
   const arrived = friendsFor(progress.get().total, progress.get().friends).filter(f => !here.has(f));   // ezzel a csillaggal érkezett barát
   garden?.setStars(progress.get().total, progress.get().friends);                 // az új barát besétál, megszólal, szívek szállnak

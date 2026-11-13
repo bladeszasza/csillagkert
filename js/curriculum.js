@@ -1,9 +1,8 @@
 // A kézzel írt feladatok ADATKÉNT (azok az állomások, amelyek még nem sablonokból jönnek) + az állatetetés.
-// A Számoló rét, a Formák és színek és az Okoskodó feladatai sablonokból készülnek (js/content/); a régi, kézzel írt
-// változatuk kikerült innen. type → js/activities/<type>.js. A pick(...) segéd: az ELSŐ válasz a helyes (futáskor
+// A generált állomások (Számoló rét, Formák és színek, Okoskodó, Hangok háza, Zenevár, Robotpálya, Ceruzavár) feladatai
+// sablonokból készülnek (js/content/); a régi, kézzel írt változatuk kikerült innen. type → js/activities/<type>.js. A pick(...) segéd: az ELSŐ válasz a helyes (futáskor
 // összekeveredik), formátum: 'emoji név'. A sorrendet az ütemező adja (js/scheduler-core.js), nem ez a lista.
 
-import { artLetter } from './hu.js';
 import { MEALS, ANY, friendById } from './friends.js';
 
 // Kijelentések a helyes válaszhoz: kulcs = kérdés|helyes válasz neve. Elhangzik: "Igen! <kijelentés>"
@@ -54,67 +53,47 @@ const feed = ([kind, good, ...rest]) => {
   return good === ANY ? { ...base, key: `feed-${kind}-mind`, any: rest } : { ...base, key: `feed-${kind}-${good}`, good, wrong: rest };
 };
 
-// Betű átírása (Ceruzavár). A betűleckék hang-kérdései a Hangok háza sablonjaiba kerültek (js/content/hang.js);
-// a betűk átírása itt marad, amíg a Ceruzavár is sablonokból nem jön (M4 harmadik része).
-const letter = L => ({ type: 'betu', text: L, say: `Fesd át ${artLetter(L)} ${L} betűt!` });
-
 const BASE = [
   // ✏️ Ceruzavár · 🔤 Hangok · 🌍 Világunk · 🍎 Egészség · 🫀 Testünk · 🏺 Időutazás · 🎵 Zene · 🤖 Robotpálya · 🎨 Rajz
-  { type: 'trace', path: 'hullam', say: 'Kövesd a hullámos vonalat a kiscicától a csillagig!' },
-  letter('A'),
   pick('🫀', 'Melyik szerv pumpálja a vért?', '❤️ szív', '🧠 agy', '🦷 fog'),
   pick('🏺', 'Melyik állat élt nagyon régen, és ma már nem él?', '🦖 dinoszaurusz', '🐶 kutya', '🐱 cica'),
   { type: 'draw', template: 'nap' },
 
-  { type: 'trace', path: 'lejto' },
   pick('🌍', 'Melyik évszakban esik a hó?', '❄️ tél', '🏖️ nyár', '🌸 tavasz'),
   pick('🫀', 'Mivel gondolkodunk?', '🧠 agy', '🦴 csont', '👅 nyelv'),
   pick('🫀', 'Mivel látunk?', '👀 szem', '👂 fül', '👃 orr'),
   pick('🏺', 'Mivel melegedtek az ősemberek?', '🔥 tűz', '🧊 jég', '🌧️ eső'),
 
-  { type: 'trace', path: 'cikcak' },
   pick('🌍', 'Ki oltja a tüzet?', '🧑‍🚒 tűzoltó', '🧑‍⚕️ orvos', '🧑‍🍳 szakács'),
   order('🍎', 'Hogyan mossunk kezet? Koppints sorrendben!', '🚰 vizezd be', '🧼 szappanozd be', '🫧 dörzsöld habosra', '💧 öblítsd le', '🧻 töröld meg'),
   pick('🫀', 'Mivel lélegzünk?', '🫁 tüdő', '🦷 fog', '👂 fül'),
-  { type: 'betu', useName: true, text: 'M', say: 'Írd át a betűket! Ez a te neved!' },
 
-  { type: 'trace', path: 'kor' },
-  letter('M'),
   pick('🌍', 'Mikor látjuk a csillagokat az égen?', '🌙 éjszaka', '☀️ délben', '🌤️ délután'),
   pick('🍎', 'Melyik az egészséges?', '🥕 répa', '🍭 nyalóka', '🍟 sült krumpli'),
   pick('🏺', 'Hol laktak a királyok és a lovagok régen?', '🏰 vár', '🏢 felhőkarcoló', '⛺ sátor'),
   { type: 'draw', template: 'haz' },
 
-  { type: 'trace', path: 'hurok' },
   pick('🫀', 'Mivel rágunk?', '🦷 fog', '👃 orr', '👂 fül'),
   withQ('🐥', pick('🌍', 'Kinek a kicsinye a csibe?', '🐔 tyúk', '🐮 tehén', '🐷 malac')),
   pick('🍎', 'Mivel mosunk fogat?', '🪥 fogkefe', '🧼 szappan', '🧽 szivacs'),
   { type: 'draw', template: 'virag' },
 
-  { type: 'trace', path: 'hegyek' },
-  letter('O'),
   pick('🌍', 'Melyik nap jön péntek után?', '🎈 szombat', '🎒 hétfő', '📚 szerda'),
   pick('🫀', 'Mivel hallunk?', '👂 fül', '👃 orr', '🦶 láb'),
   { type: 'draw', say: 'Rajzolj, amit csak szeretnél!' },
 
-  { type: 'trace', path: 'spiral' },
   order('🌍', 'Mi történik a nap folyamán? Koppints sorrendben!', '🌅 reggel', '☀️ dél', '🌇 este', '🌙 éjszaka'),
   order('🫀', 'Hogyan változunk az évek alatt? Koppints sorrendben!', '👶 baba', '🧒 gyerek', '🧑 felnőtt', '🧓 idős'),
-  letter('L'),
   pick('🏺', 'Kik védték a várat?', '⚔️ lovagok', '🧑‍🏫 tanítók', '🧑‍🎨 festők'),
 
-  { type: 'trace', path: 'nyolcas', say: 'Kövesd a nyolcast! Körbe-körbe, mint a kisvasút.' },
   order('🌍', 'Rakd sorba a hét napjait! Koppints sorrendben!', '🔴 hétfő', '🟡 kedd', '🟢 szerda', '🔵 csütörtök'),
   pick('🌍', 'Esik az eső. Mit viszünk magunkkal?', '☂️ esernyő', '🕶️ napszemüveg', '🩴 papucs'),
   pick('🫀', 'Mivel fogjuk meg a kanalat?', '✋ kéz', '🦶 láb', '👃 orr'),
   order('🏺', 'Hogyan változott a közlekedés? Koppints sorrendben!', '🐎 ló', '🚂 vonat', '🚗 autó', '✈️ repülő'),
-  letter('K'),
 
-  { type: 'trace', path: 'hullam' },
   pick('🫀', 'Mivel szagolunk?', '👃 orr', '👂 fül', '👀 szem'),
   order('🌍', 'Hogyan nő a virág? Koppints sorrendben!', '🫘 mag', '🌱 csíra', '🌷 virág'),
   pick('🫀', 'Mivel érezzük az ízeket?', '👅 nyelv', '👀 szem', '✋ kéz'),
-  letter('T'),
 
   pick('🫀', 'Hány ujjunk van két kezünkön?', '🔟 tíz', '5️⃣ öt', '8️⃣ nyolc'),
   pick('🫀', 'Mit csinálunk, ha álmosak vagyunk?', '😴 alszunk', '🏃 szaladgálunk', '⚽ focizunk'),
@@ -147,7 +126,7 @@ export const STATIONS = [
   { id: 'algo', emoji: '🤖', name: 'Robotpálya' },
   { id: 'rajz', emoji: '🎨', name: 'Rajzasztal' },
 ];
-const BY_TYPE = { trace: 'ceruza', betu: 'ceruza', count: 'szamol', math: 'szamol', memory: 'okos', clap: 'hang', draw: 'rajz', seq: 'hang', echo: 'zene', feed: 'allat', algo: 'algo' };
+const BY_TYPE = { trace: 'ceruza', maze: 'ceruza', dots: 'ceruza', count: 'szamol', math: 'szamol', memory: 'okos', clap: 'hang', draw: 'rajz', seq: 'hang', echo: 'zene', feed: 'allat', algo: 'algo' };
 const BY_ICON = { '🔺': 'forma', '🔤': 'hang', '🧩': 'okos', '🌍': 'vilag', '🍎': 'egeszseg', '🔢': 'szamol', '🫀': 'test', '🏺': 'ido', '🤖': 'algo' };
 export const stationOf = item => item.station || BY_TYPE[item.type] || BY_ICON[item.icon] || 'okos';
 export const itemsOf = id => CURRICULUM.filter(i => stationOf(i) === id);

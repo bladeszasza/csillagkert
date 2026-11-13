@@ -84,6 +84,10 @@ async function testAbort() {
     ['math', { a: 4, b: 2, op: '+' }, d => [...d.querySelectorAll('.answer')].find(b => +b.dataset.n !== 6).click()],
     ['clap', { word: { t: '🍎', name: 'alma', parts: ['al', 'ma'] } }, d => d.querySelector('.clap').click()],
     ['echo', { melody: ['szo', 'mi', 'szo'], bells: ['mi', 'szo'] }, d => d.querySelector('[data-h="1"]')?.click()],
+    // Ceruzavár: a feladat elindul és megszólal (a régi "elindul" ellenőrzés helyett), a megszakítás után csend
+    ['trace', { type: 'trace', strokes: [[[0, 0], [0, 0.03], [0, 0.06]]], free: true, tol: 0.2, say: 'Húzz egy vonalat!' }, () => {}],
+    ['maze', { type: 'maze', w: 2, h: 1, rows: ['28'], start: [0, 0], goal: [1, 0], say: 'Vezesd a cicát a csillaghoz!' }, () => {}],
+    ['dots', { type: 'dots', dots: [[0, 0], [5, 0], [5, 5]], closed: true, pic: '⭐', name: 'egy háromszög', say: 'Kösd össze a pöttyöket!' }, () => {}],
     // a robot öt lépést indul (kb. 2,5 mp); a megszakítás menet közben jön, utána nem szólhat a "odaért" mondat
     ['algo', { type: 'algo', w: 6, h: 2, start: [0, 0], goal: [5, 0], walls: [], max: 7, say: 'Vezesd a robotot a csillaghoz!' },
       d => { for (let k = 0; k < 5; k++) d.querySelector('.acmd[data-d="right"]').click(); d.querySelector('#arun').click(); }],
@@ -291,7 +295,8 @@ async function testGeneratedContent() { await testContent(ok); }
 export async function runAll() {
   const only = new URLSearchParams(location.search).get('only');      // pl. smoke.html?only=games – csak a játékok tesztje
   const all = [testHarness, testLoudness, testPositions, testClap, testStart, testGeneratedContent, testAbort, testVoices, testGarden, testOpenWorldGame, testMinigameList];
-  const list = only === 'games' ? [testOpenWorldGame, testMinigameList] : only ? all.filter(t => t.name.toLowerCase().includes(only)) : all;   // pl. ?only=garden
+  // ?only=rest: minden, ami nem a generált tartalom (a teljes futás két részletben fér az időkeretbe)
+  const list = only === 'games' ? [testOpenWorldGame, testMinigameList] : only === 'rest' ? all.filter(t => t !== testGeneratedContent) : only ? all.filter(t => t.name.toLowerCase().includes(only)) : all;   // pl. ?only=garden
   for (const t of list) { try { await t(); } catch (e) { ok(t.name, false, e.stack || e.message); } }
   window.__results = results;
   return results;

@@ -10,8 +10,9 @@ import { OKOS } from './okos.js';
 import { HANG } from './hang.js';
 import { ZENE } from './zene.js';
 import { ALGO } from './algo.js';
+import { CERUZA } from './ceruza.js';
 
-export const TEMPLATES = [...SZAMOL, ...FORMA, ...OKOS, ...HANG, ...ZENE, ...ALGO];
+export const TEMPLATES = [...SZAMOL, ...FORMA, ...OKOS, ...HANG, ...ZENE, ...ALGO, ...CERUZA];
 export const GENERATED = [...new Set(TEMPLATES.map(t => t.station))];
 const BY_ID = new Map(TEMPLATES.map(t => [t.id, t]));
 const TARGETS = new Map();

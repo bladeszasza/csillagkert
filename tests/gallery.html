@@ -27,6 +27,29 @@
   import { NOTES } from '../js/notes.js';
   import { boardHtml, chipsHtml } from '../js/content/algo.js';
   import { solve as robotSolve, compress, DIRS } from '../js/robot-path.js';
+  import { compose, GLYPHS, LETTERS, DIGITS } from '../js/glyphs.js';
+  import { decode, solveMaze } from '../js/maze-core.js';
+  // Ceruzavár: a vonások SVG-ben, a kezdőpont száma és a vonás iránya (nyílhegy) látszik; a szülő így átnézheti a betűformákat
+  function strokesSvg(strokes, size = 360) {
+    const all = strokes.flat(), xs = all.map(p => p[0]), ys = all.map(p => p[1]);
+    const x0 = Math.min(...xs) - 0.4, y0 = Math.min(...ys) - 0.4, w = Math.max(...xs) - x0 + 0.4, h = Math.max(...ys) - y0 + 0.4, u = Math.max(w, h) / 40;
+    const lines = strokes.map((st, i) => st.length === 1
+      ? `<circle cx="${st[0][0]}" cy="${st[0][1]}" r="${u * 1.4}" fill="#8e5be8"/>`
+      : `<polyline points="${st.map(p => p.join(',')).join(' ')}" fill="none" stroke="#8e5be8" stroke-width="${u * 1.3}" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ah)"/>`).join('');
+    const badges = strokes.map((st, i) => `<circle cx="${st[0][0]}" cy="${st[0][1]}" r="${u * 2.2}" fill="${i ? '#d9c8fb' : '#4cc38a'}"/><text x="${st[0][0]}" y="${st[0][1] + u * 0.9}" font-size="${u * 2.6}" text-anchor="middle" font-weight="800" fill="${i ? '#3b2a63' : '#fff'}">${i + 1}</text>`).reverse().join('');
+    return `<svg viewBox="${x0} ${y0} ${w} ${h}" width="${size}" height="${size * Math.min(1.4, h / w)}" style="background:#fff;border-radius:12px"><defs><marker id="ah" markerWidth="4" markerHeight="4" refX="2" refY="2" orient="auto"><path d="M0,0 L4,2 L0,4 z" fill="#e69a00"/></marker></defs>${lines}${badges}</svg>`;
+  }
+  function mazeSvg(it) {
+    const c = decode(it.rows), sol = solveMaze(it.rows, it.start, it.goal).path; let walls = '';
+    for (let y = 0; y < it.h; y++) for (let x = 0; x < it.w; x++) { const v = c[y][x];
+      if (!(v & 1)) walls += `M${x},${y}H${x + 1}`; if (!(v & 8)) walls += `M${x},${y}V${y + 1}`;
+      if (x === it.w - 1 && !(v & 2)) walls += `M${x + 1},${y}V${y + 1}`; if (y === it.h - 1 && !(v & 4)) walls += `M${x},${y + 1}H${x + 1}`; }
+    return `<svg viewBox="-0.2 -0.2 ${it.w + 0.4} ${it.h + 0.4}" width="420" style="background:#fff;border-radius:12px"><polyline points="${sol.map(([x, y]) => (x + 0.5) + ',' + (y + 0.5)).join(' ')}" fill="none" stroke="#ffd34d" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round"/><path d="${walls}" stroke="#6b4bb5" stroke-width="0.09" stroke-linecap="round"/><text x="0.5" y="0.7" font-size="0.5" text-anchor="middle">🐱</text><text x="${it.goal[0] + 0.5}" y="${it.goal[1] + 0.7}" font-size="0.5" text-anchor="middle">⭐</text></svg>`;
+  }
+  function dotsSvg(it) {
+    const pts = it.dots, xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x0 = Math.min(...xs) - 1, y0 = Math.min(...ys) - 1, w = Math.max(...xs) - x0 + 1, h = Math.max(...ys) - y0 + 1;
+    return `<svg viewBox="${x0} ${y0} ${w} ${h}" width="380" style="background:#fff;border-radius:12px"><polyline points="${[...pts, ...(it.closed ? [pts[0]] : [])].map(p => p.join(',')).join(' ')}" fill="#fff3c4" stroke="#c9b3f5" stroke-width="0.12" stroke-dasharray="0.3 0.2"/>${pts.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="0.22" fill="${i ? '#6b4bb5' : '#4cc38a'}"/><text x="${p[0] + 0.3}" y="${p[1] - 0.25}" font-size="0.6" font-weight="800" fill="#3b2a63">${i + 1}</text>`).join('')}</svg>`;
+  }
   const nm = n => NOTES[n].name;
   // a hallásos feladat hangsora szövegesen (a galéria nem játszik hangot): hangnév, (hangerő), [hossz], TÁ / ti taps, · csend
   const sndText = evs => evs.map(e => e.rest ? '·' : e.clap ? (e.dur >= 0.5 ? 'TÁ' : 'ti') : nm(e.n) + (e.vol !== undefined ? '(' + e.vol + ')' : '') + (e.dur !== undefined && e.dur !== 0.8 ? '[' + e.dur + ']' : '') + (e.hi ? '@' + e.hi : '')).join(' ');
@@ -42,12 +65,22 @@
         : it.type === 'memory' ? `<div class="activity"><div class="prompt">memória: ${it.deck.length} pár</div><div class="qbox" style="font-size:60px">${it.deck.map(c => `<span title="${c.n}">${c.e}</span>`).join(' ')}</div><div class="prompt">${it.deck.map(c => c.n).join(', ')}</div></div>`
         : it.type === 'echo' ? `<div class="activity music"><div class="prompt">visszhang: ${it.melody.map(nm).join(' – ')}</div><div class="answers"><span class="mbell">🎵</span></div><div class="answers bells">${it.bells.map(k => `<button class="answer key bell" style="background:${NOTES[k].c}"><span>🔔</span><small>${nm(k)}</small></button>`).join('')}</div></div>`
         : it.type === 'algo' ? `<div class="activity algo"><div class="prompt">${it.prefill?.length ? 'javítás' : 'építés'}${it.loops ? ' ismétléssel' : ''} · ${it.max} hely</div>${boardHtml(it, 64)}<div class="aprog">${(it.prefill || []).map(d => `<span class="atok">${DIRS[d][2]}</span>`).join('')}</div><div class="prompt">segítség: ${chipsHtml(compress(robotSolve(it), it.loops))}</div></div>`
+        : it.type === 'trace' ? `<div class="activity"><div class="prompt">${it.prompt} · ${it.free ? 'bármelyik irány' : 'kötött irány'} · tűrés ${it.tol}</div>${strokesSvg(it.strokes, 520)}<div class="prompt" style="font-size:22px">${it.say}</div></div>`
+        : it.type === 'maze' ? `<div class="activity"><div class="prompt">útvesztő ${it.w}×${it.h} · ${x.key}</div>${mazeSvg(it)}</div>`
+        : it.type === 'dots' ? `<div class="activity"><div class="prompt">${it.dots.length} pötty → ${it.pic} ${it.name}</div>${dotsSvg(it)}</div>`
         : it.type === 'clap' ? `<div class="activity"><div class="prompt">tapsolás: ${it.word.parts.join('-')}</div><div class="items"><span class="item" style="font-size:150px">${it.word.t}</span></div><div class="prompt">${it.word.name} · ${it.word.parts.length} szótag</div></div>`
         : `<div class="activity"><div class="prompt">${it.type} ${JSON.stringify({ n: it.n, a: it.a, b: it.b, op: it.op })}</div></div>`;
       card.innerHTML = `<div class="gin">${body}</div><p>${x.id} · ${x.level}. szint${it.sound ? '<br>🔊 ' + sndText(it.sound.events) : ''}</p>`;
       if (it.type === 'pick') card.querySelectorAll('.answer').forEach(b => { if (it.options[+b.dataset.i].ok) b.classList.add('ok-mark'); });
       out.appendChild(card);
     }
+  }
+  // betűlap: minden betű és számjegy a vonásrenddel (zöld = első vonás, a nyílhegy a vonás vége)
+  if (st === 'ceruza') {
+    const h2 = document.createElement('h2'); h2.textContent = 'Betűlap: nyomtatott nagybetűk és számjegyek (vonássorrend: a pötty száma, irány: a nyílhegy)'; document.body.appendChild(h2);
+    const sheet = document.createElement('div'); sheet.style.cssText = 'display:flex;flex-wrap:wrap;gap:10px';
+    for (const ch of [...LETTERS, ...DIGITS]) sheet.insertAdjacentHTML('beforeend', `<div style="text-align:center;font:700 18px system-ui">${strokesSvg(compose(ch), 130)}<br>${ch}</div>`);
+    document.body.appendChild(sheet);
   }
   window.__ready = true;
 </script>

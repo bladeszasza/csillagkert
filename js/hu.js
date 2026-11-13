@@ -5,7 +5,7 @@ export const art = (word, cap = false) => { const a = VOWEL.test(String(word).tr
 export const withArt = (word, cap = false) => `${art(word, cap)} ${word}`;
 
 // Betűnév alapján ("az A", "az M", de "a K", "a T"): a betű NEVE kezdődik-e magánhangzóval (a, e, ef, el, em, en, es, ...)
-const VOWEL_LETTERS = new Set('AEFILMNORSUXÁÉÍÓÖŐÚÜŰ'.split(''));
+const VOWEL_LETTERS = new Set('AEFILMNORSUXYÁÉÍÓÖŐÚÜŰ'.split('')); // Y: ipszilon
 // a kétjegyű betűnél az első betű neve dönt (az Sz: esz, az Ny: eny; a Cs: csé, a Gy: gyé)
 export const artLetter = (L, cap = false) => { const a = VOWEL_LETTERS.has(String(L).toUpperCase()[0]) ? 'az' : 'a'; return cap ? a[0].toUpperCase() + a.slice(1) : a; };
 

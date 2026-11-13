@@ -11,8 +11,8 @@ Minden forrásnál jelölöm, hogyan ellenőriztem (2026. november 12-én):
 olvastam. A **saját beállítás** jelzésű számok az én döntéseim az elvek alapján, nem kutatásból átvett értékek: a
 tapasztalat szerint hangolandók.
 
-Állapot: az M4 második harmada. Generált állomás: **Számoló rét, Formák és színek, Okoskodó, Hangok háza, Zenevár,
-Robotpálya**. A Ceruzavár és a Rajzasztal az M4 harmadik részében készül. A tény-állomások
+Állapot: az M4 harmadik része. Generált állomás: **Számoló rét, Formák és színek, Okoskodó, Hangok háza, Zenevár,
+Robotpálya, Ceruzavár**. A Rajzasztal az M4 harmadik részében készül. A tény-állomások
 (Világunk, Egészség, Testünk csodái, Időutazás, Állatok, Szívkert) kézzel írt, a szülő által átnézett ténytáblát
 kapnak az M6-ban.
 
@@ -41,7 +41,7 @@ használat.
 | relációszókincs (alatt, között, több, legnagyobb…) | Formák és színek (téri viszonyok, méret), Számoló rét (több, kevesebb, előtte, utána) |
 | tapasztalati következtetés, összefüggés-megértés | Okoskodó (sorminta, kakukktojás, csoportosítás, analógia) |
 | beszédhallgatás | Hangok háza |
-| írásmozgás-koordináció | Ceruzavár (M4/3) |
+| írásmozgás-koordináció | Ceruzavár |
 | szocialitás | Szívkert (M6) |
 
 ---
@@ -69,7 +69,8 @@ A szabályok a `js/scheduler-core.js` fájlban vannak, Node-tesztekkel (`tests/s
 | Szintlépés | 3 elsőre sikerült feladat a gyerek szintjén | Saját beállítás. Ha egy készség legnehezebb feladata a gyerek szintje alatt van, az is számít (különben egy rövid készség-létra megakasztaná a lépést). |
 | Visszalépés | 2 olyan feladat, amelyet csak segítséggel (két tévedés után) oldott meg | Saját beállítás. |
 | Egy tévedés, aztán magától jó | semleges | Saját beállítás: nem lép feljebb, de az addigi sikersorozat sem vész el. Egy ötévesnél egy elcsúszott koppintás nem jelent tudáshiányt. |
-| Gyakorló feladat (memória, vonal, rajz) | 3 befejezés a gyerek szintjén = szintlépés, visszalépés nincs | Saját beállítás: itt nincs „rossz" válasz. |
+| Gyakorló feladat (memória, vonal, útvesztő, pöttyösszekötő, rajz) | 3 befejezés a gyerek szintjén = szintlépés; hibaszám nincs | Saját beállítás: itt nincs „rossz" válasz. |
+| Elakadás gyakorló feladatnál | 6 másodperc tétlenség után felvillan a következő pont; ha a gyerek a segítség után sem halad tovább (kétszer egymás után 6 másodpercig nincs haladás), az egy vonal, útvesztő vagy pöttyösszekötő közben elakadás. Két elakadás után egy szinttel könnyebb jön, és a feladat másnap visszatér. Egyetlen segítség, vagy több rövid, egymástól független szünet egy hosszú feladatban semleges | Saját beállítás: a tévedés itt nem jel (a vonalról le lehet térni), a hosszú megakadás viszont az, hogy a feladat még nehéz. |
 | Ismétlés | elsőre sikerült: 1, 3, 7, 14 nap múlva; tévedés után: másnap | Saját beállítás a Cepeda-féle elv alapján (a konkrét napok nem a tanulmányból vannak). |
 | Ismétlések aránya | 30%, ha a sikerarány legalább 70%; különben 45% | Saját beállítás. |
 | Kihívás és bemelegítés | 90% fölött 35% eséllyel egy szinttel nehezebb; 70–90% között 20% nehezebb, 15% könnyebb; 70% alatt nincs nehezebb, 40% könnyebb | Saját beállítás. A sikerarányt az utolsó 20 értékelt feladatból számolja (5 alatt 80%-ot feltételez). |
@@ -84,14 +85,18 @@ A szabályok a `js/scheduler-core.js` fájlban vannak, Node-tesztekkel (`tests/s
 A 250-es kapu nem az egyedi azonosítókat számolja, hanem az önálló **(sablon, cél)** párokat. A cél csak az, ami a
 választ meghatározza (például a darabszám, a számhármas, a minta típusa); a tárgy fajtája, a színe, az eltérítők és a
 sorrend díszítés, nem új feladat. Állás: Számoló rét **758**, Formák és színek **304**, Okoskodó **407**, Hangok háza
-**618**, Zenevár **293**, Robotpálya **464** önálló feladat (`tests/generated.test.mjs`). A Zenevárban a feljebb vagy
-lejjebb ugyanúgy szóló (transzponált) dallam nem új feladat; a Robotpályán az eltolt vagy nagyobb pályán ugyanaz a
-program sem.
+**618**, Zenevár **293**, Robotpálya **464**, Ceruzavár **259** önálló feladat (`tests/generated.test.mjs`). A
+Zenevárban a feljebb vagy lejjebb ugyanúgy szóló (transzponált) dallam nem új feladat; a Robotpályán az eltolt vagy
+nagyobb pályán ugyanaz a program sem; a Ceruzavárban ugyanaz a vonal nagyobban, máshol vagy fordított irányban sem,
+és ugyanaz az útvesztő-megoldás más zsákutcákkal sem.
 
 Minden generált feladatra automatikus ellenőrzés fut: pontosan egy helyes válasz; nincs ismétlődő válasz; a helyes
 válasz helye egyenletes; minden válasz valahol helyes is; a kimondott szövegben nincs számjegy, jel vagy emoji; a
 gépi megoldó a gyerek által látott képből számolja ki a választ (`tests/generated.test.mjs`), és a böngészőben a
-valódi feladatot is megoldja (`tests/smoke.html`).
+valódi feladatot is megoldja (`tests/smoke.html`). A Ceruzavárban a választós szabályok helyett ez fut: a vonalak
+pontjai elég sűrűk, minden betű ismert, az útvesztő minden mezője elérhető és pontosan egy útja van, a pöttyök nem
+esnek túl közel egymáshoz; a böngészős megoldó tollal (szimulált Apple Pencil-vonással) végigköveti a vonalat, végigvezeti
+a cicát az útvesztőn, és sorban összeköti a pöttyöket.
 
 ---
 
@@ -230,6 +235,51 @@ A pályákat rögzített magból sorsolja a program (minden betöltéskor ugyana
 2. tévedés után megmutatott és a 3. után együtt megépített program a legegyszerűbb megoldás (a legkevesebb
 gombnyomás), és teszt ellenőrzi, hogy elfér a program helyein.
 
+### 3.7 Ceruzavár (9 sablon, 9 készség)
+
+**Mire épül**: a DIFER írásmozgás-koordináció területe (a forrásból csak a készség nevét ellenőriztem). A vonalelemek
+sorrendje a Beery-féle vizuomotoros teszt (VMI) formáinak sorrendjét követi. A teszt 15 formája egyre nehezebb, az
+első kilenc: függőleges vonal, vízszintes vonal, kör, kereszt, jobbra dőlő ferde vonal, négyzet, balra dőlő ferde
+vonal, ferde kereszt, háromszög (Flores és mtsai, 2023, a teszt kézikönyve alapján [teljes szöveg]; magát a
+kézikönyvet nem olvastam). Daly, Kelley és Krauss (2003) 54 óvodás gyerek vizsgálatában azok, akik az első kilenc
+formát le tudták másolni, olvashatóbban másolták le a betűket is [kivonat]; Marr és Cermak (2002) 101 gyereknél
+viszont azt találta, hogy az óvodás VMI-eredmény az egész csoportra nézve nem jelezte előre az első osztályos
+kézírást [kivonat]. A játék ezért csak a sorrendet veszi át: nem mér, és a formákat nem kéri számon.
+
+**Hogyan működik**: a gyerek ceruzával vagy ujjal követi a pöttyös vonalat. **Nincs hibajelzés és nincs hibaszám**: ha
+letér, onnan folytathatja. Vonalnál és formánál bármelyik végéről indulhat (a kört bármelyik irányba); számnál,
+betűnél és szónál a zöld pöttytől, a nyíl irányában, a kezdőpontok számozása szerinti sorrendben. A tűrés a rajz
+méretéhez igazodik (14 és 46 képpont között). Ha a gyerek 6 másodpercig nem halad, felvillan a következő pont, és
+ritkán újra elhangzik az utasítás; ez a segítség az ütemezőnek is jel (2.2: elakadás).
+
+| Készség | Feladat | Szintek | Mi nehezedik |
+|---|---:|---|---|
+| egyenes vonalak | 10 | 1–4 | függőleges, vízszintes, eső → fűszálak, kerítés → ferde vonalak, háztető, létra → napsugarak |
+| íves vonalak | 32 | 1–5 | hullám, kehely, dombok (két–öt elem) → hurkok, csigavonal mindkét forgásiránnyal → nyolcas, buborékok, kampók |
+| tört vonalak | 16 | 2–5 | cikcakk (fekvő és álló), lépcső, várfal, fűrész; egyre több elemmel |
+| formák | 14 | 1–5 | kör, szivárvány → tojás, kereszt → négyzet, téglalap, ferde kereszt, házikó → háromszög, holdsarló, csepp → szív, rombusz, csillag |
+| számjegyek, számok | 21 | 3–5 | 0, 1, 7 → 2, 3, 4, 5, 9 → 6, 8 és a kétjegyű számok tíztől húszig |
+| nagybetűk | 35 | 3–5 | csak egyenes vonásból (I, L, T, E, F, H) → ferde és íves vonással (A, K, M, N, V, W, X, Y, Z, O, C, U, J, D, P) → a többi és az ékezetes betűk |
+| szavak | 53 | 4–5 | kétbetűs szavak (ló, tó, fa, ág…) → három–hat betűs szavak (cica, alma, nyuszi…); a saját név, ha a szülő megadta |
+| útvesztő | 58 | 1–5 | 3×3-as rácstól 6×5-ösig, egyre hosszabb úttal és több zsákutcával; a cica a ceruzát követi, falon nem megy át |
+| pöttyösszekötő | 20 | 1–5 | 4–6 pöttytől 15–17 pöttyig; a végén kiderül, mi lett belőle (papírsárkány, hal, csillag, hajó, pillangó…) |
+
+**Mi számít egy feladatnak**: a vonal családja és elemszáma (és hogy fekvő vagy álló, illetve merre forog), a szám, a
+betű, a szó, az útvesztő megoldása (a lépések sora) és a pöttyös kép. Az útvesztőket rögzített magból sorsolja a
+program, és teszt ellenőrzi, hogy mindegyiknek pontosan egy útja van.
+
+**A betűformák saját összeállítás**: a nyomtatott nagybetűk és a számjegyek alakját és vonássorrendjét én írtam le,
+iskolai vagy óvodai forrással nem vetettem össze. A feladat-galéria betűlapján (`tests/gallery.html?st=ceruza`) mind
+látszik, számozott kezdőponttal és nyíllal; ha egy betűt az óvoda vagy az iskola másképp tanít, azt jelezni kell, és
+átírom. **Kisbetű és írott betű nem készült** (saját döntés: ezek már iskolai anyagok).
+
+**A saját név**: a „nevem" feladat a szülő által megadott nevet írja ki nagybetűvel (legfeljebb kilenc betű, hosszú
+névnél az első szó). A név csak futás közben, a helyi mentésből kerül a feladatba; nem kerül azonosítóba, naplóba vagy
+a repóba. Ha nincs név megadva, a „MAMA" szót kell átírni.
+
+**Szülőnek érdemes kipróbálni** (asztali gépről nem ellenőrizhető): a tűrés az iPaden ceruzával és ujjal (túl
+szigorú? túl laza?), és hogy a vastag vonal kényelmes-e a kis kéznek.
+
 ---
 
 ## 4. Rozi mondatai (monológ-könyvtár)
@@ -251,7 +301,7 @@ A mondatok a `js/lines.js` fájlban vannak; szándékonként legalább hat vált
 
 ## 5. Ami még hátra van, és amit nem tudunk
 
-- **Még nem generált** (M4/3): Ceruzavár, Rajzasztal. (A Zenevár Kodály-sorrendjének forrása: a gyakorlatok a kis
+- **Még nem generált** (M4/3): Rajzasztal. (A Zenevár Kodály-sorrendjének forrása: a gyakorlatok a kis
   terccel, a szó–mi hangközzel kezdenek, aztán egyenként jön a lá, a dó és a ré; a fá és a ti csak később, mert a
   félhangot a gyerekek nehezen éneklik tisztán; [Wikipédia: Kodály method](https://en.wikipedia.org/wiki/Kod%C3%A1ly_method),
   Choksy: *The Kodály Method I*, 1999, 9–12. o. alapján, [másodlagos].)
@@ -285,13 +335,12 @@ A tervezéskor mind a 136 régi feladatot átnéztük; 61-et jelöltünk javíta
 | Testünk csodái | 5 | 5 javítva (az „erek" helyett most „Mivel hallunk?", így a fül is lehet helyes válasz) |
 | Időutazás | 5 | 4 javítva; 1 kivéve: a piramis (az emoji a háromszög jele), az M6-ban rajzolt képpel térhet vissza |
 | Robotpálya | 5 | 5 javítva (áthelyezések és a „kétszer, háromszor" kiejtése korábban; a nyelvtan és a taps-tény az M4/1-ben); az M4/2-ben az egész állomás generált lett |
-| Ceruzavár | 3 | 2 javítva korábban (a kör azonosítója, a név nélküli betű); **1 nyitott**: kilenc feladat ugyanazt az utasítást mondja → M4/3 |
+| Ceruzavár | 3 | 2 javítva korábban (a kör azonosítója, a név nélküli betű); 1 kiváltva: a kilenc azonos utasítású régi vonal helyett generált feladatok jöttek, mindegyiknek saját utasítása van („Rajzolj esőt! Minden csepp fentről lefelé esik.") |
 | Hangok háza | 8 | kivéve, a generált feladatok váltják ki (a válaszok nevét Rozi kimondja, a kép látszik, a tapsolásnál nincs számjegy, sok rím-feladat) |
 | Zenevár | 4 | kivéve, a generált feladatok váltják ki (nincs abszolút hallás: a harangok előbb a nevükkel szólnak; a hangnév mindig harang neve; a felirat „ti") |
 | Rajzasztal | 0 | – |
 
-Összesen: 29 kiváltva generált feladattal, 29 javítva, 1 kivéve, **2 nyitott** (1 az M6-ban, 1 a Ceruzavárral az
-M4/3-ban).
+Összesen: 30 kiváltva generált feladattal, 29 javítva, 1 kivéve, **1 nyitott** (az M6-ban).
 
 ---
 
@@ -327,3 +376,13 @@ M4/3-ban).
 - Wikipédia: *Kodály method* (a hangok sorrendjéhez Choksy, L. (1999). *The Kodály Method I*, 9–12. o. alapján).
   https://en.wikipedia.org/wiki/Kod%C3%A1ly_method [másodlagos]
 - CASEL: a szociális-érzelmi tanulás öt területe. https://casel.org [másodlagos]
+- Daly, C. J., Kelley, G. T., & Krauss, A. (2003). Relationship between visual-motor integration and handwriting
+  skills of children in kindergarten: a modified replication study. *American Journal of Occupational Therapy*,
+  57(4), 459–462. https://doi.org/10.5014/ajot.57.4.459 [kivonat]
+- Flores, P., Coelho, E., Mourão-Carvalhal, M. I., & Forte, P. M. (2023). Preliminary Adaptation of Motor Tests to
+  Evaluate Fine Motor Skills Associated with Mathematical Skills in Preschoolers. *European Journal of Investigation in
+  Health, Psychology and Education*, 13(7), 1330–1361. https://doi.org/10.3390/ejihpe13070098 (a Beery-féle VMI
+  formáinak listája, Beery és Beery kézikönyve alapján) [teljes szöveg]
+- Marr, D., & Cermak, S. (2002). Predicting handwriting performance of early elementary students with the
+  developmental test of visual-motor integration. *Perceptual and Motor Skills*, 95(2), 661–669.
+  https://doi.org/10.2466/pms.2002.95.2.661 [kivonat]

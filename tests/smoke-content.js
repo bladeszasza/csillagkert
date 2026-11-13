@@ -85,6 +85,28 @@ async function solveAlgo(d, item, ans, mistake) {
   await run();
 }
 
+// Ceruzavár: a megoldó tollal követi a képernyőn látható pontokat (végig ugyanazzal a mutatóval: a pen.js a toll után
+// négy másodpercig nem enged ujjat). Vonalnál a vonásokat, útvesztőnél a megoldás mezőinek közepét, pöttyöknél a pöttyöket.
+const penEv = (el, type, p) => { const r = el.getBoundingClientRect(); el.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 7, pointerType: 'pen', pressure: 0.5, clientX: r.left + p.x, clientY: r.top + p.y })); };
+const between = pts => pts.flatMap((p, i) => (i ? Array.from({ length: 6 }, (_, k) => ({ x: pts[i - 1].x + (p.x - pts[i - 1].x) * (k + 1) / 6, y: pts[i - 1].y + (p.y - pts[i - 1].y) * (k + 1) / 6 })) : [p]));
+async function penStroke(el, pts) {
+  penEv(el, 'pointerdown', pts[0]);
+  for (let i = 1; i < pts.length; i++) { penEv(el, 'pointermove', pts[i]); if (i % 60 === 0) await wait(0); }
+  penEv(el, 'pointerup', pts[pts.length - 1]); await wait(10);
+}
+async function solveTrace(d) {
+  const box = await waitFor(() => d.querySelector('.activity.trace'), 5000); if (!box?.__trace) throw new Error('a vonalkövetés nem nyílt meg');
+  for (const st of box.__trace.strokes()) await penStroke(box.__trace.canvas, st);
+}
+async function solveMazeUi(d, path) {
+  const box = await waitFor(() => d.querySelector('.activity.maze'), 5000); if (!box?.__maze) throw new Error('az útvesztő nem nyílt meg');
+  await penStroke(box.__maze.canvas, between(path.map(c => box.__maze.center(c))));
+}
+async function solveDots(d) {
+  const box = await waitFor(() => d.querySelector('.activity.dots'), 5000); if (!box?.__dots) throw new Error('a pöttyösszekötő nem nyílt meg');
+  await penStroke(box.__dots.canvas, between(Array.from({ length: box.__dots.total }, (_, i) => box.__dots.px(i))));
+}
+
 export async function testContent(ok) {
   window.__soundSpeed = 4;                                 // a hangok ugyanazok, csak gyorsabban szólnak (a teszt ideje miatt)
   const runs = [], badLines = [];
@@ -106,6 +128,9 @@ export async function testContent(ok) {
       const tpl = TEMPLATES.find(t => t.id === item.template);
       if (item.type === 'memory') await solveMemory(d, () => result);
       else if (item.type === 'echo') { if (mistake) mistakes++; await solveEcho(d, item, mistake); await waitFor(() => result || err, 10000); }
+      else if (item.type === 'trace') { await solveTrace(d); await waitFor(() => result || err, 8000); }
+      else if (item.type === 'maze') { await solveMazeUi(d, tpl.solve(item)); await waitFor(() => result || err, 8000); }
+      else if (item.type === 'dots') { await solveDots(d); await waitFor(() => result || err, 12000); }
       else if (item.type === 'algo') { if (mistake) mistakes++; await solveAlgo(d, item, tpl.solve(item), mistake); await waitFor(() => result || err, 15000); }
       else if (item.type === 'clap') { if (mistake) mistakes++; await solveClap(d, tpl.solve(item), mistake); await waitFor(() => result || err, 10000); }
       else {
