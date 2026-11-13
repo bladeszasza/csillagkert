@@ -4,8 +4,7 @@
 // Ugrás: a nagy gomb, de a kis akadályokat (kő, rönk) magától is átugorja, és a tetejükre is felérhet.
 // Barátok: némelyik csatlakozik és veled fut (legfeljebb négy, V alakban), némelyik csak integet.
 import * as THREE from '../../vendor/three.module.js';
-import { makeUnicorn, animateRunner } from './creatures.js';
-import { makeCharacter, animateCharacter, createCharacterBatch, CHARACTER_KINDS } from '../three/characters.js';
+import { makeCharacter, animateCharacter, animateRunner, createCharacterBatch, CHARACTER_KINDS } from '../three/characters.js';
 import { say } from '../voice.js';
 import { play, animalVoice } from '../sounds.js';
 
@@ -242,9 +241,10 @@ export function run(container, opts = {}) {
   }
 
   // --- játékos ---
-  const unicorn = makeUnicorn({ body: 0xffffff, mane: 0xff5d8f, horn: 0xffd24d, scale: 1.15 });
+  const unicorn = makeCharacter('unicorn', opts.avatar || {});   // a gyerek saját, felöltöztetett unikornisa
+  unicorn.scale.setScalar(1.15);
   unicorn.rotation.order = 'YXZ';                     // előbb a fordulás, utána a bólintás: ugráskor nem dől oldalra
-  scene.add(unicorn);
+  scene.add(unicorn); batch.add(unicorn);
   const P = { x: 0, z: 0, y: 0, vy: 0, grounded: true, ang: 0, speed: 0, target: null, tap: false, best: Infinity, stall: 0, bump: 0, tilt: 0, avoid: null, avoidSide: 1, moved: 0 };
   const ray = new THREE.Raycaster(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), ndc = new THREE.Vector2(), hit = new THREE.Vector3(), TGT = { x: 0, z: 0 };
   function aim(clientX, clientY) {
@@ -362,7 +362,7 @@ export function run(container, opts = {}) {
     unicorn.rotation.y = P.ang;
     P.tilt += ((P.grounded ? 0 : P.vy > 0 ? -0.25 : 0.12) - P.tilt) * Math.min(1, dt * 8);
     unicorn.rotation.x = P.tilt;
-    animateRunner(unicorn, t, P.grounded ? Math.min(1, P.speed / WALK) : 0.6);
+    animateRunner(unicorn, t, P.grounded ? Math.min(1, P.speed / WALK) : 0.6, !P.grounded);
     // lépések hangja (halk patakopogás)
     if (P.grounded && P.speed > 1.5) { if ((stepT -= dt) <= 0) { stepT = 0.3; play('step'); } } else stepT = 0.05;
 
@@ -469,12 +469,12 @@ export function run(container, opts = {}) {
 
   // tesztekhez
   container.__ow = {
-    P, chunks, seed, canvas, camera, update, render, jump, heightAt, isReady: () => ready,
+    P, chunks, seed, canvas, camera, update, render, jump, heightAt, isReady: () => ready, player: () => unicorn,
     pals: () => pals, followers: () => pals.filter(p => p.follow),
     colliders: () => [...chunks.values()].flatMap(c => c.colliders),
     trees: () => [...chunks.values()].flatMap(c => c.trees),
     setTarget: (x, z) => { TGT.x = x; TGT.z = z; P.target = TGT; P.tap = true; P.best = Infinity; P.stall = 0; },
-    stats: () => ({ chunks: chunks.size, pals: pals.length, batch: batch.size, instances: batch.meshes.reduce((s, m) => s + m.count, 0), calls: renderer.info.render.calls, triangles: renderer.info.render.triangles }),
+    stats: () => ({ chunks: chunks.size, pals: pals.length, batch: batch.size - 1 /* a játékos unikornisa nélkül */, instances: batch.meshes.reduce((s, m) => s + m.count, 0), calls: renderer.info.render.calls, triangles: renderer.info.render.triangles }),
   };
 
   return () => {

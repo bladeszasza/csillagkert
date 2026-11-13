@@ -4,7 +4,9 @@
 // A futam végén (győzelemnél és vereségnél is) ajándék jár, a célban összebújás egy szív (js/economy.js).
 // A díszlet példányosított (közös geometria és anyag), így kevés rajzolási hívással fut.
 import * as THREE from '../../vendor/three.module.js';
-import { makeUnicorn, animateRunner } from './creatures.js';
+import { makeCharacter, animateRunner, createCharacterBatch } from '../three/characters.js';
+// az ellenfél: kék barát-unikornis (az öltöztető színeiből)
+const RIVAL_LOOK = { body: 'c2', mane: 'c2', horn: 'ice' };
 import { say } from '../voice.js';
 import { play } from '../sounds.js';
 
@@ -88,9 +90,10 @@ export function run(container, ctx = {}) {
   scene.add(bars, posts);
 
   // --- versenyzők ---
-  const me = makeUnicorn({ body: 0xffffff, mane: 0xff5d8f, horn: 0xffd24d, scale: 1.0 });
-  const rv = makeUnicorn({ body: 0xd6e6ff, mane: 0x4aa8ff, horn: 0xc0e8ff, scale: 1.0 });
-  [me, rv].forEach(u => { u.rotation.y = 0; scene.add(u); });
+  const me = makeCharacter('unicorn', ctx.avatar || {});        // a gyerek saját, felöltöztetett unikornisa
+  const rv = makeCharacter('unicorn', RIVAL_LOOK);
+  const crowd = createCharacterBatch(scene);
+  [me, rv].forEach(u => { u.rotation.y = 0; scene.add(u); crowd.add(u); });
   const S = { me: null, rv: null, t: 0, phase: 'ready', countdown: 3.2, endT: 0, result: null, shown: null, hoofT: 0, goT: null };
   const racer = (x) => ({ x, z: 0, y: 0, vy: 0, grounded: true, slow: 0, blink: 0, ang: 0 });
   function reset() {
@@ -164,7 +167,7 @@ export function run(container, ctx = {}) {
       u.rotation.order = 'YXZ'; u.rotation.y = r.ang;
       u.visible = r.blink > 0 ? (Math.floor(r.blink * 12) % 2 === 0) : true;
       const running = S.phase === 'run' || (S.phase === 'done' && hug === 0);
-      animateRunner(u, S.t, running ? (r.slow > 0 ? 0.35 : 1) : 0);
+      animateRunner(u, S.t, running ? (r.slow > 0 ? 0.35 : 1) : 0, !r.grounded);
       u.rotation.x = r.grounded ? 0 : -0.2;
     }
     const tz = -(hug > 0 ? Math.max(S.me.z, S.rv.z) : S.me.z);
@@ -193,16 +196,18 @@ export function run(container, ctx = {}) {
   const ro = 'ResizeObserver' in window ? new ResizeObserver(size) : null; ro?.observe(root);
 
   let raf = 0, last = performance.now();
-  function frame(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; step(dt); renderer.render(scene, camera); raf = requestAnimationFrame(frame); }
+  const draw = () => { crowd.update(); renderer.render(scene, camera); };
+  function frame(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; step(dt); draw(); raf = requestAnimationFrame(frame); }
   raf = requestAnimationFrame(frame);
 
   // teszteléshez: gyorsított léptetés és állapot (nem része a játéknak)
   container.__busy = () => S.phase === 'run' || S.phase === 'ready';   // a jutalomidő vége megvárja a futam végét
-  container.__race = { S, step, jump, hurdles, render: () => renderer.render(scene, camera), LEN, info: () => renderer.info.render, canvas, busy: () => S.phase === 'run' || S.phase === 'ready' };
+  container.__race = { S, step, jump, hurdles, render: draw, me, LEN, info: () => renderer.info.render, canvas, busy: () => S.phase === 'run' || S.phase === 'ready' };
 
   say('Verseny! Koppints, és az unikornisod átugorja az akadályt!');
   return () => {
     cancelAnimationFrame(raf); ro?.disconnect(); window.removeEventListener('resize', size); window.removeEventListener('keydown', key);
+    crowd.dispose();
     scene.traverse(o => { if (o.isInstancedMesh) o.dispose(); if (o.geometry) o.geometry.dispose(); if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose()); });
     geos.forEach(g => g.dispose()); mats.forEach(m => m.dispose());
     renderer.dispose(); renderer.forceContextLoss?.();

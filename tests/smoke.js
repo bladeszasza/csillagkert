@@ -7,7 +7,7 @@ import { CURRICULUM } from '../js/curriculum.js';
 import { createGarden } from '../js/garden.js';
 import { soundLog, soundMark, VOICE } from '../js/sounds.js';
 import { MEALS, ANY, friendById, FRIENDS, AREAS, MAX_FLOWERS } from '../js/friends.js';
-import { testOpenWorld, testMinigames } from './smoke-games.js';
+import { testOpenWorld, testAvatarWorld, testMinigames } from './smoke-games.js';
 import { testContent } from './smoke-content.js';
 import { testGifts } from './smoke-gifts.js';
 import { VOL } from '../js/notes.js';
@@ -176,6 +176,15 @@ async function testGarden() {
   const tri300 = d.triangles;
   garden.setStars(MAX_FLOWERS, []); await wait(900); d = garden.debug();
   ok(`kert: a háromszögek száma a teljes kerttel is kordában marad (${MAX_FLOWERS} virág; saját határ: 250 ezer)`, d.flowers === MAX_FLOWERS && d.triangles <= 250000 && d.calls <= 150, `300 csillagnál ${tri300}, ${MAX_FLOWERS} csillagnál ${d.triangles} háromszög, ${d.calls} hívás`);
+  // a kertben lakó saját unikornis átöltözik (a legnehezebb öltözettel is a kereten belül marad)
+  {
+    const HEAVY = { body: 'c7', pattern: 'spots', manestyle: 'curl', horn: 'rainbow', hornstyle: 'spiral', wing: 'rainbow', head: 'flowers', eyes: 'glasses', neck: 'pearls' };
+    const t0 = d.triangles, s0 = d.screen.unicorn, okSet = garden.setAvatar(HEAVY); await wait(300);
+    const d2 = garden.debug(), s1 = d2.screen.unicorn;
+    garden.setAvatar(null); await wait(300); const d3 = garden.debug();
+    ok('kert: a saját unikornis átöltözik a helyén; a legnehezebb öltözettel is a kereten belül', okSet && d2.triangles > t0 && d2.triangles <= 250000 && d2.calls <= 150 && d3.triangles === t0 && s0 && s1 && Math.abs(s1.cx - s0.cx) < 40 && d2.friends.includes('unicorn'),
+      `háromszögek ${t0} → ${d2.triangles} → ${d3.triangles}, hívások ${d2.calls}, hely ${s0 && Math.round(s0.cx)} → ${s1 && Math.round(s1.cx)}`);
+  }
 
   // kertrészek: a kamera átsiklik, ott minden lakó a képen van (a gombsor fölött), és koppintásra a saját hangján szól
   {
@@ -296,7 +305,7 @@ async function testVoices() {
   ok('minden hang (játékhangokkal együtt) hiba nélkül lejátszódik', bad2.length === 0 && need.every(k => SOUND_KINDS.includes(k)), bad2.join(' · ') || `${SOUND_KINDS.length} hang`);
 }
 
-async function testOpenWorldGame() { await testOpenWorld(ok); }
+async function testOpenWorldGame() { await testOpenWorld(ok); await testAvatarWorld(ok); }
 async function testMinigameList() { await testMinigames(ok); }
 async function testGeneratedContent() { await testContent(ok); }
 async function testGiftsAndHearts() { await testGifts(ok); }

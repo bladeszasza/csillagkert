@@ -3,6 +3,13 @@
 import { run as runWorld, separation, angDiff, MAX_FOLLOWERS } from '../js/rewards/openworld.js';
 import { soundLog, soundMark } from '../js/sounds.js';
 import { audio } from '../js/audio.js';
+import { makeCharacter } from '../js/three/characters.js';
+import { SPARK_KEY, sparkPalette } from '../js/avatar.js';
+
+// „az én unikornisom" a játékokban: egy feltűnő öltözet (varázssüveg, tündérszárny, köpeny, csillagok, kék test)
+const LOOK = { body: 'c2', pattern: 'stars', head: 'wizard', wing: 'fairy', neck: 'cape', horn: 'rainbow' };
+const nParts = cfg => makeCharacter('unicorn', cfg).userData.parts.length;
+const wears = (g, cfg) => !!g?.userData.avatar && g.userData.parts.length === nParts(cfg) && nParts(cfg) !== nParts({});
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const box = (w = 1024, h = 768) => { const d = document.createElement('div'); d.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;opacity:0;pointer-events:none`; document.body.appendChild(d); return d; };
@@ -177,6 +184,18 @@ async function lifecycle(ok, name, load, { opts = {}, during, settle = 700 } = {
   h.remove();
 }
 
+export async function testAvatarWorld(ok) {
+  const h = box(), dispose = runWorld(h, { seed: 3, manual: true, avatar: LOOK }), ow = h.__ow;
+  try {
+    steps(ow, 0.5); ow.render();
+    const u = ow.player();
+    ok('szabad futás: a játékos a saját, felöltöztetett unikornisa (a barátokkal közös rajzolásban)', wears(u, LOOK) && ow.stats().calls <= 150, `${u?.userData.parts.length} alkatrész (alap: ${nParts({})}), ${ow.stats().calls} hívás`);
+  } finally { dispose(); h.remove(); }
+  const h2 = box(), d2 = runWorld(h2, { seed: 3, manual: true }), u2 = h2.__ow.player();
+  ok('szabad futás: öltözet nélkül az alap unikornis fut', !!u2?.userData.avatar && u2.userData.parts.length === nParts({}), `${u2?.userData.parts.length} alkatrész`);
+  d2(); h2.remove();
+}
+
 export async function testMinigames(ok) {
   audio();                                                        // a közös hangmotor már él (ezt nem számoljuk)
   const Orig = window.AudioContext; let made = 0;
@@ -184,6 +203,7 @@ export async function testMinigames(ok) {
   try {
     // Barátom: egy 3D-színpad a választó és a gondozás között; ünnepléskor az állat a helyén marad; kevés beszéd
     await lifecycle(ok, 'Barátom', () => import('../js/rewards/pet.js'), {
+      opts: { avatar: LOOK },
       during: async h => {
         const P = h.__pet, s0 = spoken();
         P.choose(1); await wait(300);
@@ -196,6 +216,14 @@ export async function testMinigames(ok) {
         const cv2 = [...h.querySelectorAll('canvas.stage3d')];
         ok('Barátom: egy közös 3D-színpad (váltáskor nincs új WebGL-kontextus)', cv1.length === 1 && cv2.length === 1 && cv1[0] === cv2[0], `vásznak: ${cv1.length} → ${cv2.length}, ugyanaz: ${cv1[0] === cv2[0]}`);
         ok('Barátom: eszközváltáskor nem beszél folyton (15 mp-es korlát)', chatter === 0, `${chatter} mondat három gyors váltásra · ${window.__spoken.slice(s0).join(' | ')}`);
+        P.back(); await wait(200);
+        const nFriends = h.querySelectorAll('.pet-friend').length, uniBtn = [...h.querySelectorAll('.pet-friend')].findIndex(b => b.textContent.includes('🦄'));
+        P.choose(uniBtn); await wait(400);
+        const m = P.model(), cv3 = [...h.querySelectorAll('canvas.stage3d')], inCrowd = P.crowd()?.size === 1;
+        const r6 = P.animalRect(); P.celebrate(); await wait(500);
+        P.back(); await wait(200);
+        ok('Barátom: a saját unikornis is választható, a mostani ruhájában (közös 3D-színpadon)', nFriends === 7 && uniBtn === 6 && wears(m, LOOK) && inCrowd && cv3.length === 1 && cv3[0] === cv1[0] && P.crowd()?.size === 0 && r6.width > 0,
+          `barátok: ${nFriends}, unikornis helye: ${uniBtn}, alkatrész: ${m?.userData.parts.length}, rajzolóban: ${inCrowd} → ${P.crowd()?.size}, vásznak: ${cv3.length}`);
       },
     });
     // Hami-adagoló: szabad játékban legfeljebb 15 mp-enként egy mondat
@@ -210,9 +238,10 @@ export async function testMinigames(ok) {
     });
     // Felhővár-verseny: kevés rajzolási hívás, visszaszámlálás hanggal (felirat csak váltáskor), ünneplés együtt
     await lifecycle(ok, 'Felhővár-verseny', () => import('../js/rewards/race.js'), {
-      settle: 100,
+      settle: 100, opts: { avatar: LOOK },
       during: async h => {
         const R = h.__race, l0 = soundMark(); let writes = 0;
+        ok('verseny: a játékos a saját, felöltöztetett unikornisa', wears(R.me, LOOK), `${R.me?.userData.parts.length} alkatrész (alap: ${nParts({})})`);
         Object.assign(R.S, { phase: 'ready', countdown: 3.2, shown: null });   // a visszaszámlálás elölről (a saját ciklusa közben már elindult)
         const mo = new MutationObserver(m => { writes += m.length; }); mo.observe(h.querySelector('.race-center'), { childList: true, subtree: true, characterData: true });
         for (let i = 0; i < 70; i++) R.step(1 / 20);              // 3,5 mp visszaszámlálás
@@ -231,12 +260,30 @@ export async function testMinigames(ok) {
     });
     await lifecycle(ok, 'Buborékpukkasztás', () => import('../js/rewards/bubbles.js'));
     await lifecycle(ok, 'Csillagfogó cica', () => import('../js/rewards/foodcatch.js'));
-    await lifecycle(ok, 'Unikornis-öltöztető', () => import('../js/rewards/dressup.js'));
+    await lifecycle(ok, 'Unikornis-öltöztető', () => import('../js/rewards/dressup.js'), {
+      during: async h => {
+        const D = h.__dress, view = h.querySelector('.du-view'), r = view.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+        const rot0 = D.rot();
+        pe(view, 'pointerdown', x, y, 5); for (let k = 1; k <= 5; k++) pe(view, 'pointermove', x + k * 30, y, 5); pe(view, 'pointerup', x + 150, y, 5);
+        const turned = D.rot() - rot0;
+        h.querySelector('.du-zoom').click(); const z1 = D.zoom(); await wait(300); h.querySelector('.du-zoom').click(); const z2 = D.zoom();
+        h.querySelector('.du-tab[data-t="test"]').click(); await wait(20);
+        const was = D.sel().body, pick = [...h.querySelectorAll('.du-opt[data-k="body"]:not(.locked):not(.sel)')][2], m0 = D.model();
+        pick.click(); await wait(50);
+        const changed = D.sel().body === pick.dataset.i && D.model() !== m0 && h.querySelector('.du-opt[data-k="body"].sel')?.dataset.i === pick.dataset.i;   // a gombsor újrarajzolódik
+        h.querySelector(`.du-opt[data-k="body"][data-i="${was}"]`).click(); await wait(50);
+        D.render(); const calls = D.calls(), height = D.height();
+        ok('öltöztető 3D: ujjal forgatható, nagyítható, választásra rögtön átöltözik; kevés rajzolási hívás', turned > 1.5 && z1 === 1 && z2 === 0 && changed && D.sel().body === was && calls <= 20 && height > 2 && height < 2.5,
+          `fordulás ${turned.toFixed(2)} rad, nagyítás ${z1}→${z2}, átöltözött: ${changed}, hívások ${calls}, magasság ${height.toFixed(2)}`);
+      },
+    });
     // Sparkhorn-keret: betöltés után eltűnik a kártya; hálózat nélkül kedves hibaüzenet és Újra gomb
     await lifecycle(ok, 'Sparkhorn-keret', () => import('../js/rewards/sparkhorn.js'), {
-      opts: { src: './blank.html', wait: 3000 }, settle: 800,
+      opts: { src: './blank.html', wait: 3000, avatar: LOOK }, settle: 800,
       during: async h => {
         const st = h.__spark.state();
+        let saved = null; try { saved = JSON.parse(localStorage.getItem(SPARK_KEY)); } catch (e) {}
+        ok('Sparkhorn-keret: a saját unikornis színei a közös kulcsba kerülnek (csak színek, név nélkül)', JSON.stringify(saved) === JSON.stringify(sparkPalette(LOOK)) && window.__memStorage === true, `${localStorage.getItem(SPARK_KEY)}`);
         // a jutalomidő vége kivárja a futó kört: a keretben futó játék busy() jelzését olvassuk
         const fw = h.querySelector('iframe').contentWindow, idle = h.__busy();
         fw.__sparkhorn = { busy: () => true }; const running = h.__busy();

@@ -18,11 +18,23 @@
 <script type="module">
 // Fejlesztői galéria: minden kerti barát egymás mellett, elölről (a kertben használt példányosított rajzolással).
 // ?kind=fox – csak egy barát, közelről;  ?wave=1 – integetés / szárnycsapkodás;  ?side=1 – oldalnézet
+// ?outfits=1 – a saját unikornis nyolcféle ruhában (az öltöztető leírásával, js/avatar.js);  ?angle=0.6 – ferde nézet
 import * as THREE from '../vendor/three.module.js';
 import { CHARACTER_KINDS, makeCharacter, animateCharacter, measureCharacter, createCharacterBatch } from '../js/three/characters.js';
 import { FRIENDS } from '../js/friends.js';
 
-const q = new URLSearchParams(location.search), only = q.get('kind'), wave = q.get('wave') === '1', side = q.get('side') === '1';
+const q = new URLSearchParams(location.search), only = q.get('kind'), wave = q.get('wave') === '1', side = q.get('side') === '1', angle = +(q.get('angle') || 0);
+const OUTFITS = [
+  ['alap', {}],
+  ['korona', { head: 'crown', wing: 'rainbow', pattern: 'spots' }],
+  ['varázsló', { head: 'wizard', wing: 'feather', pattern: 'stars', horn: 'rainbow', hornstyle: 'spiral' }],
+  ['virág', { body: 'c1', head: 'flowers', wing: 'butterfly', manestyle: 'braid', neck: 'necklace' }],
+  ['tündér', { body: 'c2', mane: 'c2', head: 'bow', wing: 'fairy', manestyle: 'curl', neck: 'pearls', horn: 'ice' }],
+  ['köpeny', { body: 'c4', mane: 'c4', neck: 'cape', eyes: 'glasses', manestyle: 'wild', pattern: 'stripes', horn: 'pink' }],
+  ['éjszaka', { body: 'c7', mane: 'c5', eyes: 'hearts', neck: 'scarf', pattern: 'hearts' }],
+  ['minden', { mane: 'rainbow', horn: 'rainbow', wing: 'rainbow', head: 'wizard', neck: 'cape', pattern: 'stars', eyes: 'hearts', hornstyle: 'spiral' }],
+];
+const outfits = q.get('outfits') === '1';
 const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -33,10 +45,10 @@ const ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshLam
 const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
 const batch = createCharacterBatch(scene);
 // ?page=0,1,2… – négyesével, közelebbről
-const page = q.get('page'), kinds = only ? [only] : page != null ? CHARACTER_KINDS.slice(+page * 4, +page * 4 + 4) : CHARACTER_KINDS, cols = Math.min(kinds.length, 6);
+const page = q.get('page'), kinds = outfits ? OUTFITS.map(o => o[0]) : only ? [only] : page != null ? CHARACTER_KINDS.slice(+page * 4, +page * 4 + 4) : CHARACTER_KINDS, cols = Math.min(kinds.length, outfits ? 4 : 6);
 const chars = kinds.map((kind, i) => {
-  const g = makeCharacter(kind), x = (i % cols - (cols - 1) / 2) * 2.2, z = Math.floor(i / cols) * 2.6;
-  g.position.set(x, 0, z); g.rotation.y = side ? Math.PI / 2 : Math.PI; scene.add(g); batch.add(g);
+  const g = outfits ? makeCharacter('unicorn', OUTFITS[i][1]) : makeCharacter(kind), x = (i % cols - (cols - 1) / 2) * 2.2, z = Math.floor(i / cols) * (outfits ? 4 : 2.6);
+  g.position.set(x, 0, z); g.rotation.y = (side ? Math.PI / 2 : Math.PI) + angle; scene.add(g); batch.add(g);
   return { kind, g };
 });
 const rows = Math.ceil(kinds.length / cols);
@@ -46,8 +58,8 @@ const tags = chars.map(({ kind }) => { const s = document.createElement('span');
 function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
 const fit = (cols * 2.2 / 2 + 0.5) / (Math.tan(20 * Math.PI / 180) * innerWidth / innerHeight);
-camera.position.set(0, only ? 1.1 : 1.4 + rows * 0.9, (only ? 3.2 : fit) + (rows - 1) * 2.6);
-camera.lookAt(0, only ? 0.7 : 0.75, (rows - 1) * 1.3);
+camera.position.set(0, only ? 1.1 : 1.4 + rows * (outfits ? 2.2 : 0.9), (only ? 3.2 : fit) + (rows - 1) * (outfits ? 4 : 2.6));
+camera.lookAt(0, only ? 0.7 : 0.75, (rows - 1) * (outfits ? 2 : 1.3));
 const v = new THREE.Vector3();
 function frame(now) {
   const t = now / 1000;
@@ -59,6 +71,7 @@ function frame(now) {
 }
 requestAnimationFrame(frame);
 window.__gallery = { calls: () => renderer.info.render.calls, tris: () => renderer.info.render.triangles };
+setTimeout(() => { window.__ready = true; }, 600);
 </script>
 </body>
 </html>

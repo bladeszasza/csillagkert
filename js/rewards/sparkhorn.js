@@ -1,12 +1,16 @@
 // A Sparkhorn Sprint beágyazva (ugyanarról a github.io címről), betöltés- és hibajelzéssel:
 // amíg tölt, egy kedves "Töltődik…" kártya látszik; ha nem jön be (nincs net), szól, és van "Újra" gomb.
 // A régi és az új Sparkhorn-változattal is működik: a kártya a betöltéskor (vagy időtúllépéskor) tűnik el.
+// „Az én unikornisom": indulás előtt a gyerek unikornisának SZÍNEI a közös `csillagkert_avatar` kulcsba kerülnek
+// (ugyanaz a github.io cím, így a Sparkhorn beolvashatja). Név és más adat nincs benne (js/avatar.js, sparkPalette).
 import { say } from '../voice.js';
+import { SPARK_KEY, sparkPalette } from '../avatar.js';
 export const SPARKHORN_URL = 'https://bladeszasza.github.io/sparkhorn-sprint/';
 const WAIT_MS = 15000;
 
-export function run(container, { src = SPARKHORN_URL, wait = WAIT_MS, gift } = {}) {
+export function run(container, { src = SPARKHORN_URL, wait = WAIT_MS, gift, avatar } = {}) {
   let timer = 0, alive = true, watch = 0, wasBusy = false;
+  if (avatar) { try { localStorage.setItem(SPARK_KEY, JSON.stringify(sparkPalette(avatar))); } catch (e) { /* tároló nélkül az alap unikornisok futnak */ } }
   function load() {
     clearTimeout(timer);
     container.innerHTML = `<div class="spark-wrap">

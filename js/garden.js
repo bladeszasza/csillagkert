@@ -147,10 +147,11 @@ export function createGarden(canvas) {
 
   // --- a kert lakói: a cica saját modell, a többi barát alkatrészei közös, példányosított hálókban (pár rajzolási hívás) ---
   const actors = new Map(), crowd = createCharacterBatch(scene);
+  let avatarCfg = null;                                 // a saját unikornis ruhája (js/avatar.js); setAvatar() állítja
   function spawn(id, enter) {
     if (actors.has(id)) return actors.get(id);
     const def = friendById(id); if (!def) return null;
-    const isCat = id === 'cat', g = isCat ? makeGardenCat() : makeCharacter(id), size = isCat ? 1 : SCALE;
+    const isCat = id === 'cat', g = isCat ? makeGardenCat() : makeCharacter(id, id === 'unicorn' ? avatarCfg : undefined), size = isCat ? 1 : SCALE;
     g.scale.setScalar(size);
     if (!isCat) crowd.add(g);
     const u = g.userData, now = performance.now();
@@ -345,6 +346,18 @@ export function createGarden(canvas) {
     if (hit) poke(hit);
   });
 
+  // Átöltözés: a kertben lakó saját unikornis új ruhát kap (a helye és a mozgása marad)
+  function setAvatar(cfg) {
+    avatarCfg = cfg || null;
+    const a = actors.get('unicorn'); if (!a) return false;
+    const old = a.g, g = makeCharacter('unicorn', avatarCfg);
+    g.scale.setScalar(a.size); g.position.copy(old.position); g.rotation.copy(old.rotation);
+    crowd.remove(old); scene.remove(old); crowd.add(g); scene.add(g);
+    a.g = g; a.bodyBase = g.userData.body.scale.clone();
+    if (paused) draw(performance.now());
+    return true;
+  }
+
   function setStars(total, fed = [], animate = true) {
     const first = flowerCount === 0, target = Math.min(total, MAX_FLOWERS);
     while (flowerCount < target) { addFlower(flowerCount, !first && flowerCount >= target - 1); flowerCount++; }
@@ -413,7 +426,7 @@ export function createGarden(canvas) {
   }
 
   return {
-    setStars, setGifts, beginFeed, endFeed, places, setDay, goTo, areas,
+    setStars, setGifts, setAvatar, beginFeed, endFeed, places, setDay, goTo, areas,
     decorArea: id => giftById(id)?.spot?.[0] || null,
     area: () => pan.area,
     cheer() { const now = performance.now(); let k = 0; actors.forEach(a => { a.hop = now + 900 + (k++ % 3) * 70; }); },   // új csillag: mindenki ugrik egyet

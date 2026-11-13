@@ -2,21 +2,24 @@
 // Az állat minden gondoskodásra boldog hangokat ad (kuncog, dorombol, kacag...). Nincs hiba, nincs vége.
 import { happy, unlockAudio, play } from '../sounds.js';
 import { say } from '../voice.js';
-import { FRIEND_ACC } from '../hu.js';
+import { FRIEND_ACC, withArt } from '../hu.js';
 import { createStage } from './stage3d.js';
 import { makeGardenCat, animateCat, CAT_HEIGHT } from './cat3d.js';
 import { makeFriend, animateFriend } from './creatures.js';
-const KIND = { cica: 'cat', nyuszi: 'bunny', kutya: 'dog', róka: 'fox', maci: 'bear', panda: 'panda' };
+import { makeCharacter, animateCharacter, measureCharacter, createCharacterBatch } from '../three/characters.js';
+const KIND = { cica: 'cat', nyuszi: 'bunny', kutya: 'dog', róka: 'fox', maci: 'bear', panda: 'panda', unikornis: 'unicorn' };
 
-const FRIENDS = [['🐱', 'cica'], ['🐰', 'nyuszi'], ['🐶', 'kutya'], ['🦊', 'róka'], ['🐻', 'maci'], ['🐼', 'panda']];
+// az utolsó a gyerek saját unikornisa, a mostani ruhájában (ctx.avatar)
+const FRIENDS = [['🐱', 'cica'], ['🐰', 'nyuszi'], ['🐶', 'kutya'], ['🦊', 'róka'], ['🐻', 'maci'], ['🐼', 'panda'], ['🦄', 'unikornis']];
 
 export function run(container, ctx = {}) {
   let alive = true, raf = 0, cleanup = () => {};
   const root = document.createElement('div'); root.className = 'pet'; container.innerHTML = ''; container.appendChild(root);
   const view = document.createElement('div'); view.style.cssText = 'position:absolute;inset:0'; root.appendChild(view);
   // EGY 3D színpad az egész játékra (a választó ↔ gondozás váltás nem nyit új WebGL-kontextust)
-  let st3 = null;
+  let st3 = null, crowd = null;
   try { st3 = createStage(root); st3.canvas.style.display = 'none'; } catch (e) { console.warn('3D színpad nem indult', e); st3 = null; }
+  const ensureCrowd = () => crowd || (crowd = createCharacterBatch(st3.scene));   // a saját unikornis példányosított rajzolása
   // Rozi szabad játékban ritkán szól (legfeljebb 15 mp-enként egyszer); a hang és a kép viszi a többit
   let lastTalk = -1e9;
   const talk = (text, force = false) => { const now = performance.now(); if (!force && now - lastTalk < 15000) return; lastTalk = now; say(text, { remember: false }); };
@@ -39,15 +42,19 @@ export function run(container, ctx = {}) {
       </div>`;
     const stage = view.querySelector('#pet-stage'), animal = view.querySelector('#pet-animal'), fx = view.querySelector('#pet-fx'), fill = view.querySelector('.pet-meter .fill');
     // a 3D állat az emoji helyén jelenik meg (az emoji csak a hely és az érintés célpontja)
-    let model = null; const kind = KIND[name] || 'cat';
-    if (st3) { try { model = kind === 'cat' ? makeGardenCat() : makeFriend(kind); model.userData.facing = kind === 'cat' ? 0 : Math.PI; st3.add(model); st3.canvas.style.display = ''; animal.style.opacity = 0; } catch (e) { console.warn('3D állat nem indult', e); model = null; } }
+    let model = null, modelH = 1.9; const kind = KIND[name] || 'cat', uni = kind === 'unicorn';
+    if (st3) { try {
+      if (uni) { model = makeCharacter('unicorn', ctx.avatar || {}); ensureCrowd().add(model); modelH = measureCharacter(model).height; model.userData.facing = Math.PI - 0.55; }   // ferdén áll: látszik a szarva és a ruhája
+      else { model = kind === 'cat' ? makeGardenCat() : makeFriend(kind); model.userData.facing = kind === 'cat' ? 0 : Math.PI; if (kind === 'cat') modelH = CAT_HEIGHT; }
+      st3.add(model); st3.canvas.style.display = ''; animal.style.opacity = 0;
+    } catch (e) { console.warn('3D állat nem indult', e); model = null; } }
     let mode = 'brush', joy = 0, ball = null, ballEl = null, animalPos = { x: 0, y: 0 }, home = { x: 0, y: 0 }, chasing = false, hopUntil = 0;
     const rect = () => stage.getBoundingClientRect();
     const setJoy = d => { joy = Math.min(100, Math.max(0, joy + d)); fill.style.width = joy + '%'; if (joy >= 100) { joy = 0; fill.style.width = '0%'; celebrate(); } };
     // ünneplés: csak a 3D állat ugrál a helyén (a régi CSS-animáció felülírta a helyét, és a sarokba rántotta)
     const timers = new Set(), later = (fn, ms) => { const id = setTimeout(() => { timers.delete(id); fn(); }, ms); timers.add(id); };
     function celebrate() { ctx.heart?.(); ctx.gift?.(); happy(emoji);   // a boldog barát: gondoskodás (szív) és ajándék
-      later(() => happy(emoji), 500); hopUntil = performance.now() + 1500; spawn('🎉', 6); talk(`A ${name} nagyon boldog!`); }
+      later(() => happy(emoji), 500); hopUntil = performance.now() + 1500; spawn('🎉', 6); talk(`${withArt(name, true)} nagyon boldog!`); }
     function spawn(e, n = 1, x, y) {
       const R = rect();
       for (let i = 0; i < n; i++) {
@@ -109,11 +116,12 @@ export function run(container, ctx = {}) {
       placeAnimal();
       if (st3 && model) {
         const rr = st3.hostRect(), r = animal.getBoundingClientRect(), t = now / 1000, hop = now < hopUntil, wig = animal.classList.contains('wiggle');
-        st3.place(model, r.left - rr.left + r.width / 2, r.bottom - rr.top - (hop ? Math.abs(Math.sin(t * 9)) * 30 : 0), r.height * (kind === 'cat' ? 1.35 : 1.45), kind === 'cat' ? CAT_HEIGHT : 1.9);
+        st3.place(model, r.left - rr.left + r.width / 2, r.bottom - rr.top - (hop ? Math.abs(Math.sin(t * 9)) * 30 : 0), r.height * (kind === 'cat' ? 1.35 : uni ? 1.2 : 1.45), modelH);
         const dxb = ball && chasing ? (ball.x - (animalPos.x + r.width / 2)) / 220 : 0;
         model.rotation.y = model.userData.facing + Math.max(-0.9, Math.min(0.9, dxb)) + Math.sin(t) * 0.12;
-        if (kind === 'cat') animateCat(model, t, { hop: hop ? (t * 1.5) % 1 : 0, shake: wig ? (t * 3) % 1 : 0, cheer: hop }); else animateFriend(model, t, chasing ? 0.8 : 0, hop || wig);
-        st3.render();
+        if (kind === 'cat') animateCat(model, t, { hop: hop ? (t * 1.5) % 1 : 0, shake: wig ? (t * 3) % 1 : 0, cheer: hop });
+        else if (uni) animateCharacter(model, t, chasing ? 0.8 : 0, hop || wig); else animateFriend(model, t, chasing ? 0.8 : 0, hop || wig);
+        crowd?.update(); st3.render();
       }
       raf = requestAnimationFrame(frame);
     }
@@ -123,18 +131,18 @@ export function run(container, ctx = {}) {
     const told = new Set();
     view.querySelectorAll('.pet-tool').forEach(b => b.addEventListener('click', () => {
       mode = b.dataset.m; view.querySelectorAll('.pet-tool').forEach(x => x.classList.toggle('sel', x === b)); down = false;
-      const tip = { ball: 'Dobd el a labdát!', brush: 'Fésüld meg az ujjaddal!', pet: `Simogasd meg a ${FRIEND_ACC[name] || name}!` }[mode];
+      const tip = { ball: 'Dobd el a labdát!', brush: 'Fésüld meg az ujjaddal!', pet: `Simogasd meg ${withArt(FRIEND_ACC[name] || name)}!` }[mode];
       if (!told.has(mode)) { told.add(mode); talk(tip); }
       if (mode === 'ball') { ensureBall(); ballEl.style.display = ''; play('boing'); }
       else { if (ballEl) ballEl.style.display = 'none'; chasing = false; if (ball) ball.carried = false; }
     }));
     view.querySelector('.pet-back').addEventListener('click', chooser);
     told.add('brush'); talk(`Szia! Fésülj meg, simogass meg, vagy dobj labdát!`, true);
-    container.__pet = Object.assign(container.__pet || {}, { celebrate, animalRect: () => animal.getBoundingClientRect(), tool: m => view.querySelector('.pet-tool[data-m=' + m + ']')?.click(), back: () => view.querySelector('.pet-back')?.click() });
-    cleanup = () => { cancelAnimationFrame(raf); timers.forEach(clearTimeout); timers.clear(); if (st3 && model) st3.remove(model); model = null; };
+    container.__pet = Object.assign(container.__pet || {}, { celebrate, animalRect: () => animal.getBoundingClientRect(), tool: m => view.querySelector('.pet-tool[data-m=' + m + ']')?.click(), back: () => view.querySelector('.pet-back')?.click(), model: () => model, crowd: () => crowd });
+    cleanup = () => { cancelAnimationFrame(raf); timers.forEach(clearTimeout); timers.clear(); if (st3 && model) { crowd?.remove(model); st3.remove(model); } model = null; };
   }
 
   chooser();
   container.__pet = Object.assign(container.__pet || {}, { choose: i => view.querySelectorAll('.pet-friend')[i]?.click(), stage: () => st3, view });
-  return () => { alive = false; cleanup(); st3?.dispose(); st3 = null; };
+  return () => { alive = false; cleanup(); crowd?.dispose(); crowd = null; st3?.dispose(); st3 = null; };
 }

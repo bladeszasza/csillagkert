@@ -268,7 +268,12 @@ button { touch-action: none; }
 @keyframes giftgo { 0% { left: 80%; } 100% { left: 20%; } }
 
 .dress2 { position: absolute; inset: 0; display: flex; flex-direction: column; background: #fff; }
-.du-svg { flex: 1; min-height: 0; width: 100%; }
+.du-view { flex: 1; min-height: 0; width: 100%; position: relative; overflow: hidden; touch-action: none; }
+.du-bg, .du-bg svg, .du-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.du-zoom { position: absolute; right: 14px; bottom: 14px; z-index: 2; } .du-zoom.sel { background: var(--purple); }
+.du-hint { position: absolute; left: 50%; bottom: 18%; font-size: 44px; pointer-events: none; animation: duhint 1.6s ease-in-out infinite; transition: opacity .4s; }
+.du-hint.gone { opacity: 0; animation: none; }
+@keyframes duhint { 0%, 100% { transform: translateX(-90%); } 50% { transform: translateX(10%); } }
 .du-tabs { display: flex; gap: 8px; justify-content: center; padding: 6px; flex-wrap: wrap; }
 .du-tab { width: 58px; height: 52px; border-radius: 16px; background: #f1ebff; font-size: 28px; } .du-tab.sel { background: var(--purple); box-shadow: 0 0 0 3px #cdb8f2; }
 .du-opts { padding: 4px 10px 12px; display: flex; flex-direction: column; gap: 8px; align-items: center; }
@@ -276,7 +281,7 @@ button { touch-action: none; }
 .du-opt { position: relative; width: 62px; height: 62px; border-radius: 50%; border: 4px solid #fff; background: #f1ebff; font-size: 30px; box-shadow: 0 3px 8px rgba(60,20,120,.3); } .du-opt.sel { border-color: var(--ink); transform: scale(1.12); }
 .du-opt.locked { filter: grayscale(.8); opacity: .75; } .du-opt .lock { position: absolute; right: -6px; bottom: -6px; font-size: 20px; }
 .du-msg { text-align: center; min-height: 22px; font-weight: 800; color: var(--ink); padding-bottom: 6px; }
-@media (max-height: 560px) { .du-svg { flex: 0 0 38%; } .du-opt, .du-tab { width: 48px; height: 48px; font-size: 24px; } }
+@media (max-height: 560px) { .du-view { flex: 0 0 38%; } .du-opt, .du-tab { width: 48px; height: 48px; font-size: 24px; } }
 
 /* --- Robotpálya (algoritmus) --- */
 .algo { gap: 12px; }

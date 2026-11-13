@@ -1,4 +1,4 @@
-// Közös, saját tervezésű 3D szereplők a jutalomjátékokhoz (three.js primitívekből): unikornis és barátságos állatok.
+// Közös, saját tervezésű 3D szereplők a Barátom játékhoz (three.js primitívekből): barátságos állatok.
 // A figurák előre néznek (-z irány). Minden állatnak mosolya van; némelyik integet.
 import * as THREE from '../../vendor/three.module.js';
 
@@ -17,44 +17,7 @@ function legPair(group, color, hoof, positions, h = 0.5) {
   return legs;
 }
 
-export function makeUnicorn({ body = 0xffffff, mane = 0xff5d8f, horn = 0xffd24d, scale = 1 } = {}) {
-  const g = new THREE.Group(), inner = new THREE.Group(); g.add(inner);
-  inner.add(at(ball(0.5, body, 0.75, 0.65, 1.25), 0, 0.95, 0));
-  const neck = ball(0.28, body, 0.8, 1.3, 0.9); neck.position.set(0, 1.3, -0.62); neck.rotation.x = -0.5; inner.add(neck);
-  const head = new THREE.Group(); head.position.set(0, 1.55, -0.85); inner.add(head);
-  head.add(ball(0.27, body, 0.9, 0.9, 1.15));
-  const snout = ball(0.16, body, 1, 0.9, 1.1); snout.position.set(0, -0.06, -0.26); head.add(snout);
-  const nose = ball(0.04, 0xff8fc8); nose.position.set(0, -0.04, -0.4); head.add(nose);
-  for (const sx of [-1, 1]) {
-    const eye = ball(0.045, 0x3b2a63); eye.position.set(sx * 0.17, 0.07, -0.18); head.add(eye);
-    const shine = ball(0.015, 0xffffff); shine.position.set(sx * 0.18, 0.09, -0.22); head.add(shine);
-    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.2, 6), mat(body)); ear.position.set(sx * 0.14, 0.3, 0.02); ear.rotation.z = -sx * 0.25; head.add(ear);
-    const cheek = ball(0.045, 0xffb3d6, 1, 1, 0.4); cheek.position.set(sx * 0.2, -0.05, -0.2); head.add(cheek);
-  }
-  const hornM = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.38, 8), mat(horn)); hornM.position.set(0, 0.46, -0.1); hornM.rotation.x = -0.25; head.add(hornM);
-  for (let i = 0; i < 5; i++) { const t = ball(0.12, mane, 0.8, 1, 0.9); t.position.set(0, 1.78 - i * 0.14, -0.62 + i * 0.16); inner.add(t); }
-  const tail = new THREE.Group(); tail.position.set(0, 1.0, 0.62); inner.add(tail);
-  for (let i = 0; i < 4; i++) { const t = ball(0.13 - i * 0.015, mane); t.position.set(0, -i * 0.13, 0.08 + i * 0.1); tail.add(t); }
-  const legs = legPair(inner, body, 0x3b2a63, [[-0.2, -0.45], [0.2, -0.45], [-0.2, 0.45], [0.2, 0.45]], 0.55);
-  g.scale.setScalar(scale);
-  g.userData = { legs, inner, tail, head, phase: 0 };
-  return g;
-}
-
-// Vágtázás / séta / állás animáció. speed: 0..1 (0 = áll). t: idő mp-ben.
-export function animateRunner(g, t, speed) {
-  const { legs, inner, tail, head } = g.userData;
-  const f = 3 + speed * 10, amp = 0.15 + speed * 0.7;
-  const s = speed > 0.02 ? 1 : 0;
-  legs[0].rotation.x = Math.sin(t * f) * amp * s;
-  legs[3].rotation.x = Math.sin(t * f) * amp * s;
-  legs[1].rotation.x = Math.sin(t * f + Math.PI) * amp * s;
-  legs[2].rotation.x = Math.sin(t * f + Math.PI) * amp * s;
-  inner.position.y = Math.abs(Math.sin(t * f)) * 0.08 * s * (0.5 + speed);
-  inner.rotation.x = Math.sin(t * f) * 0.03 * s;
-  tail.rotation.x = 0.3 + Math.sin(t * f * 0.7) * 0.25 * (0.3 + speed);
-  head.rotation.x = Math.sin(t * f * 0.5) * 0.05;
-}
+// (A saját unikornis a js/three/characters.js-ben van: makeCharacter('unicorn', ruha), vágtázás: animateRunner.)
 
 const SPECIES = {
   bunny: { body: 0xffffff, accent: 0xffb3d6, ear: 'long', tail: 'puff' },

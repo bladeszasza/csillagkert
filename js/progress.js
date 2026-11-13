@@ -5,6 +5,7 @@
 // A régi, egyetlen mentés (csillagkert_v1) az első profil lesz; a régi kulcs érintetlenül megmarad biztonsági másolatnak.
 // Minden tároló-hívás védett: privát módban is működik, csak nem ment.
 import { migrateEconomy, payStarGift, sessionGift, sessionHeart } from './economy.js';
+import { normalizeDress } from './avatar.js';
 
 const INDEX = 'csillagkert:profiles', DEVICE = 'csillagkert:device', PREFIX = 'csillagkert:p:';
 const OLD = 'csillagkert_v1', OLD_DRESS = 'csillagkert_dress_v1';
@@ -198,6 +199,8 @@ export function openProfiles(storage) {
     rewardHeart(sess, source) { const ok = sessionHeart(state, sess, source); if (ok) save(); return ok; },
     taskHeart() { state.hearts++; save(); },                                             // etetés: gondoskodás
     seenDress() { if (state.newDress.length) { state.newDress = []; save(); } },
+    // a saját unikornis mostani ruhája (js/avatar.js): ismeretlen vagy még meg nem nyert darab nem marad rajta
+    avatar: () => normalizeDress(state.dress, id => state.owned.includes(id)),
     takeNewDecor() { const d = state.newDecor.slice(); if (d.length) { state.newDecor = []; save(); } return d; },
     addFriend(f) { if (f && !state.friends.includes(f)) { state.friends.push(f); save(); } },
     resetMeter() { state.meter = 0; save(); },

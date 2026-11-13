@@ -32,14 +32,18 @@ export const STATION_LINES = {
 };
 
 // {N} → ", Név" vagy semmi. A nevet nem minden mondatba tesszük (p valószínűséggel), hogy ne legyen erőltetett.
+// NAME_RATE: a szülő kérésére (2026-11-13) feleannyiszor szól a név, mint eddig. A p = 1 (a bemutatkozás és a napi
+// első köszönés) kivétel: ott mindig elhangzik.
+export const NAME_RATE = 0.5;
+const nameChance = p => (p >= 1 ? 1 : p * NAME_RATE);
 export function named(text, name, rand = Math.random, p = 0.35) {
-  const use = !!name && rand() < p;
+  const use = !!name && rand() < nameChance(p);
   return String(text).replace('{, N}', use ? `, ${name}` : '').replace('{N}', use ? name : '').trim();
 }
 export function stationLine(station, name, rand = Math.random) {
   const all = STATION_LINES[station]; if (!all) return '';
   const t = all[Math.floor(rand() * all.length)];
-  return name && rand() < 0.5 ? `${name}, ${t[0].toLowerCase()}${t.slice(1)}` : t;
+  return name && rand() < nameChance(0.5) ? `${name}, ${t[0].toLowerCase()}${t.slice(1)}` : t;
 }
 
 const recent = {};

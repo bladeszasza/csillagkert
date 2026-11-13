@@ -25,8 +25,9 @@ Feladatok → csillagok → jutalomjáték. Hibázásért nincs büntetés: szel
   szabály szerinti színezés, térbeli szavak matricával, színező, szabad rajz).
   Nyolc állomás feladatai sablonokból készülnek, állomásonként több száz (lásd lent).
 - **Jutalomjátékok:** Unikornis-futás, Felhővár-verseny, szabad futás procedurális világban, hami-adagoló (3D cica),
-  cica-etetés, Barátom (fésülés, simogatás, labdázás), unikornis-öltöztető (a megnyert ruhákkal), buborékpukkasztás.
-  Minden játék ajándékot ad, a jó tettek szívet (lásd „Ajándékok és szívek").
+  cica-etetés, Barátom (fésülés, simogatás, labdázás), 3D unikornis-öltöztető (a megnyert ruhákkal), buborékpukkasztás.
+  Minden játék ajándékot ad, a jó tettek szívet (lásd „Ajándékok és szívek"). A gyerek felöltöztetett unikornisa
+  mindenhol ő maga (lásd „Az én unikornisom").
 - Nincs build lépés: sima HTML + ES modulok + three.js (`vendor/`). GitHub Pages-en fut. A haladás csak az eszközön tárolódik.
 
 ## Tananyag és sorrend
@@ -187,6 +188,33 @@ nem a belépéskor:
 - **Minden szám saját beállítás** (20 csillagonként egy ajándék, a szív-korlátok, a 40 szíves fa, a 15 buborék),
   szabadon átírható a `js/economy.js`, `js/decor3d.js` és a játékok fájljaiban.
 
+## Az én unikornisom
+
+- **3D öltöztető** (`js/rewards/dressup.js`): a gyerek saját unikornisa áll a választott háttér előtt. Ujjal jobbra-balra
+  húzva forgatható; ha nem nyúlnak hozzá, lassan körbefordul. A 🔍 gomb közelebb hozza a fejét (a böngésző nagyítása
+  továbbra is tiltva). Minden választás rögtön rajta van, egy ugrással és integetéssel (a szárnyas unikornis csapkod).
+- **Választható:** testszín és minta (pötty, csík, csillag, szív), a sörény színe és fazonja, a szarv színe és formája
+  (egyenes, spirál), szárny, fejdísz (korona, virágkoszorú, masni, varázssüveg), szem (napszemüveg, szívszem),
+  nyakdísz (nyaklánc, sál, köpeny, gyöngysor), háttér és matricák. Minden darab valódi 3D alkatrész ugyanabból a
+  néhány alapformából (`js/three/characters.js`), így a kertben is a többi baráttal közös, példányosított rajzolásban fut.
+  A leírás a profilban van (`js/avatar.js`): ismeretlen vagy meg nem nyert darab helyett az alap kerül rá.
+- **Mindenhol ő az:** a kertben (90 csillagnál költözik a tanyára, és átöltözik, ha a gyerek új ruhát választ),
+  a szabad futásban, a Felhővár-versenyen (az ellenfél egy kék barát-unikornis), a Barátom játékban (hetedik barátként
+  választható) és az unikornis-futásban.
+- **Unikornis-futás (Sparkhorn):** indulás előtt a Csillagkert a saját unikornis **színeit** (név és más adat nélkül)
+  a közös `csillagkert_avatar` kulcsba írja (`sparkPalette`, `js/avatar.js`; ugyanaz a github.io cím). A Sparkhorn
+  ebből a választható unikornisok elejére teszi „Az én unikornisom"-at, ha az adat ellenőrzött; ha nincs vagy hibás,
+  minden a régi. A régebbi Sparkhorn-változat egyszerűen nem olvassa, a Csillagkert vele is működik.
+- **Mérések:** az alap unikornis 34 alkatrész és kb. 5,3 ezer háromszög, a legnehezebb öltözet 101 alkatrész és kb. 9,3 ezer;
+  az öltöztető 7–9 rajzolási hívás. A teljes kert a legnehezebb öltözettel kb. 243 ezer háromszög (saját határ: 250 ezer).
+- **Eltérések a tervtől:**
+  - A saját unikornis a kertbe továbbra is 90 csillagnál érkezik (a terv küszöbe); addig a játékokban és az öltöztetőben látszik.
+  - Az ajándék-pillanat képe 2D rajz maradt (ugyanazzal a ruhával), hogy ne nyíljon egy harmadik 3D-vászon.
+  - A háttér rajzolt kép a 3D unikornis mögött, nem külön 3D jelenet.
+  - A tervben szereplő hát- (nyereg, hátizsák), láb- (cipő) és farok-díszek, valamint a három mentett öltözet még nincs meg;
+    a meglévő csoportok mind 3D-ben működnek.
+- **A gyerek neve:** Rozi kb. feleannyiszor mondja, mint korábban (a szülő kérésére; `NAME_RATE` a `js/lines.js`-ben).
+
 ## Több gyerek, mentés
 
 - **Mindenkinek saját világa van:** külön csillagok, kert, barátok, látott feladatok, ruhatár és beállítások.
@@ -215,6 +243,9 @@ ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba ment
   legalább 10; pontosan egy helyes válasz; nincs ismétlődő kép vagy név; a helyes válasz helye egyenletes; minden válasz
   valahol helyes is; a gépi megoldó mindet megoldja; a kimondott szövegben nincs számjegy, jel vagy emoji, egy mondat
   legfeljebb 12 szó).
+- Az én unikornisom: `node --test tests/avatar.test.mjs` (minden választható elem látszik az unikornison vagy a háttéren,
+  a meg nem nyert ajándék lekerül, a talaján áll és elfér, a legnehezebb öltözet is a háromszög-kereten belül, a Sparkhorn
+  csak színeket kap, a Barátom mondatai magyarosak).
 - Ajándékok és szívek: `node --test tests/economy.test.mjs` (a régi mentés átvétele, a létra sorrendje, aranyvirág a végén,
   20 csillagonként egy ajándék, jutalomkörönként egy ajándék, a szív-korlátok, Rozi ajándék-mondatai számok nélkül).
 - Ütemező: `node --test tests/scheduler.test.mjs` (300 feladatos szimuláció ismétlés nélkül, 90 szimulált
@@ -232,12 +263,15 @@ ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba ment
   nem futhat bele fába, a követő barátok nem tűnhetnek el, és a világ széle nem látszhat. Ellenőrzi a koppintást,
   a tartott ujjat, a két ujjat, a tenyeret, az ugrást, a rajzolási terhet és a 3D-jelenet felszabadítását is.
 - Jutalomjátékok (a füstteszt része): mindegyik elindul és kilép; kilépés után nem marad 3D-jelenet, hang-kontextus,
-  időzítő és beszéd; a hangjaik a közös hangmotoron szólnak.
+  időzítő és beszéd; a hangjaik a közös hangmotoron szólnak. A saját unikornis ruhája látszik a futásban, a versenyen,
+  a Barátomban és a kertben; az öltöztető ujjal forgatható, nagyítható, és választásra rögtön átöltözik; a Sparkhorn-kulcsba
+  csak színek kerülnek.
 - A jutalomidő vége: `node --test tests/reward-timer.test.mjs` (figyelmeztetés, a futó verseny kivárása, türelmi idő).
 - Állatgaléria: `http://localhost:8080/tests/characters.html` (`?kind=cow`, `?page=2`, `?wave=1`, `?side=1`) – minden faj
   egyenként, a mért és a táblázatban álló magassággal.
 - A barátok egyetlen közös, példányosított hálócsomagból rajzolódnak (`js/three/characters.js`): a teljes kert
   19 baráttal 12–30 rajzolási hívás. Háromszögből 300 csillagnál (300 virággal) kb. 194 ezer van; a tervben szereplő
   kb. 150 ezres keretet ez a sok virág miatt átlépi. A teljes kert (a virágplafonig, minden kerti dísszel, a Barátság fájával
-  és aranyvirágokkal) kb. 239 ezer háromszög és 45 rajzolási hívás. A teszt saját határa 250 ezer, ez alatt már kevés a hely
-  (a saját unikornis a kertben az M5 következő része); az iPades próbán érdemes figyelni, nem lassul-e.
+  és aranyvirágokkal) kb. 239 ezer háromszög és 45 rajzolási hívás; a saját unikornis legnehezebb öltözetével kb. 243 ezer.
+  A teszt saját határa 250 ezer, ez alatt már kevés a hely (új kertrészhez a nem látszó részeket el kell rejteni);
+  az iPades próbán érdemes figyelni, nem lassul-e.

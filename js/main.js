@@ -73,6 +73,7 @@ function restart(pick) { try { if (pick) sessionStorage.setItem(PICK, pick); els
 try { const pick = sessionStorage.getItem(PICK); sessionStorage.removeItem(PICK); if (pick) progress.use(pick); } catch (e) {}
 // A játszó gyerek kertje és csillagmérője. Több gyereknél csak a választás után töltjük fel (addig üres a kert).
 function fillFor() {
+  garden?.setAvatar(progress.avatar());                      // a saját unikornis a mostani ruhájában (ha már a kertben lakik)
   garden?.setStars(progress.get().total, progress.get().friends);
   garden?.setGifts(progress.get(), false);                  // kerti díszek, a Barátság fája, aranyvirágok
   renderTreasure();
@@ -261,7 +262,7 @@ async function runItem(item, station, via) {
   } else renderAreaButtons();
   // Új barátnál Rozi egy mondatban bejelenti; etetés után különben hallgat (ott az állat a saját hangján köszöni meg)
   if (arrived.length) say(`Új barát érkezett: ${withArt(friendById(arrived[0]).name)}!`, { remember: false });
-  else if (!inGarden) say(lineNamed('star', name(), Math.random, meter >= perReward() ? 1 : 0.3), { remember: false });
+  else if (!inGarden) say(lineNamed('star', name(), Math.random, meter >= perReward() ? 0.6 : 0.3), { remember: false });
   await flyStar(Math.min(meter, perReward()) - 1, Math.min(meter, perReward()));
   garden?.setGifts(progress.get(), true);                    // az etetés szíve a Barátság fáján
   if (starGift) {
@@ -304,6 +305,7 @@ document.querySelectorAll('.choice').forEach(btn => btn.addEventListener('click'
     const src = btn.dataset.game; rewardSess = newRewardSession();
     const sess = rewardSess;
     const ctx = {
+      avatar: progress.avatar(),                             // a saját unikornis ruhája (futás, verseny, Barátom)
       gift() { if (sess !== rewardSess) return null; const g = progress.rewardGift(sess, src); if (g) { renderTreasure(); showGift(g, { name: name() }); } return g; },
       heart(at) { if (sess !== rewardSess) return false; const ok = progress.rewardHeart(sess, src); if (ok) { renderTreasure(); floatHeart(at); } return ok; },
     };
@@ -336,6 +338,7 @@ function endReward(fromBye = false) {
   try { stopGame?.(); } catch (e) {}
   stopGame = null;
   clearGameBody(); $('game').hidden = true; $('game-soon').hidden = true; $('game-bye').hidden = true; garden?.pause(false);
+  garden?.setAvatar(progress.avatar());                      // az öltöztetőben választott ruha a kertben is látszik
   garden?.setGifts(progress.get(), true); renderTreasure();  // a megnyert dísz és a szívek most bukkannak fel a kertben
   const nd = progress.takeNewDecor();
   if (nd.length && garden) { const ar = garden.decorArea(nd[0]); goArea(ar); areaTimer = setTimeout(() => { if (!running && garden.area() === ar) goArea(null); }, 6500); }
