@@ -78,7 +78,7 @@ export const FLORA = [
   { id: 'eukaliptusz', name: 'eukaliptuszfa', emoji: '🌿', area: 'ausztralia', stars: 210, spot: [-39.6, -6.8, 0, 1.15] },
   { id: 'cseresznye', name: 'cseresznyefa', emoji: '🌸', area: null, stars: 270, spot: [-3.9, -10.0, 0, 1.2] },
   { id: 'almafa', name: 'almafa', emoji: '🍎', area: 'tanya', stars: 360, spot: [19.4, -8.6, 0, 1.1] },
-  { id: 'palackfa', name: 'palackfa', emoji: '🌳', area: 'ausztralia', stars: 450, spot: [-27.4, -7.2, 0, 1.1] },
+  { id: 'palackfa', name: 'palackfa', emoji: '🌳', area: 'ausztralia', stars: 450, spot: [-35.0, -8.0, 0, 1.1] },
   { id: 'fuzfa', name: 'szomorúfűz', emoji: '🌳', area: 'to', stars: 720, spot: [-17.4, -9.7, 0, 1.25] },
 ];
 export const floraById = id => FLORA.find(f => f.id === id);

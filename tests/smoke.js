@@ -173,8 +173,15 @@ async function testGarden() {
   ok('kert: legfeljebb 150 rajzolási hívás (régen 70 virággal kb. 600 volt)', d.calls <= 150, `hívások: ${d.calls}, háromszögek: ${d.triangles}`);
   const out = Object.entries(center).filter(([, r]) => r.left < 0 || r.right > 900 || r.top < 0 || r.bottom > 650).map(([k]) => k);
   ok('kert: a kert közepén lakó minden barát a kezdő képen van', out.length === 0 && Object.keys(center).length === 6, out.length ? `kilóg: ${out.join(', ')}` : Object.entries(center).map(([k, r]) => `${k} ${Math.round(r.cx)},${Math.round(r.cy)}`).join(' · '));
+  // távoli földre érkező barát: a föld szélén túlról besétál, megérkezve a saját hangján köszön
+  {
+    garden.setStars(179, []); await wait(3200);
+    const n = soundMark(); garden.setStars(180, []); await wait(3300); const h = garden.debug(), heard = since(n).map(x => x.kind);
+    ok('kert: 180 csillagnál megjön a kenguru Ausztráliába, besétál és a saját hangján köszön', h.friends.includes('kangaroo') && heard.includes(VOICE.kangaroo) && h.shadows === h.friends.length,
+      `hangok: ${heard.join(', ') || '–'}; árnyékok: ${h.shadows}/${h.friends.length}`);
+  }
   garden.setStars(70 + 230, []); await wait(2900); garden.debug(); await wait(1900); d = garden.debug();
-  ok(`kert: 300 csillagnál mind a ${friendsFor(300).length} barát itt van, és egyszerre csak ${MAX_FLOWERS} virág nyílik (a régiek elhervadtak)`, d.friends.length === friendsFor(300).length && d.flowers === MAX_FLOWERS && d.bloomed === 300 && d.calls <= calls70 + 2 && d.calls <= 150, `virágok: ${d.flowers} (eddig ${d.bloomed}), hívások: ${d.calls} (70 csillagnál ${calls70}), háromszögek: ${d.triangles}`);
+  ok(`kert: 300 csillagnál mind a ${friendsFor(300).length} barát itt van, és egyszerre csak ${MAX_FLOWERS} virág nyílik (a régiek elhervadtak)`, d.friends.length === friendsFor(300).length && d.shadows === d.friends.length && d.flowers === MAX_FLOWERS && d.bloomed === 300 && d.calls <= calls70 + 2 && d.calls <= 150, `virágok: ${d.flowers} (eddig ${d.bloomed}), hívások: ${d.calls} (70 csillagnál ${calls70}), háromszögek: ${d.triangles}`);
   const tri300 = d.triangles;
   const before = garden.flowerAt(300);
   garden.setStars(301, []); await wait(450); const mid = garden.debug(), wm = garden.flowerAt(300); await wait(1500); const after = garden.debug(), wa = garden.flowerAt(300);

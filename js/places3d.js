@@ -195,7 +195,7 @@ const desertPea = () => [part(cyl(0.02, 0.02, 0.3, 4), C.green, [0, 0.15, 0]), p
   part(ball(0.09, 8, 6), AU.pea, [0.07, 0.31, 0], [0, 0, -0.6], [1.5, 0.7, 0.8]), part(ball(0.05, 6, 4), 0x2a1a1a, [0, 0.36, 0.05])];
 const LANDS = {
   ausztralia(at, area) {
-    at(-34.8, -10.4, uluru());
+    at(-36.0, -10.6, uluru());                     // a tópartról nézve már nem lóg be a kép szélére (így ott nem kell rajzolni)
     at(BILLABONG.x, BILLABONG.z, billabong());
     at(-28.4, -4.4, mound());
     // apróságok szétszórva (determinisztikusan): a lakók zuga, a tavacska, a termeszvár és a fák helye szabadon marad
@@ -206,7 +206,7 @@ const LANDS = {
     const items = [[spinifex, 11], [rock, 7], [saltbush, 5], [desertPea, 9]];
     for (const [make, n] of items) {
       for (let i = 0, got = 0; i < 300 && got < n; i++) {
-        const x = -44 + rnd() * 16.5, z = -7 + rnd() * 10;                        // elöl, a kamera előtt nem nőnek nagy dolgok
+        const x = -44 + rnd() * 15.4, z = -7 + rnd() * 10;                        // elöl, a kamera előtt nem nőnek nagy dolgok
         if (keep.some(([kx, kz, r]) => Math.hypot(x - kx, z - kz) < r)) continue;
         keep.push([x, z, 0.7]); got++;
         at(x, z, make === rock ? rock(0.6 + rnd() * 0.4, rnd() * 3) : make === desertPea ? desertPea() : make(0.8 + rnd() * 0.4));
@@ -214,19 +214,20 @@ const LANDS = {
     }
   },
 };
-// { mesh, spheres: [[x, y, z, r], …] } – a gömbök a tájelemek befoglalói: a kert ezekkel dönti el, látja-e a kamera a földet
+// { mesh, boxes: [[minX, minY, minZ, maxX, maxY, maxZ], …] } – a dobozok a tájelemek befoglalói (a föld alatti rész nélkül):
+// a kert ezekkel dönti el, látja-e a kamera a földet
 export function buildLand(id) {
   const area = AREAS.find(a => a.id === id), fill = LANDS[id]; if (!area || !fill) return null;
-  const parts = [], spheres = [], box = new THREE.Box3(), b = new THREE.Box3(), sp = new THREE.Sphere();
+  const parts = [], boxes = [], box = new THREE.Box3(), b = new THREE.Box3();
   const at = (x, z, list) => {
     const m = new THREE.Matrix4().makeTranslation(x, 0, z); box.makeEmpty();
     for (const q of list) { q.matrix.premultiply(m); parts.push(q); if (!q.geo.boundingBox) q.geo.computeBoundingBox(); box.union(b.copy(q.geo.boundingBox).applyMatrix4(q.matrix)); }
-    box.getBoundingSphere(sp); spheres.push([sp.center.x, sp.center.y, sp.center.z, sp.radius]);
+    boxes.push([box.min.x, Math.max(0, box.min.y), box.min.z, box.max.x, Math.max(0.05, box.max.y), box.max.z]);
   };
   fill(at, area);
   const mesh = new THREE.Mesh(merge(parts), lookMat({ vertexColors: true }));
   mesh.frustumCulled = false;
-  return { mesh, spheres };
+  return { mesh, boxes };
 }
 
 export function buildPlaces() {

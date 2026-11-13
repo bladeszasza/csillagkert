@@ -196,10 +196,11 @@ lakó, mindegyik saját hanggal (szintetizált, nem felvétel):
 - **Elrendezés:** a zugokat fekvő és álló képernyőn (900×650, 650×900, 1024×768, 768×1024) kiszámoltam és a füstteszt
   is méri: mindenki a képen van, a gombsor fölött, és a térkép jelei egyiküket sem takarják 15%-nál jobban. A legkisebb
   (kacsacsőrű emlős) ezért nem középen, hanem bal elöl lakik, mert középen az alsó jelsor eltakarná.
-- **Rajzolási teher:** a távoli föld tájelemei, fái és lakói csak akkor rajzolódnak, ha a kamera látja őket (a befoglaló
-  gömbjeiket a kamera látóterével vetjük össze, így semmi nem „pattan be" a kép szélén). Ausztráliában a kert közepe nem
-  rajzolódik: ott kb. 74 ezer háromszög és 15 rajzolási hívás; a tóparton a szomszéd föld tája (a lakói nélkül) kb. 140 ezer,
-  a kert közepén 420 csillagnál változatlanul kb. 134 ezer.
+- **Rajzolási teher:** a távoli föld tájelemei, fái és lakói csak akkor rajzolódnak, ha a kamera látja őket (a befoglalóikat
+  – a lakóknál gömböt, a tájelemeknél és a fáknál dobozt – a kamera látóterével vetjük össze, így semmi nem „pattan be" a kép
+  szélén). Ausztráliában a kert közepe nem rajzolódik: ott kb. 74 ezer háromszög és 15 rajzolási hívás. A tópartról nézve
+  iPad-arányú képernyőn Ausztráliából semmi nem esik a képbe, ezért ott sem rajzolódik (csak széles, 16:9-es képernyőn látszik
+  a széle); a kert közepén 420 csillagnál változatlanul kb. 134 ezer.
 
 ## Ajándékok és szívek
 
@@ -265,8 +266,8 @@ nem a belépéskor:
   (külön repó, külön feltöltéssel) ebből teszi a választható unikornisok elejére „Az én unikornisom"-at, ha az adat
   ellenőrzött; ha nincs vagy hibás, minden a régi. A régebbi Sparkhorn-változat nem olvassa, a Csillagkert vele is működik.
 - **Mérések:** az alap unikornis 34 alkatrész és kb. 5,3 ezer háromszög, a legnehezebb öltözet 101 alkatrész és kb. 9,3 ezer;
-  az öltöztető 7–9 rajzolási hívás. A teljes kert (420 csillag, 71 virág, minden dísz) a legnehezebb öltözettel kb. 144 ezer háromszög
-  és 46 rajzolási hívás (saját határ: 250 ezer; a virágok korlátozása előtt 242 ezer volt).
+  az öltöztető 7–9 rajzolási hívás. A teljes kert (510 csillag, 71 virág, minden dísz, 60 aranyvirág, 40 szív) a legnehezebb
+  öltözettel kb. 162 ezer háromszög és 48 rajzolási hívás (saját határ: 250 ezer; a virágok korlátozása előtt 242 ezer volt).
 - **Eltérések a tervtől:**
   - A saját unikornis a kertbe továbbra is 90 csillagnál érkezik (a terv küszöbe); addig a játékokban és az öltöztetőben látszik.
   - Az ajándék-pillanat képe 2D rajz maradt (ugyanazzal a ruhával), hogy ne nyíljon egy harmadik 3D-vászon.
@@ -378,6 +379,7 @@ ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba ment
 - A barátok egyetlen közös, példányosított hálócsomagból rajzolódnak (`js/three/characters.js`): a teljes kert
   19 baráttal 12–31 rajzolási hívás. A távoli földek lakói saját csomagban vannak (lásd Ausztrália). Mivel egyszerre legfeljebb 71 virág nyílik, a háromszögek száma 71 csillag után már
   csak a barátokkal nő: 300 és 420 csillagnál is kb. 130 ezer (a korlátozás előtt 300 csillagnál 194 ezer volt), így a kert
-  a tervben szereplő kb. 150 ezres kereten belül marad. A teljes kert minden kerti dísszel, a Barátság fájával, aranyvirágokkal
-  és a saját unikornis legnehezebb öltözetével kb. 144 ezer háromszög és 46 rajzolási hívás (ebből egy a foltárnyékoké).
+  a tervben szereplő kb. 150 ezres kereten belül marad. A legtöbb ajándékkal kicsit fölé megy: 510 csillagnál minden kerti
+  dísszel, a Barátság fájával (40 szív), 60 aranyvirággal és a saját unikornis legnehezebb öltözetével a kert közepén
+  kb. 162 ezer háromszög és 48 rajzolási hívás, a tóparton és a tanyán kb. 157 ezer, Ausztráliában kb. 80 ezer.
   A teszt saját határa 250 ezer; az iPades próbán érdemes figyelni, nem lassul-e.

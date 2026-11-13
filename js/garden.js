@@ -153,10 +153,10 @@ export function createGarden(canvas) {
   const lands = new Map();
   for (const r of AREAS.filter(a => a.land)) {
     const group = new THREE.Group(), crowdGroup = new THREE.Group(); scene.add(group, crowdGroup);
-    let spheres = [];
-    try { const b = buildLand(r.id); if (b) { group.add(b.mesh); spheres = b.spheres.map(([x, y, z, s]) => new THREE.Sphere(new THREE.Vector3(x, y, z), s)); } }
+    let boxes = [];
+    try { const b = buildLand(r.id); if (b) { group.add(b.mesh); boxes = b.boxes.map(([a, b2, c, d, e, f]) => new THREE.Box3(new THREE.Vector3(a, b2, c), new THREE.Vector3(d, e, f))); } }
     catch (e) { console.warn('Egy távoli föld tájelemei nem épültek fel', r.id, e); }
-    lands.set(r.id, { group, crowdGroup, crowd: createCharacterBatch(crowdGroup, { shadows: true }), spheres });
+    lands.set(r.id, { group, crowdGroup, crowd: createCharacterBatch(crowdGroup, { shadows: true }), boxes });
   }
   const landOf = def => (def?.area && lands.get(def.area)) || null;
 
@@ -169,7 +169,7 @@ export function createGarden(canvas) {
     m.position.set(x, 0, z); m.rotation.y = rot; m.frustumCulled = false; m.userData.k = k;
     const land = landOf(f);
     m.scale.setScalar(animate ? 0.01 : k); (land?.group || scene).add(m); flora.set(id, m);
-    land?.spheres.push(new THREE.Sphere(new THREE.Vector3(x, 2 * k, z), 2.4 * k));
+    if (land) { geo.computeBoundingBox(); const bb = geo.boundingBox; land.boxes.push(new THREE.Box3(new THREE.Vector3(x + bb.min.x * k - 0.1, 0, z + bb.min.z * k - 0.1), new THREE.Vector3(x + bb.max.x * k + 0.1, bb.max.y * k, z + bb.max.z * k + 0.1))); }
     if (animate) popping.push({ m, t0: performance.now() + 500 });
   }
   // owned: a megszerzett ajándékok; hearts: szívek; gold: aranyvirágok; animate: az új díszek és szívek kipattannak
@@ -341,7 +341,8 @@ export function createGarden(canvas) {
   }
 
   // --- mit lát a kamera? A kert közepe (virágmező + lakók) és a távoli földek (tájelemek, fák, lakók) csak akkor rajzolódik,
-  // ha valamelyik befoglaló gömbjük a látótérbe esik. A gömbök bőven fedik a tárgyakat, így semmi nem „pattan be" a kép szélén.
+  // ha valamelyik befoglalójuk (a lakóknál gömb, a tájelemeknél és a fáknál doboz) a látótérbe esik. A befoglalók fedik a
+  // tárgyakat (a lakóké a szökkenést is), így semmi nem „pattan be" a kép szélén.
   const frustum = new THREE.Frustum(), pv = new THREE.Matrix4(), probeS = new THREE.Sphere(), FIELD = new THREE.Sphere(new THREE.Vector3(0, 0.5, -1), 13.2);
   const sees = (x, z, h) => { probeS.center.set(x, h / 2, z); probeS.radius = Math.max(0.6, h * 0.8); return frustum.intersectsSphere(probeS); };
   function cull() {
@@ -354,7 +355,7 @@ export function createGarden(canvas) {
       if (sees(a.x, a.z, a.def.height * a.size)) { if (L) seen.add(L); else main = true; }
     });
     mainGroup.visible = main;
-    for (const L of lands.values()) { L.crowdGroup.visible = seen.has(L); L.group.visible = L.spheres.some(s => frustum.intersectsSphere(s)); }
+    for (const L of lands.values()) { L.crowdGroup.visible = seen.has(L); L.group.visible = L.boxes.some(b => frustum.intersectsBox(b)); }
   }
 
   // --- egy lépés: minden az óra szerint mozog, így a lassan frissülő képernyőn is jó helyen áll ---
