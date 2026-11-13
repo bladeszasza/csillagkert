@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../vendor/three.module.js';
 import { TABS, GROUPS, DEFAULT, MAX_STICKERS, normalizeDress, resolveAvatar, sparkPalette, SPARK_KEY } from '../js/avatar.js';
-import { dressSvg, backdropSvg } from '../js/avatar-svg.js';
+import { dressSvg, backdropSvg, stickerLayer } from '../js/avatar-svg.js';
 import { makeCharacter, measureCharacter, createCharacterBatch } from '../js/three/characters.js';
 import { CATALOG } from '../js/gifts.js';
 
@@ -43,17 +43,21 @@ test('a mentett ruha rendbetétele: ismeretlen érték helyett alap, a meg nem n
   const st = normalizeDress({ stickers: ['star', 'star', 'heart', 'nope', 'flower', 'moon', 'rain'] }).stickers;
   assert.deepEqual(st, ['heart', 'flower', 'moon', 'rain']);
   assert.equal(st.length, MAX_STICKERS);
+  // az öltöztetőben mind a négy matrica külön helyen, a nézet belsejében (álló képernyőn sem vágódik le)
+  const spots = [...stickerLayer({ ...DEFAULT, stickers: st }).matchAll(/left:(\d+)%;top:(\d+)%/g)].map(m => [+m[1], +m[2]]);
+  assert.equal(new Set(spots.map(String)).size, 4);
+  for (const [x, y] of spots) assert.ok(x >= 8 && x <= 92 && y >= 12 && y <= 70, `matrica helye: ${x}%, ${y}%`);
 });
 
-test('minden választható elem látszik: az unikornison, vagy (háttér, matrica) a háttérképen', () => {
-  const base = signature(DEFAULT), bg0 = backdropSvg(DEFAULT);
+test('minden választható elem látszik: az unikornison, a háttérképen, vagy (matrica) a matrica-rétegen', () => {
+  const base = signature(DEFAULT), bg0 = backdropSvg(DEFAULT) + stickerLayer(DEFAULT);
   let n = 0;
   for (const t of TABS) for (const g of t.groups) for (const it of g.items) {
     const cfg = withItem(g.key, it.id);
     if (g.key !== 'stickers' && it.id === DEFAULT[g.key]) continue;
     n++;
     if (LOOKS_2D.has(g.key)) {
-      assert.notEqual(backdropSvg(cfg), bg0, `${g.key}:${it.id} a háttéren`);
+      assert.notEqual(backdropSvg(cfg) + stickerLayer(cfg), bg0, `${g.key}:${it.id} a háttéren`);
       assert.equal(signature(cfg), base, `${g.key}:${it.id} nem változtatja az unikornist`);
     } else assert.notEqual(signature(cfg), base, `${g.key}:${it.id} látszik az unikornison`);
   }
@@ -113,7 +117,7 @@ test('a Sparkhorn-futás színei: csak színek, név és más adat nélkül', ()
 test('a 2D rajz (ajándék-pillanat, háttér): ép SVG minden elemmel', () => {
   for (const g of GROUPS) for (const it of g.items) {
     const cfg = withItem(g.key, it.id);
-    for (const svg of [dressSvg(cfg), backdropSvg(cfg)]) {
+    for (const svg of [dressSvg(cfg), backdropSvg(cfg), ...(cfg.stickers.length ? [stickerLayer(cfg)] : [])]) {
       assert.ok(svg.startsWith('<svg') && svg.endsWith('</svg>'), `${g.key}:${it.id}`);
       assert.ok(!/undefined|NaN|null/.test(svg), `${g.key}:${it.id}: hiányzó érték az SVG-ben`);
     }

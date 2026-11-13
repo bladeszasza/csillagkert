@@ -6,7 +6,7 @@
 import * as THREE from '../../vendor/three.module.js';
 import { makeCharacter, animateRunner, createCharacterBatch } from '../three/characters.js';
 // az ellenfél: kék barát-unikornis (az öltöztető színeiből)
-const RIVAL_LOOK = { body: 'c2', mane: 'c2', horn: 'ice' };
+const RIVAL_LOOK = { body: 'c2', mane: 'c2', horn: 'ice' }, RIVAL_ALT = { body: 'c5', mane: 'c3', horn: 'pink' };   // ha a gyereké is kék: menta
 import { say } from '../voice.js';
 import { play } from '../sounds.js';
 
@@ -91,7 +91,7 @@ export function run(container, ctx = {}) {
 
   // --- versenyzők ---
   const me = makeCharacter('unicorn', ctx.avatar || {});        // a gyerek saját, felöltöztetett unikornisa
-  const rv = makeCharacter('unicorn', RIVAL_LOOK);
+  const rv = makeCharacter('unicorn', ctx.avatar?.body === RIVAL_LOOK.body ? RIVAL_ALT : RIVAL_LOOK);
   const crowd = createCharacterBatch(scene);
   [me, rv].forEach(u => { u.rotation.y = 0; scene.add(u); crowd.add(u); });
   const S = { me: null, rv: null, t: 0, phase: 'ready', countdown: 3.2, endT: 0, result: null, shown: null, hoofT: 0, goT: null };

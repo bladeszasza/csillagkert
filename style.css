@@ -270,6 +270,8 @@ button { touch-action: none; }
 .dress2 { position: absolute; inset: 0; display: flex; flex-direction: column; background: #fff; }
 .du-view { flex: 1; min-height: 0; width: 100%; position: relative; overflow: hidden; touch-action: none; }
 .du-bg, .du-bg svg, .du-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.du-stks { position: absolute; inset: 0; pointer-events: none; }
+.du-stk { position: absolute; width: clamp(44px, 9vmin, 76px); height: clamp(44px, 9vmin, 76px); transform: translate(-50%, -50%); }
 .du-zoom { position: absolute; right: 14px; bottom: 14px; z-index: 2; } .du-zoom.sel { background: var(--purple); }
 .du-hint { position: absolute; left: 50%; bottom: 18%; font-size: 44px; pointer-events: none; animation: duhint 1.6s ease-in-out infinite; transition: opacity .4s; }
 .du-hint.gone { opacity: 0; animation: none; }

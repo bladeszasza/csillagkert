@@ -5,7 +5,16 @@ import { colorOf } from './avatar.js';
 const star = (x, y, r, fill) => { let d = ''; for (let i = 0; i < 10; i++) { const rad = i % 2 ? r * 0.45 : r, a = -Math.PI / 2 + i * Math.PI / 5; d += `${i ? 'L' : 'M'}${(x + Math.cos(a) * rad).toFixed(1)} ${(y + Math.sin(a) * rad).toFixed(1)}`; } return `<path d="${d}Z" fill="${fill}" stroke="#e69a00" stroke-width="2" stroke-linejoin="round"/>`; };
 const heart = (x, y, s, fill) => `<path transform="translate(${x} ${y}) scale(${s})" d="M0 8 C-14 -4 -6 -16 0 -6 C6 -16 14 -4 0 8Z" fill="${fill}"/>`;
 
-function backdrop(s) {
+// matricák: középpontjuk a (x, y) pont
+const STK = {
+  star: (x, y) => star(x, y, 20, '#ffcf3f'),
+  heart: (x, y) => heart(x, y, 2, '#ff5d8f'),
+  flower: (x, y) => `<g transform="translate(${x} ${y})">${[0, 1, 2, 3, 4].map(i => `<circle cx="${Math.cos(i * 1.256) * 11}" cy="${Math.sin(i * 1.256) * 11}" r="8" fill="#ff8fc8"/>`).join('')}<circle r="7" fill="#ffe14d"/></g>`,
+  moon: (x, y) => `<circle cx="${x}" cy="${y}" r="18" fill="#fff3c4"/>`,
+  rain: (x, y) => `<g transform="translate(${x} ${y})" fill="none" stroke-width="6" stroke-linecap="round"><path d="M-24 8 a24 24 0 0 1 48 0" stroke="#ff5d5d"/><path d="M-17 8 a17 17 0 0 1 34 0" stroke="#ffe14d"/><path d="M-10 8 a10 10 0 0 1 20 0" stroke="#4a7dff"/></g>`,
+};
+
+function backdrop(s, withStickers = true) {
   let o = `<defs>
     <linearGradient id="rb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5d5d"/><stop offset=".25" stop-color="#ffb020"/><stop offset=".5" stop-color="#ffe14d"/><stop offset=".75" stop-color="#4cc38a"/><stop offset="1" stop-color="#4a7dff"/></linearGradient>
     <clipPath id="bodyclip"><ellipse cx="290" cy="270" rx="140" ry="85"/></clipPath>
@@ -22,10 +31,9 @@ function backdrop(s) {
     castle: `<rect width="600" height="480" fill="url(#skyg)"/>${[[110, 220, 70, 150, '#ffd6ea'], [250, 170, 90, 200, '#e6d6ff'], [410, 210, 70, 160, '#ffd6ea'], [505, 250, 56, 120, '#d6e6ff']].map(([x, y, w, h, c]) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}" stroke="#b9a0e8" stroke-width="3"/><polygon points="${x - 6},${y} ${x + w / 2},${y - 50} ${x + w + 6},${y}" fill="#8e5be8"/><rect x="${x + w / 2 - 8}" y="${y + 24}" width="16" height="26" rx="8" fill="#ffd24d"/>`).join('')}<path d="M0 410 q150 -50 300 -10 t300 10 V480 H0Z" fill="#fff"/><ellipse cx="300" cy="470" rx="440" ry="60" fill="#fff"/>`,
   };
   o += bgs[s.bg] || bgs.garden;
-  // matricák
-  const stk = { star: (x, y) => star(x, y, 20, '#ffcf3f'), heart: (x, y) => heart(x, y, 2, '#ff5d8f'), flower: (x, y) => `<g transform="translate(${x} ${y})">${[0, 1, 2, 3, 4].map(i => `<circle cx="${Math.cos(i * 1.256) * 11}" cy="${Math.sin(i * 1.256) * 11}" r="8" fill="#ff8fc8"/>`).join('')}<circle r="7" fill="#ffe14d"/></g>`, moon: (x, y) => `<circle cx="${x}" cy="${y}" r="18" fill="#fff3c4"/><circle cx="${x + 8}" cy="${y - 4}" r="15" fill="#bfefff" opacity=".0"/>`, rain: (x, y) => `<g transform="translate(${x} ${y})" fill="none" stroke-width="6" stroke-linecap="round"><path d="M-24 8 a24 24 0 0 1 48 0" stroke="#ff5d5d"/><path d="M-17 8 a17 17 0 0 1 34 0" stroke="#ffe14d"/><path d="M-10 8 a10 10 0 0 1 20 0" stroke="#4a7dff"/></g>` };
+  // matricák (az ajándék-pillanat képén; az öltöztetőben külön rétegen, lásd stickerLayer)
   const spots = [[60, 70], [540, 90], [80, 200], [530, 330]];
-  s.stickers.forEach((id, i) => { const p = spots[i % spots.length]; o += stk[id]?.(p[0], p[1]) || ''; });
+  if (withStickers) s.stickers.forEach((id, i) => { const p = spots[i % spots.length]; o += STK[id]?.(p[0], p[1]) || ''; });
   return o;
 }
 
@@ -98,5 +106,12 @@ function unicorn(s) {
 
 // A teljes kép: háttér, matricák és a 2D unikornis (600 × 480)
 export const dressSvg = s => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 480">${backdrop(s)}${unicorn(s)}</svg>`;
-// Csak a háttér és a matricák (a 3D unikornis mögé)
-export const backdropSvg = s => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 480" preserveAspectRatio="xMidYMid slice">${backdrop(s)}</svg>`;
+// Csak a háttér (a 3D unikornis mögé; kitölti a nézetet, a széle levágódhat)
+export const backdropSvg = s => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 480" preserveAspectRatio="xMidYMid slice">${backdrop(s, false)}</svg>`;
+// A matricák az öltöztetőben: a nézethez mért helyen (százalékban), így álló és fekvő képernyőn is mind látszik,
+// és nem kerülnek a vissza- és a nagyító gomb alá.
+const STK_SPOTS = [[12, 32], [88, 16], [10, 66], [88, 56]];
+export const stickerLayer = s => s.stickers.map((id, i) => {
+  const [x, y] = STK_SPOTS[i % STK_SPOTS.length];
+  return STK[id] ? `<svg class="du-stk" style="left:${x}%;top:${y}%" viewBox="-30 -30 60 60" aria-hidden="true">${STK[id](0, 0)}</svg>` : '';
+}).join('');

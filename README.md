@@ -203,10 +203,11 @@ nem a belépéskor:
   választható) és az unikornis-futásban.
 - **Unikornis-futás (Sparkhorn):** indulás előtt a Csillagkert a saját unikornis **színeit** (név és más adat nélkül)
   a közös `csillagkert_avatar` kulcsba írja (`sparkPalette`, `js/avatar.js`; ugyanaz a github.io cím). A Sparkhorn
-  ebből a választható unikornisok elejére teszi „Az én unikornisom"-at, ha az adat ellenőrzött; ha nincs vagy hibás,
-  minden a régi. A régebbi Sparkhorn-változat egyszerűen nem olvassa, a Csillagkert vele is működik.
+  (külön repó, külön feltöltéssel) ebből teszi a választható unikornisok elejére „Az én unikornisom"-at, ha az adat
+  ellenőrzött; ha nincs vagy hibás, minden a régi. A régebbi Sparkhorn-változat nem olvassa, a Csillagkert vele is működik.
 - **Mérések:** az alap unikornis 34 alkatrész és kb. 5,3 ezer háromszög, a legnehezebb öltözet 101 alkatrész és kb. 9,3 ezer;
-  az öltöztető 7–9 rajzolási hívás. A teljes kert a legnehezebb öltözettel kb. 243 ezer háromszög (saját határ: 250 ezer).
+  az öltöztető 7–9 rajzolási hívás. A teljes kert (a virágplafonig, minden dísszel) a legnehezebb öltözettel kb. 242 ezer háromszög és 45 rajzolási hívás
+  (saját határ: 250 ezer).
 - **Eltérések a tervtől:**
   - A saját unikornis a kertbe továbbra is 90 csillagnál érkezik (a terv küszöbe); addig a játékokban és az öltöztetőben látszik.
   - Az ajándék-pillanat képe 2D rajz maradt (ugyanazzal a ruhával), hogy ne nyíljon egy harmadik 3D-vászon.
@@ -272,6 +273,6 @@ ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba ment
 - A barátok egyetlen közös, példányosított hálócsomagból rajzolódnak (`js/three/characters.js`): a teljes kert
   19 baráttal 12–30 rajzolási hívás. Háromszögből 300 csillagnál (300 virággal) kb. 194 ezer van; a tervben szereplő
   kb. 150 ezres keretet ez a sok virág miatt átlépi. A teljes kert (a virágplafonig, minden kerti dísszel, a Barátság fájával
-  és aranyvirágokkal) kb. 239 ezer háromszög és 45 rajzolási hívás; a saját unikornis legnehezebb öltözetével kb. 243 ezer.
+  és aranyvirágokkal) kb. 239 ezer háromszög és 45 rajzolási hívás; a saját unikornis legnehezebb öltözetével kb. 242 ezer.
   A teszt saját határa 250 ezer, ez alatt már kevés a hely (új kertrészhez a nem látszó részeket el kell rejteni);
   az iPades próbán érdemes figyelni, nem lassul-e.

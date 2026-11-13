@@ -12,7 +12,7 @@ import { say } from '../voice.js';
 import { play } from '../sounds.js';
 import { progress } from '../progress.js';
 import { TABS, DEFAULT, MAX_STICKERS } from '../avatar.js';
-import { dressSvg, backdropSvg } from '../avatar-svg.js';
+import { dressSvg, backdropSvg, stickerLayer } from '../avatar-svg.js';
 import { makeCharacter, animateCharacter, measureCharacter, createCharacterBatch } from '../three/characters.js';
 
 // A ruhatár a játszó gyerek profiljában él (mindenkinek saját unikornisa van)
@@ -39,10 +39,10 @@ export function run(container) {
   progress.seenDress();
   const firstTab = TABS.find(t => t.groups.some(g => g.items.some(it => fresh.has(`${g.key}:${it.id}`))));
   let tab = firstTab ? firstTab.id : 'test';
-  container.innerHTML = `<div class="dress2"><div class="du-view"><div class="du-bg"></div><canvas class="du-canvas"></canvas>
+  container.innerHTML = `<div class="dress2"><div class="du-view"><div class="du-bg"></div><div class="du-stks"></div><canvas class="du-canvas"></canvas>
     <button class="round du-zoom" aria-label="Közelebb">🔍</button><div class="du-hint" aria-hidden="true">👆</div></div>
     <div class="du-tabs"></div><div class="du-opts"></div><div class="du-msg"></div></div>`;
-  const view = container.querySelector('.du-view'), bgEl = container.querySelector('.du-bg'), canvas = container.querySelector('.du-canvas');
+  const view = container.querySelector('.du-view'), bgEl = container.querySelector('.du-bg'), stkEl = container.querySelector('.du-stks'), canvas = container.querySelector('.du-canvas');
   const tabsEl = container.querySelector('.du-tabs'), optsEl = container.querySelector('.du-opts'), msg = container.querySelector('.du-msg');
   const zoomBtn = container.querySelector('.du-zoom'), hint = container.querySelector('.du-hint');
 
@@ -65,7 +65,7 @@ export function run(container) {
 
   // Az unikornis újraépítése a mostani ruhával (a helye és a forgása marad)
   function build(celebrate = false) {
-    bgEl.innerHTML = backdropSvg(sel);
+    bgEl.innerHTML = backdropSvg(sel); stkEl.innerHTML = stickerLayer(sel);
     if (!renderer) return;
     ground.material.color.setHex(GROUND[sel.bg] ?? GROUND.garden);
     if (model) crowd.remove(model);

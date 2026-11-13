@@ -111,6 +111,8 @@ export async function testGifts(ok) {
   const canvas = document.createElement('canvas'); canvas.style.cssText = 'position:fixed;left:0;top:0;width:1024px;height:768px;opacity:0;pointer-events:none'; document.body.appendChild(canvas);
   let garden; try { garden = createGarden(canvas); } catch (e) { ok('kert (díszek): a 3D jelenet elindul', false, e.message); canvas.remove(); return; }
   try {
+    // a saját unikornis a legszélesebb öltözetben (szárny, köpeny): így sem takarhatja dísz, és a kert a kereten belül marad
+    garden.setAvatar({ body: 'c7', pattern: 'spots', manestyle: 'curl', horn: 'rainbow', hornstyle: 'spiral', wing: 'rainbow', head: 'flowers', eyes: 'glasses', neck: 'cape' });
     garden.setStars(MAX_FLOWERS, []); garden.setGifts({ owned: CATALOG.map(g => g.id), hearts: 60, gold: 12 }, false);
     await wait(2900); garden.debug(); await wait(1900);           // a barátok besétálnak, a köszönés szívei eltűnnek
     const d = garden.debug();
