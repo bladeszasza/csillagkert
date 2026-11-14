@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Csillagkert – ténylista átnézésre</title>
+<style>
+  /* A tény-állomások táblái a szülőnek, átnézésre (képernyőn és nyomtatva). Nem játszik hangot, a mentéshez nem nyúl;
+     a kihúzott sorokat csak ez az oldal jegyzi meg (külön kulcson). Használat: tests/tenyek.html?st=allat */
+  :root { --ink: #2b2140; --mute: #6d6480; --line: #d9d2e6; --ok: #2fa84f; --x: #b26b00; --cut: #c0392b; }
+  body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--ink); background: #fff; margin: 0; padding: 18px; font-size: 14px; line-height: 1.35; }
+  h1 { font-size: 22px; margin: 0 0 4px; } h2 { font-size: 17px; margin: 22px 0 2px; break-after: avoid; }
+  .sub { color: var(--mute); margin: 0 0 10px; } .hint { color: var(--mute); font-size: 13px; margin: 0 0 6px; }
+  .how { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; margin: 10px 0 4px; background: #faf8fd; }
+  .how p { margin: 4px 0; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 12px; color: var(--mute); font-weight: 600; border-bottom: 2px solid var(--line); padding: 4px 6px; }
+  td { border-bottom: 1px solid var(--line); padding: 6px; vertical-align: top; }
+  tr { break-inside: avoid; }
+  .n { width: 116px; color: var(--mute); font-variant-numeric: tabular-nums; }
+  .n small { display: block; font-size: 10px; overflow-wrap: anywhere; }
+  .lv { width: 26px; text-align: center; color: var(--mute); }
+  .fact { font-weight: 600; } .qa { margin-top: 3px; } .qa + .qa { margin-top: 6px; }
+  .ask::before { content: '❓ '; } .show { font-size: 20px; vertical-align: middle; }
+  .pic { display: inline-flex; align-items: center; gap: 3px; margin: 1px 6px 1px 0; white-space: nowrap; }
+  .pic i { font-style: normal; font-size: 20px; line-height: 1; } .pic svg { width: 22px; height: 22px; }
+  .ok { color: var(--ok); font-weight: 600; } .x { color: var(--x); } .rest { color: var(--mute); font-size: 12px; }
+  .tag { font-size: 11px; color: var(--x); border: 1px solid var(--x); border-radius: 6px; padding: 0 4px; margin-left: 4px; }
+  .note { font-size: 12px; color: var(--x); margin-top: 3px; }
+  .own { font-size: 13px; margin-top: 2px; } .own::before { content: '💬 '; } .fact u, .own u { text-decoration-style: dotted; }
+  .cut { width: 44px; text-align: center; }
+  .cut input { width: 22px; height: 22px; }
+  tr.out td { opacity: .45; } tr.out .fact { text-decoration: line-through; color: var(--cut); }
+  #bar { position: sticky; top: 0; background: #fff; padding: 8px 0; border-bottom: 1px solid var(--line); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; z-index: 2; }
+  #bar button { font: inherit; padding: 6px 12px; border-radius: 8px; border: 1px solid #8e5be8; background: #f3ecff; }
+  #out { font-size: 13px; color: var(--mute); }
+  @media print { #bar { display: none; } body { padding: 0; font-size: 11.5px; } .pic i { font-size: 16px; } @page { size: A4; margin: 12mm; } }
+</style>
+</head>
+<body>
+<div id="bar"><span id="cnt"></span><button id="copy">Kihúzottak másolása</button><button id="clear">Jelölések törlése</button><span id="out"></span></div>
+<div id="doc"></div>
+<script type="module">
+  import { FACT_TABLES } from '../js/content/facts/index.js';
+  import { ALL_STATIONS } from '../js/curriculum.js';
+  import { APPROVED } from '../js/content/approved.js';
+  import { NUMS } from '../js/content/common.js';
+  import { withArt } from '../js/hu.js';
+
+  const st = new URLSearchParams(location.search).get('st') || FACT_TABLES[0].station;
+  const T = FACT_TABLES.find(t => t.station === st);
+  const name = ALL_STATIONS.find(s => s.id === st)?.name || st;
+  const KEY = 'csillagkert-tenyek:' + st;
+  let cut = new Set(); try { cut = new Set(JSON.parse(localStorage.getItem(KEY) || '[]')); } catch (e) {}
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const pic = (b, cls = '') => `<span class="pic ${cls}">${b.num !== undefined ? `<i>${b.num}</i>` : b.e.startsWith('<') ? b.e : `<i>${b.e}</i>`}${esc(b.n)}</span>`;
+  const today = new Date().toISOString().slice(0, 10);
+  // a {A} helyére a választott jó válasz kerül: itt az összes lehetséges jó válasz látszik ("A delfin / a bálna / a fóka")
+  const said = (txt, q) => esc(txt).replace('{A}', () => `<u>${esc(q && q.a ? q.a.map((n, i) => withArt(n, i === 0)).join(' / ') : 'A jó válasz')}</u>`);
+
+  if (!T) document.getElementById('doc').innerHTML = `<h1>Nincs ilyen ténytábla: ${esc(st)}</h1><p>Választható: ${FACT_TABLES.map(t => `<a href="?st=${t.station}">${t.station}</a>`).join(', ')}</p>`;
+  else {
+    let no = 0, qn = 0;
+    const rows = sk => T.facts.filter(f => f.sk === sk).map(f => {
+      no++;
+      const qs = f.q.map(q => {
+        qn++;
+        if (q.kind === 'order') return `<div class="qa"><span class="ask">${esc(q.ask)}</span> <span class="tag">sorba rakós</span><br>${q.steps.map((s, i) => pic({ e: s.t, n: `${i + 1}. ${s.name}` })).join('')}</div>`;
+        const bank = T.banks[q.bank], rest = Object.keys(bank).filter(n => !q.a.includes(n) && !q.x.includes(n));
+        return `<div class="qa"><span class="ask">${esc(q.ask)}</span>${q.show ? ` <span class="show">${q.show}</span>` : ''}${q.lv && q.lv !== f.lv ? ` <span class="tag">${q.lv}. szint</span>` : ''}${q.quiet ? ' <span class="tag">a válaszok nevét nem mondja</span>' : ''}${q.f ? `<div class="own">Ennél a kérdésnél ez hangzik el: ${said(q.f, q)}</div>` : '<br>'}
+          <span class="ok">Jó: </span>${q.a.map(n => pic(bank[n], 'ok')).join('')}
+          ${q.x.length ? `<br><span class="x">Ez sem rossz, ezért nem kínáljuk fel: </span>${q.x.map(n => pic(bank[n], 'x')).join('')}` : ''}
+          <br><span class="rest">Rossz válasznak kínálható: ${q.quiet && rest.length > 16 ? `a bank többi ${rest.length} képe közül bármelyik (a képek a lap alján)` : rest.map(n => pic(bank[n])).join('')}</span></div>`;
+      }).join('');
+      return `<tr data-id="${f.id}" class="${cut.has(f.id) ? 'out' : ''}"><td class="n">${no}<small>${f.id}</small></td><td class="lv">${f.lv}</td>
+        <td><div class="fact">${said(f.f, f.q.length === 1 ? f.q[0] : null)}</div>${f.note ? `<div class="note">⚠ ${esc(f.note)}</div>` : ''}${qs}</td>
+        <td class="cut"><input type="checkbox" aria-label="kihúzom" ${cut.has(f.id) ? 'checked' : ''}></td></tr>`;
+    }).join('');
+    const body = Object.entries(T.skills).map(([sk, s]) => `<h2>${esc(s.name)}</h2><p class="hint">Ha kétszer téved, Rozi ezt mondja: „${esc(s.hint)}”</p>
+      <table><thead><tr><th>#</th><th>Szint</th><th>Tény (a jó válasz után ez hangzik el) és kérdés</th><th>Kihúzom</th></tr></thead><tbody>${rows(sk)}</tbody></table>`).join('');
+    document.getElementById('doc').innerHTML = `<h1>${esc(name)}: ténylista átnézésre</h1>
+      <p class="sub">${today} · ${no} tény · ${qn} kérdés · ${APPROVED[st] ? `jóváhagyva: ${APPROVED[st]}` : 'még nincs a játékban: csak a jóváhagyás után kerül be'}</p>
+      <div class="how"><p><b>Hogyan működik?</b> Rozi felteszi a kérdést, és felsorolja a három (a nehezebb szinteken négy) képes választ. Egy jó válasz van, a többi a „rossz válasznak kínálható” képek közül jön, minden alkalommal mások.</p>
+      <p>Jó válasz után elhangzik a tény. Ha a gyerek mást választ, Rozi megmondja, mit választott, egy mondatban (a képek mondatai a lap alján), aztán újra kérdez.</p>
+      <p><b>Kérlek, húzd ki</b>, ami nem igaz, nem egyértelmű vagy nem tetszik (pipáld be, vagy írd meg a sor számát). Ha egy rossz válaszra szánt kép mégis jó lehet, azt is írd meg. Szint: 1 = legkönnyebb, 5 = legnehezebb.</p></div>
+      ${body}
+      <h2>A képek és a mondatuk (ezt mondja Rozi, ha a gyerek ezt választja, de nem ez a jó válasz)</h2>
+      <table><tbody>${Object.entries(T.banks).map(([b, bank]) => Object.values(bank).map(x => `<tr><td>${pic(x)}</td><td>${esc(x.said)}</td></tr>`).join('')).join('')}</tbody></table>`;
+    const counter = () => { document.getElementById('cnt').textContent = `${no} tény, kihúzva: ${cut.size}`; };
+    counter();
+    document.getElementById('doc').addEventListener('change', e => {
+      const tr = e.target.closest('tr[data-id]'); if (!tr) return;
+      e.target.checked ? cut.add(tr.dataset.id) : cut.delete(tr.dataset.id);
+      tr.classList.toggle('out', e.target.checked);
+      try { localStorage.setItem(KEY, JSON.stringify([...cut])); } catch (err) {}
+      counter();
+    });
+    document.getElementById('copy').onclick = async () => {
+      const nums = [...document.querySelectorAll('tr.out .n')].map(td => td.firstChild.textContent + ' (' + td.querySelector('small').textContent + ')');
+      const txt = `${name} – kihúzandó: ${nums.join(', ') || 'semmi'}`;
+      try { await navigator.clipboard.writeText(txt); document.getElementById('out').textContent = 'Kimásolva, beillesztheted az üzenetbe.'; }
+      catch (e) { document.getElementById('out').textContent = txt; }
+    };
+    document.getElementById('clear').onclick = () => { cut.clear(); try { localStorage.removeItem(KEY); } catch (e) {} location.reload(); };
+  }
+</script>
+</body>
+</html>

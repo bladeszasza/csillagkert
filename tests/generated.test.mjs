@@ -2,10 +2,10 @@
 // Minden sablon minden célját több maggal felépítjük, és ellenőrizzük azt, amit a gyerek lát és hall.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { TEMPLATES, GENERATED, targetsOf, build, entries } from '../js/content/engine.js';
+import { TEMPLATES, STATIONS_OF, targetsOf, build, entries } from '../js/content/engine.js';
 import { rng } from '../js/content/rng.js';
 import { pickSpeech, resetLines } from '../js/lines.js';
-import { STATIONS } from '../js/curriculum.js';
+import { ALL_STATIONS } from '../js/curriculum.js';
 import { NOTES } from '../js/notes.js';
 import { simulate, solve as robotSolve, compress, keyOf } from '../js/robot-path.js';
 import { compose, known } from '../js/glyphs.js';
@@ -14,6 +14,8 @@ import { _canon } from '../js/content/rajz.js';
 import { visible } from '../js/content/kepek.js';
 
 const SEEDS = [1, 2, 3];
+// minden sablonból jövő állomás, a még átnézésre váró ténytáblákkal együtt (azok is ugyanezeken a kapukon mennek át)
+const GENERATED = STATIONS_OF(TEMPLATES);
 const answerOf = o => o.n ?? (o.name || o.key);
 // A kimondott mondat: nincs benne számjegy, matematikai jel vagy emoji; egy mondat legfeljebb 12 szó
 const DIGIT = /[0-9]/, SIGN = /[+×÷=<>−]| - /, EMOJI = /\p{Extended_Pictographic}/u;
@@ -27,7 +29,7 @@ function spoken(txt, where) {
 
 test('legalább 250 önálló feladat minden generált állomáson, mind az öt szinten', () => {
   for (const st of GENERATED) {
-    const list = entries().filter(e => e.station === st);
+    const list = entries(true).filter(e => e.station === st);
     const ids = new Set(list.map(e => e.id));
     assert.equal(ids.size, list.length, `ismétlődő azonosító: ${st}`);
     assert.ok(ids.size >= 250, `${st}: csak ${ids.size} önálló feladat`);
@@ -38,7 +40,7 @@ test('legalább 250 önálló feladat minden generált állomáson, mind az öt 
 });
 
 test('minden sablon ismert állomáshoz tartozik, és a kulcsai egyediek', () => {
-  const known = new Set(STATIONS.map(s => s.id));
+  const known = new Set(ALL_STATIONS.map(s => s.id));
   for (const t of TEMPLATES) {
     assert.ok(known.has(t.station), `ismeretlen állomás: ${t.id}`);
     assert.ok(/^[a-z0-9._-]+$/.test(t.skill), `rossz készség-azonosító: ${t.skill}`);
@@ -226,10 +228,12 @@ test('Rozi minden mondata kimondható: nincs számjegy, jel, emoji, és rövidek
 
 test('a helyes válasz helye nem árulkodó: a helyes válasz minden helyen előfordul', () => {
   // a válaszok számától függően (3 harang, 5 harang…) külön számolunk; minden helynek legalább a várt fele kell
-  // (ahol egy helyre ötnél kevesebb minta jutna, ott a kis szám miatt nem döntünk)
+  // (ahol egy helyre ötnél kevesebb minta jutna, ott a kis szám miatt nem döntünk). Feladatonként 12 keverés: kevés
+  // feladatnál (pl. a négyválaszos szinteken) három keverés véletlenül is adhatna egyenlőtlen képet.
+  const POS_SEEDS = Array.from({ length: 12 }, (_, i) => i + 1);
   for (const t of TEMPLATES) {
     const groups = new Map();
-    for (const x of targetsOf(t)) for (const seed of SEEDS) {
+    for (const x of targetsOf(t)) for (const seed of POS_SEEDS) {
       const it = build(x.id, rng(`${x.id}@${seed}`)); if (it.type !== 'pick') continue;
       const n = it.options.length, pos = groups.get(n) || new Map(), i = it.options.findIndex(o => o.ok);
       pos.set(i, (pos.get(i) || 0) + 1); groups.set(n, pos);

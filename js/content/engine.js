@@ -12,9 +12,16 @@ import { ZENE } from './zene.js';
 import { ALGO } from './algo.js';
 import { CERUZA } from './ceruza.js';
 import { RAJZ } from './rajz.js';
+import { FACT_TEMPLATES } from './facts/index.js';
+import { APPROVED } from './approved.js';
 
-export const TEMPLATES = [...SZAMOL, ...FORMA, ...OKOS, ...HANG, ...ZENE, ...ALGO, ...CERUZA, ...RAJZ];
-export const GENERATED = [...new Set(TEMPLATES.map(t => t.station))];
+// minden sablon (a tesztek és az átnéző oldalak mindet nézik); a ténytáblák (review) csak jóváhagyás után kerülnek a játékba
+export const TEMPLATES = [...SZAMOL, ...FORMA, ...OKOS, ...HANG, ...ZENE, ...ALGO, ...CERUZA, ...RAJZ, ...FACT_TEMPLATES];
+export const isLive = t => !t.review || !!APPROVED[t.station];
+export const LIVE = TEMPLATES.filter(isLive);
+export const STATIONS_OF = list => [...new Set(list.map(t => t.station))];
+// a játékban sablonból jövő állomások (ezeknek a régi, kézzel írt feladatai kimaradnak)
+export const GENERATED = STATIONS_OF(LIVE);
 const BY_ID = new Map(TEMPLATES.map(t => [t.id, t]));
 const TARGETS = new Map();
 
@@ -28,15 +35,17 @@ export function targetsOf(t) {
 export const templateOf = id => BY_ID.get(String(id).slice(0, String(id).indexOf(':')));
 
 // Könnyű jegyzék az ütemezőnek: minden generált feladat azonosítója, állomása, készsége és szintje
-let ENTRIES = null;
-export function entries() {
-  if (!ENTRIES) {
-    ENTRIES = TEMPLATES.flatMap(t => targetsOf(t).map(x => ({ id: x.id, template: t.id, station: t.station, skill: t.skill, level: x.level, graded: t.graded !== false, neutral: t.neutral === true })));
+// (alapból csak a játékba kerülők; all = true: a még átnézésre váró ténytáblák is, a teszteknek)
+const ENTRIES = new Map();
+export function entries(all = false) {
+  if (!ENTRIES.has(all)) {
+    const list = (all ? TEMPLATES : LIVE).flatMap(t => targetsOf(t).map(x => ({ id: x.id, template: t.id, station: t.station, skill: t.skill, level: x.level, graded: t.graded !== false, neutral: t.neutral === true })));
     // top: a készség legnehezebb szintje (aki ezt megoldja, annak a sikere a terület szintlépésébe is beleszámít)
-    const top = new Map(); for (const e of ENTRIES) top.set(e.skill, Math.max(top.get(e.skill) || 0, e.level));
-    for (const e of ENTRIES) e.top = top.get(e.skill);
+    const top = new Map(); for (const e of list) top.set(e.skill, Math.max(top.get(e.skill) || 0, e.level));
+    for (const e of list) e.top = top.get(e.skill);
+    ENTRIES.set(all, list);
   }
-  return ENTRIES;
+  return ENTRIES.get(all);
 }
 
 // Egy feladat felépítése az azonosítójából (bemutatásonként más rng: más eltérítők, más sorrend)

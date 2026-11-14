@@ -4,6 +4,7 @@
 // összekeveredik), formátum: 'emoji név'. A sorrendet az ütemező adja (js/scheduler-core.js), nem ez a lista.
 
 import { MEALS, ANY, friendById } from './friends.js';
+import { APPROVED } from './content/approved.js';
 
 // Kijelentések a helyes válaszhoz: kulcs = kérdés|helyes válasz neve. Elhangzik: "Igen! <kijelentés>"
 const FACTS = {
@@ -106,8 +107,9 @@ export const isFeed = item => item.type === 'feed';
 export const BASE_ITEMS = BASE;
 export const FEED_ITEMS = FEED;
 
-// Állomások a kertben (szabad választáshoz és a szülői áttekintéshez)
-export const STATIONS = [
+// Állomások a kertben (szabad választáshoz és a szülői áttekintéshez). review: új állomás, amelyik csak a szülő jóváhagyása
+// után jelenik meg (addig nincs feladata a játékban, lásd js/content/approved.js)
+export const ALL_STATIONS = [
   { id: 'ceruza', emoji: '✏️', name: 'Ceruzavár' },
   { id: 'szamol', emoji: '🔢', name: 'Számoló rét' },
   { id: 'forma', emoji: '🔺', name: 'Formák és színek' },
@@ -121,7 +123,9 @@ export const STATIONS = [
   { id: 'ido', emoji: '🏺', name: 'Időutazás' },
   { id: 'algo', emoji: '🤖', name: 'Robotpálya' },
   { id: 'rajz', emoji: '🎨', name: 'Rajzasztal' },
+  { id: 'sziv', emoji: '💗', name: 'Szívkert', review: true },
 ];
+export const STATIONS = ALL_STATIONS.filter(s => !s.review || APPROVED[s.id]);
 const BY_TYPE = { trace: 'ceruza', maze: 'ceruza', dots: 'ceruza', racs: 'rajz', matrica: 'rajz', kep: 'rajz', count: 'szamol', math: 'szamol', memory: 'okos', clap: 'hang', draw: 'rajz', seq: 'hang', echo: 'zene', feed: 'allat', algo: 'algo' };
 const BY_ICON = { '🔺': 'forma', '🔤': 'hang', '🧩': 'okos', '🌍': 'vilag', '🍎': 'egeszseg', '🔢': 'szamol', '🫀': 'test', '🏺': 'ido', '🤖': 'algo' };
 export const stationOf = item => item.station || BY_TYPE[item.type] || BY_ICON[item.icon] || 'okos';

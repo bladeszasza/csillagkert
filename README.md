@@ -72,6 +72,12 @@ Az M4 mérföldkő kész: **mind a 8 generálható állomás** sablonokból kés
   javítottam (például „Mivel hallunk?" került a félreérthető „Mi folyik az ereinkben?" helyére); ezek az állomások az
   M6-ban kapnak szülő által átnézett ténytáblát. Hogy a 61 javítandó régi feladatból mi lett (javítva, kivéve, nyitott),
   az a [`docs/pedagogia.md`](docs/pedagogia.md) 6. részében áll.
+- **Tény-állomások (M6, folyamatban)**: az Állatok, Világunk, Egészség, Testünk csodái, Időutazás és az új Szívkert
+  feladatai kézzel írt ténytáblákból jönnek (`js/content/facts/`), nem generálva. Egy tényhez legfeljebb két kérdés
+  tartozik, a válaszok zárt képbankból jönnek, a vitatható képek soha nem rossz válaszok, és a jó válasz után elhangzó
+  tény arról az állatról szól, amit a gyerek választott. **Egy állomás csak a szülő jóváhagyása után élesedik**
+  (`js/content/approved.js`); addig a régi feladatai maradnak a játékban. Az első kész tábla az Állatoké (265 tény,
+  289 kérdés), átnézésre: `tests/tenyek.html?st=allat`. A szabályok: [`docs/pedagogia.md`](docs/pedagogia.md) 3.9.
 
 ## Hang
 
@@ -379,8 +385,15 @@ ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba ment
 - Ütemező: `node --test tests/scheduler.test.mjs` (300 feladatos szimuláció ismétlés nélkül, 90 szimulált
   gyereknél is: 5–7 évesek, gyenge–erős; szintlépés és visszalépés; kezdőnek csak a szintjéhez illő készség, egy állomás
   a bevezető készséggel kezd; ismétlési napok; gyakorló feladatok).
-- Feladat-galéria: `http://localhost:8080/tests/gallery.html?st=okos` (vagy `szamol`, `forma`, `hang`, `zene`, `algo`) – sablononként és
-  szintenként egy minta kicsinyítve, a helyes válasz zöld keretben. Nem szól és nem ír a mentésbe.
+- Feladat-galéria: `http://localhost:8080/tests/gallery.html?st=okos` (vagy `szamol`, `forma`, `hang`, `zene`, `algo`, `allat`) – sablononként és
+  szintenként egy minta kicsinyítve, a helyes válasz zöld keretben; `&sk=allat.arnyek` egy készségre szűkít. Nem szól és nem ír a mentésbe.
+- Ténytáblák: `node --test tests/facts.test.mjs` (azonosítók, legfeljebb két kérdés tényenként, a tény legfeljebb 70 betűs
+  teljes mondat minden jó válasszal kitöltve, a válaszok a bankból jönnek, a jó és a vitatható válasz külön, marad elég
+  rossz válasz, minden képnek egy neve van a játék egészében). A közös kapukat (250 önálló feladat, egy jó válasz,
+  kimondható mondatok) a `generated.test.mjs` a még jóvá nem hagyott táblákra is lefuttatja.
+- Ténylista a szülőnek: `http://localhost:8080/tests/tenyek.html?st=allat` – nyomtatható (A4), soronként a tény, a
+  kérdések, a jó, a vitatható és a lehetséges rossz válaszok; a kihúzott sorokat csak ez az oldal jegyzi meg, a mentéshez
+  nem nyúl.
 - Böngészős füstteszt: `http://localhost:8080/tests/smoke.html` (hangerő-mérés, a jó válasz helye, megszakítás utáni csend,
   minden feladattípus elindul, a kert lakói és rajzolási terhe, a tópart és a tanya, koppintás minden barátra,
   etetés a 3D állattal minden úton, a tanyáról is). A füstteszt memóriában élő tárolóval fut, a valódi mentéshez nem nyúl.

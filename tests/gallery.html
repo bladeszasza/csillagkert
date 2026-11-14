@@ -66,10 +66,10 @@
   const nm = n => NOTES[n].name;
   // a hallásos feladat hangsora szövegesen (a galéria nem játszik hangot): hangnév, (hangerő), [hossz], TÁ / ti taps, · csend
   const sndText = evs => evs.map(e => e.rest ? '·' : e.clap ? (e.dur >= 0.5 ? 'TÁ' : 'ti') : nm(e.n) + (e.vol !== undefined ? '(' + e.vol + ')' : '') + (e.dur !== undefined && e.dur !== 0.8 ? '[' + e.dur + ']' : '') + (e.hi ? '@' + e.hi : '')).join(' ');
-  const st = new URLSearchParams(location.search).get('st') || 'szamol';
+  const st = new URLSearchParams(location.search).get('st') || 'szamol', onlySk = new URLSearchParams(location.search).get('sk');
   document.getElementById('h').textContent = `Feladat-galéria: ${st}`;
   const out = document.getElementById('g');
-  for (const t of TEMPLATES.filter(t => t.station === st)) {
+  for (const t of TEMPLATES.filter(t => t.station === st && (!onlySk || t.id === onlySk))) {
     const byLevel = new Map(); for (const x of targetsOf(t)) if (!byLevel.has(x.level)) byLevel.set(x.level, x);
     for (const x of byLevel.values()) {
       const it = build(x.id, rng(x.id + '#galeria'));

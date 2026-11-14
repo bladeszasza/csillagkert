@@ -336,6 +336,49 @@ kerülnek ki a kert rajztáblájára (az M5-ben).
 doboz) képe az iPad saját emojijaival is úgy néz-e ki, hogy a „szék alá" hely tényleg a szék alatt legyen (a helyeket
 a tárgyak szokásos rajzához igazítottam, de az emojik eszközönként eltérnek).
 
+### 3.9 Állatok: az első ténytábla (265 tény, 289 kérdés, 9 készség), a szülő átnézésére vár
+
+A tény-állomások (Állatok, Világunk, Egészség, Testünk csodái, Időutazás, Szívkert) feladatait **nem generáljuk**: egy
+tényt nem lehet sablonból úgy előállítani, hogy biztosan igaz és egyértelmű legyen. Minden tényt kézzel írtam, és az
+állomás csak akkor kerül a játékba, ha a szülő átnézte. A tábla: `js/content/facts/allat.js`, a közös gyártó:
+`js/content/facts/kit.js`.
+
+**Mire épül**: a DIFER tapasztalati következtetés és összefüggés-megértés területe (1. rész): az állatot össze kell
+kötni azzal, amit eszik, ahol él, amit ad, ahogy szól, és fel kell ismerni a nevét és a körvonalát. A készségek
+(név, mit eszik, hangja, hol él, a tanya és a kicsinyek, lábak száma, testrészek, szokások, árnyék) és a szintek
+beosztása **saját összeállítás**, nem egy forrásból átvett sorrend.
+
+**A szabályok** (mindegyikre teszt figyel: `tests/facts.test.mjs`, `tests/generated.test.mjs`):
+
+- **Egy tény, legfeljebb két kérdés.** A tény egy igaz, teljes, legfeljebb 70 betűs mondat; ez hangzik el a jó válasz
+  után. A második kérdés ugyanarról a tényről kérdez másképp („Mit eszik a panda?" és „Ki eszik bambuszt?").
+- **Zárt képbank, egy védhető válasz.** A válaszok készségenként egy képbankból jönnek, minden képnek egy neve van (ugyanaz,
+  mint a játék többi részén). Minden kérdés megadja a bank összes helyes tagját, és külön a **vitathatókat** (nem rossz,
+  de nem is a várt válasz, például „Ki él az erdőben?" kérdésnél a sün). A vitatható kép soha nem lehet rossz válasz,
+  így egy feladatban pontosan egy védhető válasz van.
+- **A tény arról szól, amit a gyerek választott.** Ha egy kérdésnek több jó válasza van („Ki él a tengerben?"), a
+  tényben a választott állat neve áll („A delfin a tengerben él."), nem egy másik állaté.
+- **Az önálló feladat egy kérdés.** Más rossz válaszok vagy más sorrend nem új feladat (2.3).
+- **Árnyék**: a körvonal mellé nem kerül hasonló alakú állat (a ló árnyéka mellé nem kerül tehén vagy cica, a cápáé
+  mellé nem delfin, a nyusziéhoz nem kenguru vagy mókus).
+- **Három, a 4. szinttől négy válasz**, és mindegyiket kimondja Rozi, kivéve a „Melyik a kutya?" kérdést, ahol a név
+  elárulná a választ.
+
+**Szintek** (saját beosztás): 1 = otthonról és a tanyáról ismert állat, látható vagy hallható tulajdonság; 2 = ismert,
+de ritkábban látott állat, egyszerű kapcsolat (lakóhely, kicsinye, lábak száma); 3 = vadon élő és távoli állatok,
+élőhely és szokás; 4 = négy válasz, finomabb különbség (rovar vagy pók, a tenger emlősei, kevés támpontú árnyék);
+5 = meglepő tények és csoportosítás (kérődzés, kopoltyú, visszhang). Eloszlás: 78, 87, 71, 38 és 15 kérdés.
+
+**Az átnézés menete**: a szülő a nyomtatható listán (`tests/tenyek.html?st=allat`) kihúzza, ami nem igaz, nem
+egyértelmű vagy nem tetszik; ami kihúzva marad, az kikerül a táblából. A jóváhagyás dátuma a `js/content/approved.js`
+fájlba kerül, és csak ettől kezdve élesedik az állomás. Addig a játékban a régi feladatok maradnak.
+
+**Az etetés**: a kerti, húzós etetés a saját ritmusában marad. A jóváhagyás után az Állatok helyen az etetés és a
+tény-kérdések váltakoznak. A 250-es kapuba csak a tény-kérdések számítanak.
+
+**Amit nem tudunk**: néhány újabb emoji (🦫 hód, 🦭 fóka, 🪱 giliszta, 🪰 légy) csak frissebb iPadOS-en látszik, és
+az árnyékok az iPad saját emojijaiból készülnek. Ha egy árnyék nem ismerhető fel, azt jelezni kell.
+
 ---
 
 ## 4. Rozi mondatai (monológ-könyvtár)
