@@ -12,9 +12,10 @@ export function nextItem() {
   return materialize(e);
 }
 export function stationItem(station) {
-  const list = station === 'allat' ? FEED_POOL : POOL.filter(e => e.station === station);
-  const e = station === 'allat' ? core.freshestInOrder(list, core.ensure(progress.get())) : core.chooseInStation(progress.get(), list, Math.random, Date.now(), solved);
-  return materialize(e);
+  const list = POOL.filter(e => e.station === station), s = core.ensure(progress.get());
+  // az Állatok helyen etetés és tény-kérdés felváltva (amíg a tények nincsenek jóváhagyva, csak etetés)
+  if (station === 'allat' && core.stationTurn(s, FEED_POOL, list) === 'feed') return materialize(core.freshestInOrder(FEED_POOL, s));
+  return materialize(core.chooseInStation(s, list, Math.random, Date.now(), solved));
 }
 // A "Tovább"-gombos feladat után: számolja, mikor jön az etetés
 export function noteRound(item) {

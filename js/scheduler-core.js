@@ -109,6 +109,14 @@ export function chooseNext(state, pool, feedPool, rand, now, legacySolved) {
   const st = chooseStation(state, stations, rand);
   return chooseInStation(state, pool.filter(e => e.station === st), rand, now, legacySolved);
 }
+// Az Állatok helyen az etetés és a tény-kérdések váltakoznak: ha ott legutóbb etetés volt (a "Tovább"-ból is), tény jön,
+// különben etetés. Az első alkalom etetés (az a megszokott).
+export function stationTurn(state, feedPool, factPool) {
+  if (!factPool.length) return 'feed';
+  if (!feedPool.length) return 'fact';
+  const last = list => list.reduce((m, e) => Math.max(m, state.seen[e.id] ?? -Infinity), -Infinity);
+  return last(feedPool) > last(factPool) ? 'fact' : 'feed';
+}
 // az etetés a régi rend szerint: az első még nem látott, különben a legrégebben látott (a lista sorrendje váltogatja az állatokat)
 export function freshestInOrder(list, state) {
   let best = null;

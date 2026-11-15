@@ -336,7 +336,7 @@ kerülnek ki a kert rajztáblájára (az M5-ben).
 doboz) képe az iPad saját emojijaival is úgy néz-e ki, hogy a „szék alá" hely tényleg a szék alatt legyen (a helyeket
 a tárgyak szokásos rajzához igazítottam, de az emojik eszközönként eltérnek).
 
-### 3.9 Állatok: az első ténytábla (265 tény, 289 kérdés, 9 készség), a szülő átnézésére vár
+### 3.9 Állatok: az első ténytábla (265 tény, 289 kérdés, 9 készség), jóváhagyva: 2026-11-15
 
 A tény-állomások (Állatok, Világunk, Egészség, Testünk csodái, Időutazás, Szívkert) feladatait **nem generáljuk**: egy
 tényt nem lehet sablonból úgy előállítani, hogy biztosan igaz és egyértelmű legyen. Minden tényt kézzel írtam, és az
@@ -371,10 +371,12 @@ de ritkábban látott állat, egyszerű kapcsolat (lakóhely, kicsinye, lábak s
 
 **Az átnézés menete**: a szülő a nyomtatható listán (`tests/tenyek.html?st=allat`) kihúzza, ami nem igaz, nem
 egyértelmű vagy nem tetszik; ami kihúzva marad, az kikerül a táblából. A jóváhagyás dátuma a `js/content/approved.js`
-fájlba kerül, és csak ettől kezdve élesedik az állomás. Addig a játékban a régi feladatok maradnak.
+fájlba kerül, és csak ettől kezdve élesedik az állomás. Addig a játékban a régi feladatok maradnak. Az Állatok
+tábláját a szülő 2026-11-15-én átnézte, egyetlen tényt sem húzott ki, így az állomás élesedett.
 
 **Az etetés**: a kerti, húzós etetés a saját ritmusában marad. A jóváhagyás után az Állatok helyen az etetés és a
-tény-kérdések váltakoznak. A 250-es kapuba csak a tény-kérdések számítanak.
+tény-kérdések váltakoznak (egy etetés, egy tény-kérdés; ha a „Tovább” már etetést adott, a következő
+tény-kérdés). A 250-es kapuba csak a tény-kérdések számítanak.
 
 **Amit nem tudunk**: néhány újabb emoji (🦫 hód, 🦭 fóka, 🪱 giliszta, 🪰 légy) csak frissebb iPadOS-en látszik, és
 az árnyékok az iPad saját emojijaiból készülnek. Ha egy árnyék nem ismerhető fel, azt jelezni kell.

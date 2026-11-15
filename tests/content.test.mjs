@@ -22,8 +22,10 @@ test('minden feladat egy létező állomáshoz tartozik, és minden állomáson 
   const ids = new Set(STATIONS.map(s => s.id));
   for (const it of CURRICULUM) assert.ok(ids.has(stationOf(it)), `ismeretlen állomás: ${stationOf(it)}`);
   for (const s of STATIONS) assert.ok([...POOL, ...FEED_POOL].some(e => e.station === s.id), `üres állomás: ${s.id}`);
-  // a sablonokból készülő állomások régi, kézzel írt feladatai kikerültek (nem keverednek a generáltakkal)
-  for (const it of CURRICULUM) assert.ok(!GENERATED.includes(stationOf(it)), `régi feladat egy generált állomáson: ${idOf(it)}`);
+  // a sablonokból vagy ténytáblából készülő állomások régi, kézzel írt feladatai kikerültek (nem keverednek az újakkal);
+  // az etetés kivétel: az Állatok helyen a tény-kérdésekkel váltakozik
+  for (const it of BASE_ITEMS) assert.ok(!GENERATED.includes(stationOf(it)), `régi feladat egy generált állomáson: ${idOf(it)}`);
+  assert.ok(FEED_ITEMS.every(it => stationOf(it) === 'allat'), 'etetés csak az Állatok helyen');
 });
 
 test('tény-állomások: az audit szerint javított feladatok', () => {

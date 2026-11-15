@@ -136,3 +136,19 @@ test('a játék útja (a megjelenített feladatból vett bejegyzés) is viszi a 
   for (let i = 0; i < 6; i++) core.record(s, entryOf(item), { wrong: 0 }, i);
   assert.equal(core.levelOf(s, 'rajz').lv, lv0);
 });
+
+test('Állatok hely: az etetés és a tény-kérdés váltakozik (az első etetés), és a jóváhagyott tények a "Tovább" sorában is ott vannak', () => {
+  const facts = POOL.filter(e => e.station === 'allat');
+  assert.ok(facts.length >= 250, `kevés Állatok-kérdés a játékban: ${facts.length}`);
+  const s = core.ensure({ age: 5 }), turns = [];
+  for (let i = 0, now = 1; i < 8; i++, now++) {
+    const t = core.stationTurn(s, FEED_POOL, facts); turns.push(t);
+    const e = t === 'feed' ? core.freshestInOrder(FEED_POOL, s) : core.chooseInStation(s, facts, () => 0.5, now);
+    assert.equal(e.station, 'allat'); core.record(s, e, {}, now);
+  }
+  assert.deepEqual(turns, ['feed', 'fact', 'feed', 'fact', 'feed', 'fact', 'feed', 'fact']);
+  // ha a "Tovább" éppen etetést adott, a hely tény-kérdéssel folytatja
+  core.record(s, FEED_POOL[3], {}, 100);
+  assert.equal(core.stationTurn(s, FEED_POOL, facts), 'fact');
+  assert.equal(core.stationTurn(s, FEED_POOL, []), 'feed');
+});
