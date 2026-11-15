@@ -77,7 +77,9 @@ Az M4 mérföldkő kész: **mind a 8 generálható állomás** sablonokból kés
   tartozik, a válaszok zárt képbankból jönnek, a vitatható képek soha nem rossz válaszok, és a jó válasz után elhangzó
   tény arról az állatról szól, amit a gyerek választott. **Egy állomás csak a szülő jóváhagyása után élesedik**
   (`js/content/approved.js`); addig a régi feladatai maradnak a játékban. Az első kész tábla az Állatoké (265 tény,
-  289 kérdés), a szülő 2026-11-15-én jóváhagyta, a játékban az etetéssel váltakozik. Átnézés: `tests/tenyek.html?st=allat`. A szabályok: [`docs/pedagogia.md`](docs/pedagogia.md) 3.9.
+  289 kérdés), a szülő 2026-11-15-én jóváhagyta, a játékban az etetéssel váltakozik. Átnézés: `tests/tenyek.html?st=allat`.
+  A Testünk csodái tábla (242 tény, 264 kérdés, saját testábrával) is élesben van: `tests/tenyek.html?st=test`. A többi
+  táblát a szülő előre jóváhagyta, ezek elkészültük után élesednek ([`docs/pedagogia.md`](docs/pedagogia.md) 3.9–3.10).
 
 ## Hang
 

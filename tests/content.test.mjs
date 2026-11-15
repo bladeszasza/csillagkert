@@ -5,6 +5,7 @@ import { CURRICULUM, STATIONS, stationOf, idOf, BASE_ITEMS, FEED_ITEMS } from '.
 import { art, withArt, artLetter, ACC_NUM, numAttr, fromNum } from '../js/hu.js';
 import { FRIENDS, FOODS, MEALS, ANY, friendById, friendsFor, flowerSpot, MAX_FLOWERS, GOLD_MAX, goldSpot, FEED_SPOT, FEED_GATE, PLACES, AREAS, FLORA, floraFor, NEWCOMER_FROM, NEWCOMER_STEP, groundK } from '../js/friends.js';
 import { roundStars } from '../js/economy.js';
+import { FACT_TABLES } from '../js/content/facts/index.js';
 import { progress } from '../js/progress.js';
 
 const flat = CURRICULUM.flatMap(i => (i.type === 'seq' ? [i, ...i.steps] : [i]));
@@ -35,8 +36,9 @@ test('tény-állomások: az audit szerint javított feladatok', () => {
     'Mi élt nagyon régen, az emberek előtt?', 'Mi melegített és világított az ősembereknek?', 'Mit építettek az egyiptomiak a fáraóknak?',
     'Ki védte a várat?', 'Hogyan világítottak régen, villany nélkül?', 'Mit használunk fogmosáshoz?', 'Hogyan növünk? Koppints sorrendben!'])
     assert.ok(!prompts.has(p), `még benne van: ${p}`);
-  // a "fül" eddig csak rossz válasz volt: most egy kérdésnek ő a helyes válasza
-  assert.ok(picks.some(p => p.options.some(o => o.ok && o.name === 'fül')), 'a fül sehol nem helyes válasz');
+  // a "fül" eddig csak rossz válasz volt: most a Testünk ténytáblájában több kérdésnek is ő a helyes válasza
+  const testTable = FACT_TABLES.find(t => t.station === 'test');
+  assert.ok(testTable.facts.some(f => f.q.some(q => q.a.includes('fül'))), 'a fül sehol nem helyes válasz');
   // a csibe kérdésénél látszik a csibe; a mag képe nem gesztenye; a kézmosásnál nincs taps
   assert.ok(picks.find(p => p.prompt === 'Kinek a kicsinye a csibe?').q.includes('🐥'));
   assert.ok(!orders.some(o => o.steps.some(s => s.t === '🌰' || s.t === '👏')), 'félrevezető kártyakép');
@@ -68,8 +70,9 @@ test('a kimondott kérdésekben nincs matematikai jel', () => {
 
 test('rosszul besorolt feladatok a helyükön vannak', () => {
   const where = prompt => stationOf(flat.find(i => i.prompt === prompt));
-  assert.equal(where('Mivel látunk?'), 'test');
-  assert.equal(where('Mivel szagolunk?'), 'test');
+  // a látás és a szaglás a Testünk ténytáblájába került (a régi, kézzel írt Testünk-feladatok kikerültek)
+  const testAsks = FACT_TABLES.find(t => t.station === 'test').facts.flatMap(f => f.q.map(q => q.ask));
+  assert.ok(testAsks.includes('Mivel látjuk a színeket?') && testAsks.includes('Mivel érezzük a virág illatát?'));
   assert.equal(where('Esik az eső. Mit viszünk magunkkal?'), 'vilag');
   assert.equal(where('Piros a lámpa. Mit csinálsz?'), 'vilag');
   assert.equal(where('Hogyan mosunk fogat? Koppints sorrendben!'), 'egeszseg');

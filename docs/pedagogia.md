@@ -381,6 +381,30 @@ tény-kérdés). A 250-es kapuba csak a tény-kérdések számítanak.
 **Amit nem tudunk**: néhány újabb emoji (🦫 hód, 🦭 fóka, 🪱 giliszta, 🪰 légy) csak frissebb iPadOS-en látszik, és
 az árnyékok az iPad saját emojijaiból készülnek. Ha egy árnyék nem ismerhető fel, azt jelezni kell.
 
+**A többi tábla jóváhagyása**: a szülő 2026-11-15-én a még hátralévő ténytáblákat (Testünk csodái, Szívkert, Világunk,
+Egészség, Időutazás) **előre jóváhagyta**. Ezek ezért elkészültük után azonnal élesednek. A nyomtatható lista
+(`tests/tenyek.html?st=…`) ugyanúgy elkészül mindegyikhez, és ha a szülő utólag kihúz egy sort, az kikerül a táblából.
+Ezért minden táblát a megírás után végigolvasok: a kimondott kérdést, a felsorolt válaszokat és a jó válasz utáni
+tényt is. Egy rossz válasz sem lehet védhető, egy kép sem jelenthet két különböző dolgot.
+
+### 3.10 Testünk csodái (242 tény, 264 kérdés, 9 készség), jóváhagyva: 2026-11-15
+
+A tábla: `js/content/facts/test.js`. **Készségek** (a DIFER tapasztalati következtetés és összefüggés-megértés
+területe, és a testséma, amire az írásmozgás és a téri tájékozódás is épül): melyik testrész ez; érzékszervek; mire
+való a testrészünk; a testünk belseje; hány van belőle; ruha és testrész (két irányból); hogyan növünk; mit kér a
+testünk (éhség, szomjúság, fáradtság, fázás, vécé); meglepő tények. Szintek: 61, 91, 64, 28 és 20 kérdés.
+
+**Testábra**: a nyak, a váll, a könyök, a csukló, a has, a térd és a fej emojiként nem rajzolható, ezért a táblában
+egy saját, egyszerű gyerekalak van, amelyen a kérdezett testrész rózsaszínnel ki van emelve („Melyik képen rózsaszín
+a térd?”, „Hová kötjük a sálat?”). Így a gyerek a saját testén is meg tudja mutatni, amit a képen lát.
+
+**Szóhasználat**: a felnőttes szavak (ízlelünk, erek) helyett a hétköznapiak (érezzük az ízeket, a vér körbejár). A
+hogyan növünk kérdései a tiszteletet is tanítják: a nagyszülőnek segítünk, csókolommal köszönünk neki, ő mesél arról,
+milyen volt, amikor gyerek volt. A régi, kézzel írt Testünk-feladatok kikerültek; aki ezekből sokat megoldott, az új
+készségeken egy szinttel feljebb indul.
+
+**Amit nem tudunk**: a 🫀 szív és a 🫁 tüdő emoji csak iPadOS 13.2-től látszik.
+
 ---
 
 ## 4. Rozi mondatai (monológ-könyvtár)

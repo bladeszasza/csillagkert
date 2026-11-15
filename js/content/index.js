@@ -24,6 +24,7 @@ const OLD = {
   zene: [/^music\|/],
   ceruza: [/^trace\|/, /^betu\|/],
   rajz: [/^draw\|/],
+  test: [/^pick\|(Melyik szerv pumpálja|Mivel gondolkodunk|Mivel látunk|Mivel lélegzünk|Mivel rágunk|Mivel hallunk|Mivel fogjuk meg a kanalat|Mivel szagolunk|Mivel érezzük az ízeket|Mivel ízlelünk|Hány ujjunk van|Mit csinálunk, ha álmosak|Mi folyik az ereinkben|Mi segít, hogy kipihenjük)/, /^order\|(Hogyan változunk|Hogyan növünk)/],
   algo: [/^algo\|/, /^order\|Hogyan készítünk szendvicset/, /^pick\|(Hány taps lesz|Mi jön ezután\? Találd ki|Ha sötét van)/],
 };
 export function legacySolvedIn(seen, station) {
