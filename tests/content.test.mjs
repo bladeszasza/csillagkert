@@ -169,16 +169,17 @@ test('jövevények: 150 csillag után 30 csillagonként egy (barát vagy fa), eg
   assert.deepEqual(floraFor(900), FLORA.map(f => f.id));
 });
 
-test('jövevények üteme: a jutalomkör hosszával (5, 7, 10, 15 kezdőszám) körönként legfeljebb egy jövevény jön', () => {
+test('jövevények üteme: a jutalomkör hosszával (5, 7, 10, 15 kezdőszám, naponta elölről) körönként legfeljebb egy jövevény jön', () => {
   const late = lateOnes().map(([s]) => s), last = Math.max(...late);
   assert.equal(roundStars(10, 0), 10); assert.equal(roundStars(10, 3), 16); assert.equal(roundStars(5, 100), 30); assert.equal(roundStars(undefined, 0), 10);
-  for (const base of [5, 7, 10, 15]) {
+  // naponta 1–4 kör (a kör hossza minden nap a kezdőszámról indul), és a régi, soha vissza nem álló növekedés is
+  for (const base of [5, 7, 10, 15]) for (const perDay of [1, 2, 3, 4, Infinity]) {
     let total = 0, done = 0, rounds = 0;
     while (total < last) {
       const n = roundStars(base, done), got = late.filter(s => s > total && s <= total + n);
-      assert.ok(got.length <= 1, `${base}-ös kezdés, ${done + 1}. kör (${total + 1}–${total + n} csillag): ${got.length} jövevény`);
+      assert.ok(got.length <= 1, `${base}-ös kezdés, napi ${perDay} kör, a nap ${done + 1}. köre (${total + 1}–${total + n} csillag): ${got.length} jövevény`);
       if (total + n > NEWCOMER_FROM) rounds++;
-      total += n; done++;
+      total += n; done = done + 1 >= perDay ? 0 : done + 1;
     }
     assert.ok(rounds >= late.length, 'legalább annyi kör kell, ahány jövevény');
   }

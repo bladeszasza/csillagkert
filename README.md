@@ -176,8 +176,11 @@ a `js/friends.js` táblájában. Etetéssel bárki hamarabb is beköltözik.
 
 A szülő kérésére a tehén (150 csillag) után nagyjából **jutalomkörönként egy** újdonság érkezik, ahogy az ajándék is:
 **30 csillagonként** hol egy új barát, hol egy új fa. Egy jutalomkör a beállított kezdőszámmal (5, 7, 10 vagy 15 csillag)
-indul, körönként kettővel hosszabb, és legfeljebb 30 csillag (`roundStars`, `js/economy.js`). Ezért egy körben soha nem jön
-egynél több jövevény (Node-teszt mind a négy kezdőszámmal), és ha a kör már 30 csillagos, a teljes rendben minden körre jut egy.
+indul, aznap körönként kettővel hosszabb, és legfeljebb 30 csillag (`roundStars`, `js/economy.js`). **A szülő kérésére
+(2026-11-16) minden nap elölről, a kezdőszámról indul** (`roundsToday`; a nap a készülék órája szerint éjfélkor vált).
+Ezért egy körben soha nem jön egynél több jövevény (Node-teszt mind a négy kezdőszámmal, napi egy–négy körrel). A
+napi visszaállás miatt a körök rövidebbek maradnak, így a jövevény nem minden körre jut: tízes kezdőszámmal és napi
+három körrel (10 + 12 + 14 csillag) nagyjából naponta egy érkezik.
 A rend rögzített (az én beállításom, a `js/friends.js` elején):
 
 | Csillag | Jövevény | Hol |

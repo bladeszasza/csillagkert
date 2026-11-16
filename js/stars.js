@@ -1,5 +1,5 @@
 // Csillagmérő: ★☆☆ — a csillag látványosan odarepül és kigyullad. Kevés csillagnál külön csillagok,
-// sokatnál (12 fölött) kitöltődő sáv számlálóval: a jutalomhoz egyre több csillag kell.
+// sokatnál (12 fölött) kitöltődő sáv számlálóval: a jutalomhoz aznap egyre több csillag kell.
 const meter = () => document.getElementById('meter');
 const BAR_FROM = 13;
 

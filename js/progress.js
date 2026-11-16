@@ -4,7 +4,7 @@
 //   csillagkert:device        – az eszköz beállításai (felolvasó hang, beszéd hangereje): minden gyereknél ugyanaz
 // A régi, egyetlen mentés (csillagkert_v1) az első profil lesz; a régi kulcs érintetlenül megmarad biztonsági másolatnak.
 // Minden tároló-hívás védett: privát módban is működik, csak nem ment.
-import { migrateEconomy, payStarGift, sessionGift, sessionHeart } from './economy.js';
+import { migrateEconomy, payStarGift, sessionGift, sessionHeart, dayKey, roundsToday } from './economy.js';
 import { normalizeDress } from './avatar.js';
 
 const INDEX = 'csillagkert:profiles', DEVICE = 'csillagkert:device', PREFIX = 'csillagkert:p:';
@@ -26,7 +26,8 @@ const fresh = () => ({
   gold: 0,           // aranyvirágok (amikor a létra minden foka megvan)
   newDress: [], newDecor: [],   // még meg nem nézett új ruhák (az öltöztetőnél jelzés) és még meg nem mutatott kerti díszek
   friends: [],       // akit már megetettek: a csillagoktól függetlenül is a kertben lakik
-  rewardsDone: 0,    // hány jutalomjátékot játszott már: minden kör után több csillag kell
+  rewardsDone: 0,    // hány jutalomjátékot játszott már összesen
+  roundsDay: '', roundsToday: 0,   // ma hány jutalomkört játszott: aznap minden kör után több csillag kell, másnap elölről
   dress: null,       // az öltöztető állása
   story: null,       // a mostani kör meséje { id, step, ended } (js/story.js)
   storiesUsed: [],   // a már sorra került mesék (hogy ne ismétlődjenek, amíg mind sorra nem kerül)
@@ -45,6 +46,8 @@ function normalize(raw) {
   for (const k of ['sk', 'rv', 'stAt']) if (!s[k] || typeof s[k] !== 'object' || Array.isArray(s[k])) s[k] = {};
   for (const k of ['hist', 'lastSt', 'storiesUsed']) if (!Array.isArray(s[k])) s[k] = [];
   if (!s.story || typeof s.story !== 'object' || Array.isArray(s.story)) s.story = null;
+  if (typeof s.roundsDay !== 'string') s.roundsDay = '';
+  s.roundsToday = Math.max(0, Math.floor(+s.roundsToday || 0));
   for (const k of ['total', 'meter', 'rewardsDone']) s[k] = Math.max(0, Math.floor(+s[k] || 0));
   if (!MARKS.includes(s.mark)) s.mark = MARKS[0];
   if (had && !raw.v2) s.perReward = 10;                         // korábbi mentés: 3 helyett 10 csillag
@@ -61,6 +64,7 @@ function sanitize(raw) {
   const s = fresh(), int = (v, lo, hi, d) => (Number.isFinite(+v) ? Math.max(lo, Math.min(hi, Math.floor(+v))) : d);
   const word = v => typeof v === 'string' && /^[\p{L}0-9:_-]{1,24}$/u.test(v);
   s.total = int(raw.total, 0, 100000, 0); s.meter = int(raw.meter, 0, 1000, 0); s.rewardsDone = int(raw.rewardsDone, 0, 100000, 0);
+  if (typeof raw.roundsDay === 'string' && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(raw.roundsDay)) { s.roundsDay = raw.roundsDay; s.roundsToday = int(raw.roundsToday, 0, 1000, 0); }
   s.rewardMinutes = [2, 4, 6, 10].includes(+raw.rewardMinutes) ? +raw.rewardMinutes : 4;
   s.perReward = [5, 7, 10, 15].includes(+raw.perReward) ? +raw.perReward : 10;
   s.feedGap = int(raw.feedGap, 2, 3, 2); s.sinceFeed = int(raw.sinceFeed, 0, 10, 0);
@@ -198,7 +202,7 @@ export function openProfiles(storage) {
     },
     // Megszakított (X) feladat: csillag nem jár érte, de "látott"-nak számít, hogy a Tovább ne ugyanazt adja újra
     skip(sid) { if (sid) { state.seen[sid] = Date.now(); save(); } },
-    completeReward() { state.rewardsDone = (state.rewardsDone || 0) + 1; save(); },
+    completeReward(day = dayKey()) { state.rewardsDone = (state.rewardsDone || 0) + 1; state.roundsToday = roundsToday(state, day) + 1; state.roundsDay = day; save(); },
     // --- ajándékok és szívek (a szabályok: js/economy.js) ---
     starGift() { const g = payStarGift(state); if (g) save(); return g; },               // 20-as csillaghatárnál
     rewardGift(sess, source) { const g = sessionGift(state, sess, source); if (g) save(); return g; },

@@ -13,7 +13,7 @@ import { friendsFor, friendById, floraFor, floraById, AREAS } from './friends.js
 import { withArt } from './hu.js';
 import { createRewardTimer } from './reward-timer.js';
 import { play } from './sounds.js';
-import { nextGift, newRewardSession, roundStars } from './economy.js';
+import { nextGift, newRewardSession, roundStars, roundsToday } from './economy.js';
 import { giftById } from './gifts.js';
 import { showGift, giftBusy, clearGifts, floatHeart, BOX_SVG } from './gift-moment.js';
 import { REWARDS } from './rewards/index.js';
@@ -65,8 +65,8 @@ window.addEventListener('unhandledrejection', ev => logError(ev.reason, 'ígére
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const name = () => progress.get().name;
-// Egyre több csillag kell: az alapérték + 2 minden megjátszott jutalomkör után (legfeljebb 30)
-const perReward = () => roundStars(progress.get().perReward, progress.get().rewardsDone);
+// Aznap egyre több csillag kell: az alapérték + 2 minden ma megjátszott jutalomkör után (legfeljebb 30); másnap elölről
+const perReward = () => roundStars(progress.get().perReward, roundsToday(progress.get()));
 
 // --- A mese (js/story.js): egy jutalomkörön át tart. A feladatokat továbbra is az ütemező választja; a mese csak keretet ad
 // (a kör elején mire készülünk, egy állomás előtt miért csináljuk, a csillagokkal haladó lépések, a kapunál a vége).

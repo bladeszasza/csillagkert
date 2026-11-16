@@ -15,7 +15,7 @@ test('Rozi mondata az ajándékról: rövid, számjegy nélküli, és nem számo
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CATALOG, LADDER, OLD_ORDER, GOLD, DECOR, giftById } from '../js/gifts.js';
-import { giftLine, migrateEconomy, nextGift, grantGift, payStarGift, starGiftDue, newRewardSession, sessionGift, sessionHeart, GIFT_SOURCES, HEART_CAPS, STAR_STEP } from '../js/economy.js';
+import { giftLine, migrateEconomy, nextGift, grantGift, payStarGift, starGiftDue, newRewardSession, sessionGift, sessionHeart, GIFT_SOURCES, HEART_CAPS, STAR_STEP, roundStars, roundsToday, dayKey } from '../js/economy.js';
 import { openProfiles } from '../js/progress.js';
 import { FRIENDS, AREAS } from '../js/friends.js';
 
@@ -118,4 +118,28 @@ test('a profilban: mentéskor megmarad, a csillag-ajándék a 20-as határnál j
   // régi fájl (owned nélkül): ugyanaz, mint a régi mentés átemelése
   const id2 = q.importData({ app: 'csillagkert', kind: 'profil', profile: { total: 300, gifts: ['race-1', 'race-2'] } });
   q.use(id2); assert.deepEqual(q.get().owned, OLD_ORDER); assert.equal(q.get().starGifts, 15);
+});
+
+test('a jutalomkör hossza naponta a kezdőszámról indul: aznap körönként kettővel több, másnap elölről', () => {
+  assert.equal(dayKey(new Date(2026, 0, 5, 23, 59)), '2026-01-05');
+  assert.equal(dayKey(new Date(2026, 10, 16, 0, 0)), '2026-11-16');
+  assert.equal(roundsToday({ roundsDay: '2026-11-16', roundsToday: 3 }, '2026-11-16'), 3);
+  assert.equal(roundsToday({ roundsDay: '2026-11-15', roundsToday: 3 }, '2026-11-16'), 0, 'tegnapi körök nem számítanak');
+  assert.equal(roundsToday({}, '2026-11-16'), 0); assert.equal(roundsToday(null, '2026-11-16'), 0);
+  const st = new FakeStorage(), p = openProfiles(st);
+  p.set({ perReward: 10, rewardsDone: 7 });                       // régi mentés: sok kör, de ma még egy sem
+  const per = d => roundStars(p.get().perReward, roundsToday(p.get(), d));
+  assert.equal(per('2026-11-16'), 10, 'a régi körök száma már nem nyújtja a kört');
+  p.completeReward('2026-11-16'); assert.equal(per('2026-11-16'), 12);
+  p.completeReward('2026-11-16'); assert.equal(per('2026-11-16'), 14);
+  assert.equal(p.get().rewardsDone, 9, 'az összes kör száma tovább nő (áttekintéshez)');
+  assert.equal(per('2026-11-17'), 10, 'másnap elölről');
+  p.completeReward('2026-11-17'); assert.equal(per('2026-11-17'), 12); assert.equal(p.get().roundsToday, 1);
+  for (let i = 0; i < 20; i++) p.completeReward('2026-11-17');
+  assert.equal(per('2026-11-17'), 30, 'legfeljebb 30');
+  // fájlba mentés és visszatöltés: a napi számláló megmarad, a sérült nem jut be
+  const back = p.exportData(); const pid = p.importData(back); assert.ok(p.use(pid));
+  assert.equal(p.get().roundsDay, '2026-11-17'); assert.equal(p.get().roundsToday, 21);
+  const bad = p.exportData(); bad.profile.roundsDay = 'holnap'; bad.profile.roundsToday = 99;
+  assert.ok(p.use(p.importData(bad))); assert.equal(p.get().roundsDay, ''); assert.equal(p.get().roundsToday, 0);
 });
