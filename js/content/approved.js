@@ -6,4 +6,5 @@ export const APPROVED = {
   sziv: '2026-11-16',       // Szívkert (előre jóváhagyva)
   vilag: '2026-11-16',      // Világunk (előre jóváhagyva)
   egeszseg: '2026-11-16',   // Egészség (előre jóváhagyva)
+  ido: '2026-11-16',        // Időutazás (előre jóváhagyva)
 };

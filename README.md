@@ -72,7 +72,7 @@ Az M4 mérföldkő kész: **mind a 8 generálható állomás** sablonokból kés
   javítottam (például „Mivel hallunk?" került a félreérthető „Mi folyik az ereinkben?" helyére); ezek az állomások az
   M6-ban kapnak szülő által átnézett ténytáblát. Hogy a 61 javítandó régi feladatból mi lett (javítva, kivéve, nyitott),
   az a [`docs/pedagogia.md`](docs/pedagogia.md) 6. részében áll.
-- **Tény-állomások (M6, folyamatban)**: az Állatok, Világunk, Egészség, Testünk csodái, Időutazás és az új Szívkert
+- **Tény-állomások (M6)**: az Állatok, Világunk, Egészség, Testünk csodái, Időutazás és az új Szívkert
   feladatai kézzel írt ténytáblákból jönnek (`js/content/facts/`), nem generálva. Egy tényhez legfeljebb két kérdés
   tartozik, a válaszok zárt képbankból jönnek, a vitatható képek soha nem rossz válaszok, és a jó válasz után elhangzó
   tény arról az állatról szól, amit a gyerek választott. **Egy állomás csak a szülő jóváhagyása után élesedik**
@@ -83,8 +83,9 @@ Az M4 mérföldkő kész: **mind a 8 generálható állomás** sablonokból kés
   `tests/tenyek.html?st=sziv`. A Világunk is élesben van (231 tény, 270 kérdés; az évszakokat, a napszakokat és a naptárt
   saját rajzok mutatják): `tests/tenyek.html?st=vilag`, és az Egészség is (194 tény, 264 kérdés; az ételek „gyakran” vagy
   „néha” csoportba tartoznak, nincs szégyenítés, és először vannak sorba rakós kérdések egy ténytáblában):
-  `tests/tenyek.html?st=egeszseg`. A többi táblát a szülő előre jóváhagyta, ezek elkészültük után élesednek
-  ([`docs/pedagogia.md`](docs/pedagogia.md) 3.9–3.13).
+  `tests/tenyek.html?st=egeszseg`. Az utolsó az Időutazás (171 tény, 258 kérdés; saját rajz a piramisról, a gémeskútról
+  és a kemencéről, és egy naptárcsík a tegnap-ma-holnaphoz): `tests/tenyek.html?st=ido`. Mind a hat tábla élesben van,
+  a régi, kézzel írt feladatok mind kikerültek ([`docs/pedagogia.md`](docs/pedagogia.md) 3.9–3.14).
 
 ## Hang
 

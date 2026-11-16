@@ -13,6 +13,7 @@ import { testGifts } from './smoke-gifts.js';
 import { VOL } from '../js/notes.js';
 import { build } from '../js/content/engine.js';
 import { rng } from '../js/content/rng.js';
+import { POOL, materialize } from '../js/content/index.js';
 
 const results = [];
 const ok = (name, pass, info = '') => { results.push({ name, pass: !!pass, info: String(info) }); };
@@ -121,9 +122,11 @@ async function testClap() {
 }
 
 // --- 5. minden feladattípus elindul kivétel nélkül ---
+// a kézzel írt lista már csak az etetés: a többi típushoz készségenként az első sablon ad egy feladatot
+const skillSamples = () => { const skills = new Set(), out = []; for (const e of POOL) { if (e.item || skills.has(e.skill)) continue; skills.add(e.skill); out.push(materialize(e, rng(1))); } return out; };
 async function testStart() {
   const seenTypes = new Set();
-  for (const it of CURRICULUM) {
+  for (const it of [...CURRICULUM, ...skillSamples()]) {
     if (seenTypes.has(it.type + (it.mode || ''))) continue; seenTypes.add(it.type + (it.mode || ''));
     const ac = new AbortController(), d = host(); setScope(ac.signal);
     let err = null;

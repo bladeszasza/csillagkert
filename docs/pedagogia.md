@@ -489,6 +489,42 @@ sokat megoldott, az új készségeken egy szinttel feljebb indul.
 betegségnél pedig csak hétköznapi dolgok szerepelnek (lázmérő, tea, pihenés, sebtapasz), orvosi tanács nincs. Ha egy
 család másként csinálja (például nincs kád, csak zuhany), a szülő kihúzhatja a kérdést (`tests/tenyek.html?st=egeszseg`).
 
+### 3.14 Időutazás (171 tény, 258 kérdés, 9 készség), jóváhagyva: 2026-11-16
+
+A tábla: `js/content/facts/ido.js`. **Készségek** (a DIFER tapasztalati következtetés és összefüggés-megértés
+területe, és az idő relációszavai: régen, előbb, tegnap, holnap): otthon régen és ma (világítás, fűtés, víz, az idő
+mérése, írás, játék); utazás és üzenet; dinoszauruszok; az ősemberek; várak és lovagok; régi népek (egyiptomiak,
+vikingek, görögök, inkák, kínaiak); régi mesterségek; népi hagyományok (gémeskút, kemence, szüret, fonó, vásár,
+pásztorok); tegnap, ma, holnap. Szintek: 48, 74, 79, 43 és 14 kérdés.
+
+**Sorba rakás**: nyolc sorrend: a világítás (tűz, gyertya, villanykörte), az üzenet (levél, telefon, mobil), a
+közlekedés, a kenyér útja a búzától, a gyapjú útja a zokniig, tegnap-ma-holnap, az életkorok, és a „mi volt előbb?”
+(dinoszauruszok, ősemberek, lovagok, a mai város). A tegnap-ma-holnap kérdéseknél egy háromnapos naptárcsík látszik: a
+középső nap fölött süt a nap (ez a ma), a kérdezett nap rózsaszín.
+
+**Saját rajzok**: piramis (az 1.0-ban a háromszög jele állt a helyén, ezért kikerült; most saját rajzzal visszajött),
+barlang tűzzel, szélmalom, gémeskút, kemence, mézeskalács-szív, rokka, fonott kosár, dinoszaurusz-lábnyom és a
+naptárcsík.
+
+**Vitatható válaszok**: ami szintén igaz lehet, az soha nem rossz válasz. Villany nélkül a mécses is világít, üzenetet
+a postagalamb és a lovas hírnök is vitt, a kályhába tüzet is raktak, kövület nem csak csontból lesz, a malmot ló is
+hajthatta, a címer a várkapun is ott lehetett.
+
+**Mit mondunk és mit nem**: a „régen” a dédszülők koráig vagy még régebbre megy vissza; a nagyszülők gyerekkoráról
+csak azt mondjuk, ami biztos (például hogy nem volt mobiltelefon). Egy kérdés kimondja, hogy az ősemberek mamutot
+láttak, dinoszauruszt soha. Csata, háború és vallási ünnep nincs a táblában; a lovagoknál a kard, a pajzs, a ló és a
+torna szerepel.
+
+**A régi feladatok**: a hat kézzel írt Időutazás-feladat kikerült (dinoszaurusz, az ősemberek tüze, vár, lovagok,
+közlekedés, gyertya); mindegyik témája átírva él tovább a táblában. Aki a régiekből sokat megoldott, az új készségeken
+egy szinttel feljebb indul. Ezzel az utolsó kézzel írt feladat is kikerült: a `js/curriculum.js` fájlban már csak az
+etetés és az állomások listája maradt.
+
+**Amit nem tudunk**: néhány újabb emoji (🪵 tűzifa, 🪶 lúdtoll, 🛖 kunyhó, 🪨 kő, 🦣 mamut, 🪣 vödör, 🪡 tű, 🫐 bogyó
+iPadOS 14.2-től, 🛞 kerék iPadOS 15.4-től) régebbi iPaden üres négyzet lehet. A régi népekről és a hagyományokról
+egy-egy egyszerű, általánosan elfogadott állítás szerepel; ha valami a családnak másként ismerős, a szülő kihúzhatja
+(`tests/tenyek.html?st=ido`).
+
 ---
 
 ## 4. Rozi mondatai (monológ-könyvtár)
@@ -541,14 +577,14 @@ A tervezéskor mind a 136 régi feladatot átnéztük; 61-et jelöltünk javíta
 | Világunk | 5 | 4 javítva; 1 kiváltva: a „Melyik nap jön péntek után?" önkényes képei (lufi, táska, könyvek) helyett az M6 ténytáblájában naptárlap van (3.12) |
 | Egészség | 5 | 3 javítva (áthelyezés az M1-ben); 2 kiváltva: a kézmosás félreérthető képei és a fogkefe-kérdés komolytalan rossz válaszai helyett az M6 ténytáblája jött (3.13) |
 | Testünk csodái | 5 | 5 javítva (az „erek" helyett most „Mivel hallunk?", így a fül is lehet helyes válasz) |
-| Időutazás | 5 | 4 javítva; 1 kivéve: a piramis (az emoji a háromszög jele), az M6-ban rajzolt képpel térhet vissza |
+| Időutazás | 5 | 4 javítva; 1 kiváltva: a piramis (az emoji a háromszög jele volt) saját rajzzal jött vissza az M6 ténytáblájában (3.14) |
 | Robotpálya | 5 | 5 javítva (áthelyezések és a „kétszer, háromszor" kiejtése korábban; a nyelvtan és a taps-tény az M4/1-ben); az M4/2-ben az egész állomás generált lett |
 | Ceruzavár | 3 | 2 javítva korábban (a kör azonosítója, a név nélküli betű); 1 kiváltva: a kilenc azonos utasítású régi vonal helyett generált feladatok jöttek, mindegyiknek saját utasítása van („Rajzolj esőt! Minden csepp fentről lefelé esik.") |
 | Hangok háza | 8 | kivéve, a generált feladatok váltják ki (a válaszok nevét Rozi kimondja, a kép látszik, a tapsolásnál nincs számjegy, sok rím-feladat) |
 | Zenevár | 4 | kivéve, a generált feladatok váltják ki (nincs abszolút hallás: a harangok előbb a nevükkel szólnak; a hangnév mindig harang neve; a felirat „ti") |
 | Rajzasztal | 0 | a négy régi rajzos feladat (nap, ház és virág kiszínezése, szabad rajz) helyett generált feladatok jöttek (3.8) |
 
-Összesen: 33 kiváltva generált feladattal vagy ténytáblával, 27 javítva, 1 kivéve, nyitott nincs.
+Összesen: 34 kiváltva generált feladattal vagy ténytáblával, 27 javítva, nyitott nincs.
 
 ---
 

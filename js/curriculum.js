@@ -1,38 +1,10 @@
-// A kézzel írt feladatok ADATKÉNT (azok az állomások, amelyek még nem sablonokból jönnek) + az állatetetés.
-// A generált állomások (Számoló rét, Formák és színek, Okoskodó, Hangok háza, Zenevár, Robotpálya, Ceruzavár) feladatai
-// sablonokból készülnek (js/content/); a régi, kézzel írt változatuk kikerült innen. type → js/activities/<type>.js. A pick(...) segéd: az ELSŐ válasz a helyes (futáskor
-// összekeveredik), formátum: 'emoji név'. A sorrendet az ütemező adja (js/scheduler-core.js), nem ez a lista.
+// Az állatetetés feladatai és az állomások listája. A többi feladat sablonokból (generált állomások) és kézzel írt,
+// a szülő által átnézett ténytáblákból jön (js/content/). type → js/activities/<type>.js. A sorrendet az ütemező adja
+// (js/scheduler-core.js), nem ez a lista.
 
 import { MEALS, ANY, friendById } from './friends.js';
 import { APPROVED } from './content/approved.js';
 
-// Kijelentések a helyes válaszhoz: kulcs = kérdés|helyes válasz neve. Elhangzik: "Igen! <kijelentés>"
-const FACTS = {
-  'Mivel gondolkodunk?|agy': 'Az agyunkkal gondolkodunk.',
-  'Mivel látunk?|szem': 'A szemünkkel látunk.',
-  'Mivel melegedtek az ősemberek?|tűz': 'Az ősemberek a tűz mellett melegedtek.',
-  'Mivel lélegzünk?|tüdő': 'A tüdőnkkel lélegzünk.',
-  'Hol laktak a királyok és a lovagok régen?|vár': 'A királyok és a lovagok régen várban laktak.',
-  'Mivel rágunk?|fog': 'A fogunkkal rágunk.',
-  'Mivel hallunk?|fül': 'A fülünkkel hallunk.',
-  'Kik védték a várat?|lovagok': 'A várat a lovagok védték.',
-  'Mivel fogjuk meg a kanalat?|kéz': 'A kanalat a kezünkkel fogjuk meg.',
-  'Mivel szagolunk?|orr': 'Az orrunkkal szagolunk.',
-  'Mivel érezzük az ízeket?|nyelv': 'A nyelvünkkel érezzük az ízeket.',
-  'Hány ujjunk van két kezünkön?|tíz': 'Két kezünkön tíz ujjunk van.',
-  'Mit csinálunk, ha álmosak vagyunk?|alszunk': 'Ha álmosak vagyunk, alszunk egy jót.',
-  'Melyikhez nem kell villany?|gyertya': 'A gyertyához nem kell villany. Régen azzal világítottak.',
-  'Melyik szerv pumpálja a vért?|szív': 'A szív pumpálja a vért az egész testünkben.',
-  'Melyik állat élt nagyon régen, és ma már nem él?|dinoszaurusz': 'A dinoszauruszok nagyon régen éltek, ma már nincsenek.',
-};
-const ORDER_FACTS = {
-  'Hogyan változunk az évek alatt? Koppints sorrendben!': 'Előbb baba vagyunk, aztán gyerek, felnőtt, végül idős.',
-  'Hogyan változott a közlekedés? Koppints sorrendben!': 'Régen lovon jártak, aztán jött a vonat, az autó, és végül a repülő.',
-};
-const opt = (s, ok) => { const i = s.indexOf(' '); return i < 0 ? { t: s, ok } : { t: s.slice(0, i), name: s.slice(i + 1), ok }; };
-const pick = (icon, prompt, correct, ...wrong) => ({ type: 'pick', icon, prompt, fact: FACTS[prompt + '|' + (opt(correct, true).name || '')], options: [opt(correct, true), ...wrong.map(w => opt(w, false))] });
-const withQ = (q, p) => ({ ...p, q });
-const order = (icon, prompt, ...steps) => ({ type: 'order', icon, prompt, fact: ORDER_FACTS[prompt], steps: steps.map(s => opt(s)) });
 // Állatetetés: a kert valódi lakóját etetjük (js/friends.js: ki mit eszik). A kulcs az állat és a jó étel párja.
 // A mindenevő barátnál (ANY) mindegyik étel jó: ott a gyerek választ, a kulcs vége "mind".
 const feed = ([kind, good, ...rest]) => {
@@ -40,24 +12,13 @@ const feed = ([kind, good, ...rest]) => {
   return good === ANY ? { ...base, key: `feed-${kind}-mind`, any: rest } : { ...base, key: `feed-${kind}-${good}`, good, wrong: rest };
 };
 
-const BASE = [
-  // 🏺 Időutazás (a többi állomás feladatai sablonokból és ténytáblákból jönnek)
-  pick('🏺', 'Melyik állat élt nagyon régen, és ma már nem él?', '🦖 dinoszaurusz', '🐶 kutya', '🐱 cica'),
-
-  pick('🏺', 'Mivel melegedtek az ősemberek?', '🔥 tűz', '🧊 jég', '🌧️ eső'),
-
-  pick('🏺', 'Hol laktak a királyok és a lovagok régen?', '🏰 vár', '🏢 felhőkarcoló', '⛺ sátor'),
-
-  pick('🏺', 'Kik védték a várat?', '⚔️ lovagok', '🧑‍🏫 tanítók', '🧑‍🎨 festők'),
-
-  order('🏺', 'Hogyan változott a közlekedés? Koppints sorrendben!', '🐎 ló', '🚂 vonat', '🚗 autó', '✈️ repülő'),
-
-  pick('🏺', 'Melyikhez nem kell villany?', '🕯️ gyertya', '💡 villanykörte', '📺 tévé'),
-];
+// A régi, kézzel írt feladatok mind kikerültek: minden állomás sablonokból vagy ténytáblából kapja a feladatait
+// (js/content/). Ez a lista üresen marad, hogy a régi mentések átemelése és a tesztek ugyanúgy működjenek.
+const BASE = [];
 
 const FEED = MEALS.map(feed);
 
-// A kézzel írt feladatok + az állatetetés. Az etetés ütemét (minden 2., majd 3. feladat) az ütemező tartja be.
+// Az állatetetés (a régi lista üres). Az etetés ütemét (minden 2., majd 3. feladat) az ütemező tartja be.
 export const CURRICULUM = [...BASE, ...FEED];
 export const isFeed = item => item.type === 'feed';
 export const BASE_ITEMS = BASE;
