@@ -8,22 +8,16 @@ import { APPROVED } from './content/approved.js';
 
 // Kijelentések a helyes válaszhoz: kulcs = kérdés|helyes válasz neve. Elhangzik: "Igen! <kijelentés>"
 const FACTS = {
-  'Melyik évszakban esik a hó?|tél': 'Télen esik a hó, és hideg van.',
   'Mivel gondolkodunk?|agy': 'Az agyunkkal gondolkodunk.',
   'Mivel látunk?|szem': 'A szemünkkel látunk.',
   'Mivel melegedtek az ősemberek?|tűz': 'Az ősemberek a tűz mellett melegedtek.',
-  'Ki oltja a tüzet?|tűzoltó': 'A tűzoltó oltja el a tüzet.',
   'Mivel lélegzünk?|tüdő': 'A tüdőnkkel lélegzünk.',
-  'Mikor látjuk a csillagokat az égen?|éjszaka': 'Éjszaka, amikor sötét van, látjuk a csillagokat.',
   'Melyik az egészséges?|répa': 'A répa egészséges, sok vitamin van benne.',
   'Hol laktak a királyok és a lovagok régen?|vár': 'A királyok és a lovagok régen várban laktak.',
   'Mivel rágunk?|fog': 'A fogunkkal rágunk.',
-  'Kinek a kicsinye a csibe?|tyúk': 'A csibe a tyúk kicsinye.',
   'Mivel mosunk fogat?|fogkefe': 'Fogat fogkefével mosunk.',
-  'Melyik nap jön péntek után?|szombat': 'Péntek után szombat jön.',
   'Mivel hallunk?|fül': 'A fülünkkel hallunk.',
   'Kik védték a várat?|lovagok': 'A várat a lovagok védték.',
-  'Esik az eső. Mit viszünk magunkkal?|esernyő': 'Esőben esernyőt viszünk magunkkal.',
   'Mivel fogjuk meg a kanalat?|kéz': 'A kanalat a kezünkkel fogjuk meg.',
   'Mivel szagolunk?|orr': 'Az orrunkkal szagolunk.',
   'Mivel érezzük az ízeket?|nyelv': 'A nyelvünkkel érezzük az ízeket.',
@@ -32,14 +26,10 @@ const FACTS = {
   'Melyikhez nem kell villany?|gyertya': 'A gyertyához nem kell villany. Régen azzal világítottak.',
   'Melyik szerv pumpálja a vért?|szív': 'A szív pumpálja a vért az egész testünkben.',
   'Melyik állat élt nagyon régen, és ma már nem él?|dinoszaurusz': 'A dinoszauruszok nagyon régen éltek, ma már nincsenek.',
-  'Piros a lámpa. Mit csinálsz?|megállok': 'Piros lámpánál megállunk, és megvárjuk a zöldet.',
 };
 const ORDER_FACTS = {
   'Hogyan mossunk kezet? Koppints sorrendben!': 'Víz, szappan, dörzsölés, öblítés, végül törölközés.',
-  'Mi történik a nap folyamán? Koppints sorrendben!': 'A nap így telik: reggel, dél, este, éjszaka.',
   'Hogyan változunk az évek alatt? Koppints sorrendben!': 'Előbb baba vagyunk, aztán gyerek, felnőtt, végül idős.',
-  'Rakd sorba a hét napjait! Koppints sorrendben!': 'Hétfő, kedd, szerda, csütörtök, péntek, szombat, vasárnap.',
-  'Hogyan nő a virág? Koppints sorrendben!': 'Először mag van, abból csíra nő, végül virág lesz belőle.',
   'Hogyan változott a közlekedés? Koppints sorrendben!': 'Régen lovon jártak, aztán jött a vonat, az autó, és végül a repülő.',
   'Hogyan mosunk fogat? Koppints sorrendben!': 'Fogkrém a kefére, fogmosás, öblítés, és jöhet a mosoly!',
 };
@@ -55,35 +45,23 @@ const feed = ([kind, good, ...rest]) => {
 };
 
 const BASE = [
-  // 🌍 Világunk · 🍎 Egészség · 🏺 Időutazás (a többi állomás feladatai sablonokból és ténytáblákból jönnek)
+  // 🍎 Egészség · 🏺 Időutazás (a többi állomás feladatai sablonokból és ténytáblákból jönnek)
   pick('🏺', 'Melyik állat élt nagyon régen, és ma már nem él?', '🦖 dinoszaurusz', '🐶 kutya', '🐱 cica'),
 
-  pick('🌍', 'Melyik évszakban esik a hó?', '❄️ tél', '🏖️ nyár', '🌸 tavasz'),
   pick('🏺', 'Mivel melegedtek az ősemberek?', '🔥 tűz', '🧊 jég', '🌧️ eső'),
 
-  pick('🌍', 'Ki oltja a tüzet?', '🧑‍🚒 tűzoltó', '🧑‍⚕️ orvos', '🧑‍🍳 szakács'),
   order('🍎', 'Hogyan mossunk kezet? Koppints sorrendben!', '🚰 vizezd be', '🧼 szappanozd be', '🫧 dörzsöld habosra', '💧 öblítsd le', '🧻 töröld meg'),
 
-  pick('🌍', 'Mikor látjuk a csillagokat az égen?', '🌙 éjszaka', '☀️ délben', '🌤️ délután'),
   pick('🍎', 'Melyik az egészséges?', '🥕 répa', '🍭 nyalóka', '🍟 sült krumpli'),
   pick('🏺', 'Hol laktak a királyok és a lovagok régen?', '🏰 vár', '🏢 felhőkarcoló', '⛺ sátor'),
 
-  withQ('🐥', pick('🌍', 'Kinek a kicsinye a csibe?', '🐔 tyúk', '🐮 tehén', '🐷 malac')),
   pick('🍎', 'Mivel mosunk fogat?', '🪥 fogkefe', '🧼 szappan', '🧽 szivacs'),
 
-  pick('🌍', 'Melyik nap jön péntek után?', '🎈 szombat', '🎒 hétfő', '📚 szerda'),
-
-  order('🌍', 'Mi történik a nap folyamán? Koppints sorrendben!', '🌅 reggel', '☀️ dél', '🌇 este', '🌙 éjszaka'),
   pick('🏺', 'Kik védték a várat?', '⚔️ lovagok', '🧑‍🏫 tanítók', '🧑‍🎨 festők'),
 
-  order('🌍', 'Rakd sorba a hét napjait! Koppints sorrendben!', '🔴 hétfő', '🟡 kedd', '🟢 szerda', '🔵 csütörtök'),
-  pick('🌍', 'Esik az eső. Mit viszünk magunkkal?', '☂️ esernyő', '🕶️ napszemüveg', '🩴 papucs'),
   order('🏺', 'Hogyan változott a közlekedés? Koppints sorrendben!', '🐎 ló', '🚂 vonat', '🚗 autó', '✈️ repülő'),
 
-  order('🌍', 'Hogyan nő a virág? Koppints sorrendben!', '🫘 mag', '🌱 csíra', '🌷 virág'),
-
   pick('🏺', 'Melyikhez nem kell villany?', '🕯️ gyertya', '💡 villanykörte', '📺 tévé'),
-  withQ('🚦', pick('🌍', 'Piros a lámpa. Mit csinálsz?', '✋ megállok', '🚶 átmegyek', '🏃 szaladok')),
   order('🍎', 'Hogyan mosunk fogat? Koppints sorrendben!', '🪥 fogkrémet teszünk a kefére', '🦷 megmossuk minden fogunkat', '🚰 kiöblítjük a szánkat', '😁 mosolygunk'),
 ];
 

@@ -80,8 +80,9 @@ Az M4 mérföldkő kész: **mind a 8 generálható állomás** sablonokból kés
   289 kérdés), a szülő 2026-11-15-én jóváhagyta, a játékban az etetéssel váltakozik. Átnézés: `tests/tenyek.html?st=allat`.
   A Testünk csodái tábla (242 tény, 264 kérdés, saját testábrával) is élesben van: `tests/tenyek.html?st=test`, és az új
   Szívkert is (236 helyzet, 263 kérdés a kert barátaival; a válaszok mind érzések, kedves szavak vagy jó tettek):
-  `tests/tenyek.html?st=sziv`. A többi táblát a szülő előre jóváhagyta, ezek elkészültük után élesednek
-  ([`docs/pedagogia.md`](docs/pedagogia.md) 3.9–3.11).
+  `tests/tenyek.html?st=sziv`. A Világunk is élesben van (231 tény, 270 kérdés; az évszakokat, a napszakokat és a naptárt
+  saját rajzok mutatják): `tests/tenyek.html?st=vilag`. A többi táblát a szülő előre jóváhagyta, ezek elkészültük után
+  élesednek ([`docs/pedagogia.md`](docs/pedagogia.md) 3.9–3.12).
 
 ## Hang
 

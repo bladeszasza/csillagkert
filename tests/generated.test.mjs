@@ -242,7 +242,10 @@ test('a helyes válasz helye nem árulkodó: a helyes válasz minden helyen elő
       const total = [...pos.values()].reduce((a, b) => a + b, 0), expected = total / n;
       if (expected < 5) continue;
       const counts = Array.from({ length: n }, (_, i) => pos.get(i) || 0);
-      assert.ok(Math.min(...counts) >= expected / 2, `${t.id}: a helyes válasz helye egyenlőtlen (${n} válasz) ${JSON.stringify(counts)}`);
+      // kis mintánál (pl. négy négyválaszos kérdés × 12 keverés) a fele is véletlenül alá eshet: ott a véletlen szórás
+      // háromszorosa a tűrés (binomiális eloszlás); nagy mintánál a "legalább a fele" a szigorúbb
+      const sd = Math.sqrt(total * (1 / n) * (1 - 1 / n)), floor = Math.min(expected / 2, expected - 3 * sd);
+      assert.ok(Math.min(...counts) >= floor,`${t.id}: a helyes válasz helye egyenlőtlen (${n} válasz) ${JSON.stringify(counts)}`);
     }
   }
 });

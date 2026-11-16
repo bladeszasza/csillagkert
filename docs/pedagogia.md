@@ -431,6 +431,32 @@ választás marad.
 **Amit nem tudunk**: hogy egy helyzet a gyerek saját életében mit jelent, azt a játék nem tudja. Ha egy kérdés
 rosszul esik vagy félreérthető, a szülő kihúzhatja (`tests/tenyek.html?st=sziv`).
 
+### 3.12 Világunk (231 tény, 270 kérdés, 10 készség), jóváhagyva: 2026-11-16
+
+A tábla: `js/content/facts/vilag.js`. **Készségek** (a DIFER relációszókincs, tapasztalati következtetés és
+összefüggés-megértés területe): foglalkozások (ki mit csinál, ki használja ezt az eszközt); helyek (hol vásárolunk, hol
+gyógyítanak); évszakok; napszakok; a hét napjai és a hónapok; időjárás és öltözet; járművek; közlekedés (lámpa, zebra,
+biztonsági öv, bukósisak); a természet (víz és jég, hegy, tenger, Nap, Hold, Föld); ünnepek. Szintek: 60, 81, 61, 42 és
+26 kérdés.
+
+**Saját rajzok**: az évszakoknál ugyanaz a fa látszik négyféleképpen (tavasszal virágzik, nyáron zöld, ősszel sárgul,
+télen havas), a napszakoknál ugyanaz a táj (reggel kel a nap, délben fent jár, este lila az ég, éjszaka hold és
+csillagok). A hét napjait és a hónapokat egy **naptárlap** mutatja: hét kocka (a hétvége zöld) vagy tizenkét kocka, a
+kérdezett nap vagy hónap rózsaszín. Ezzel megoldódott az 1.0 utolsó nyitott hibája: a „Melyik nap jön péntek után?”
+kérdésnél nincsenek többé önkényes képek (lufi, táska, könyvek). A közlekedési és a gyalogos lámpa is rajz, a kigyulladt
+fény jól látszik.
+
+**Vitatható válaszok**: ami szintén igaz lehet, az soha nem rossz válasz. Esernyőt hóesésben is viszünk, a vitorlás is
+hajó, a Hold a Földdel együtt a Nap körül is kering, a buszon kívül a villamoson is kapaszkodunk, a biztonsági övet nem
+csak az autóban kötjük be. A számos válaszokat (hány nap van egy héten, hány kereke van a biciklinek) Rozi szóval mondja.
+
+**A régi feladatok**: a tíz kézzel írt Világunk-feladat kikerült. Az esernyős és a lámpás kérdés a táblában él tovább, a
+csibéé az Állatok táblájában. Aki a régiekből sokat megoldott, az új készségeken egy szinttel feljebb indul.
+
+**Amit nem tudunk**: az ünnepeknél csak a magyar családokban általános szokások szerepelnek (karácsonyfa, Mikulás,
+húsvéti tojásfestés, farsang, szilveszter, szülinap, anyák napja), vallási tartalom nincs. Ha egy család másként
+ünnepel, a szülő kihúzhatja a kérdést (`tests/tenyek.html?st=vilag`).
+
 ---
 
 ## 4. Rozi mondatai (monológ-könyvtár)
@@ -481,7 +507,7 @@ A tervezéskor mind a 136 régi feladatot átnéztük; 61-et jelöltünk javíta
 | Formák és színek | 7 | kivéve, a generált feladatok váltják ki (saját rajzolt formák, jelenet-rács, egyértelmű színek) |
 | Okoskodó | 3 | kivéve, a generált feladatok váltják ki (a sorminta rossz válaszai a mintából jönnek, a memória kimondja a kártyák nevét) |
 | Állatetetés | 4 | javítva az M2a-ban (kutya, egér, maci, mókus) |
-| Világunk | 5 | 4 javítva; **1 nyitott**: a „Melyik nap jön péntek után?" képei (lufi, táska, könyvek) önkényesek, az M6 ténytáblájában naptárcsíkkal |
+| Világunk | 5 | 4 javítva; 1 kiváltva: a „Melyik nap jön péntek után?" önkényes képei (lufi, táska, könyvek) helyett az M6 ténytáblájában naptárlap van (3.12) |
 | Egészség | 5 | 5 javítva (3 áthelyezés az M1-ben; a kézmosás képei és a fogkefe-kérdés rossz válaszai most) |
 | Testünk csodái | 5 | 5 javítva (az „erek" helyett most „Mivel hallunk?", így a fül is lehet helyes válasz) |
 | Időutazás | 5 | 4 javítva; 1 kivéve: a piramis (az emoji a háromszög jele), az M6-ban rajzolt képpel térhet vissza |
@@ -491,7 +517,7 @@ A tervezéskor mind a 136 régi feladatot átnéztük; 61-et jelöltünk javíta
 | Zenevár | 4 | kivéve, a generált feladatok váltják ki (nincs abszolút hallás: a harangok előbb a nevükkel szólnak; a hangnév mindig harang neve; a felirat „ti") |
 | Rajzasztal | 0 | a négy régi rajzos feladat (nap, ház és virág kiszínezése, szabad rajz) helyett generált feladatok jöttek (3.8) |
 
-Összesen: 30 kiváltva generált feladattal, 29 javítva, 1 kivéve, **1 nyitott** (az M6-ban).
+Összesen: 31 kiváltva generált feladattal vagy ténytáblával, 29 javítva, 1 kivéve, nyitott nincs.
 
 ---
 

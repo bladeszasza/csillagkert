@@ -39,8 +39,8 @@ test('tény-állomások: az audit szerint javított feladatok', () => {
   // a "fül" eddig csak rossz válasz volt: most a Testünk ténytáblájában több kérdésnek is ő a helyes válasza
   const testTable = FACT_TABLES.find(t => t.station === 'test');
   assert.ok(testTable.facts.some(f => f.q.some(q => q.a.includes('fül'))), 'a fül sehol nem helyes válasz');
-  // a csibe kérdésénél látszik a csibe; a mag képe nem gesztenye; a kézmosásnál nincs taps
-  assert.ok(picks.find(p => p.prompt === 'Kinek a kicsinye a csibe?').q.includes('🐥'));
+  // a csibe kérdésénél látszik a csibe (most az Állatok táblájában); a mag képe nem gesztenye; a kézmosásnál nincs taps
+  assert.ok(FACT_TABLES.find(t => t.station === 'allat').facts.some(f => f.q.some(q => q.ask === 'Kinek a kicsinye a csibe?' && q.show === '🐥')));
   assert.ok(!orders.some(o => o.steps.some(s => s.t === '🌰' || s.t === '👏')), 'félrevezető kártyakép');
 });
 
@@ -73,8 +73,9 @@ test('rosszul besorolt feladatok a helyükön vannak', () => {
   // a látás és a szaglás a Testünk ténytáblájába került (a régi, kézzel írt Testünk-feladatok kikerültek)
   const testAsks = FACT_TABLES.find(t => t.station === 'test').facts.flatMap(f => f.q.map(q => q.ask));
   assert.ok(testAsks.includes('Mivel látjuk a színeket?') && testAsks.includes('Mivel érezzük a virág illatát?'));
-  assert.equal(where('Esik az eső. Mit viszünk magunkkal?'), 'vilag');
-  assert.equal(where('Piros a lámpa. Mit csinálsz?'), 'vilag');
+  // az esernyő és a lámpa a Világunk ténytáblájába került (a régi, kézzel írt Világunk-feladatok kikerültek)
+  const vilagAsks = FACT_TABLES.find(t => t.station === 'vilag').facts.flatMap(f => f.q.map(q => q.ask));
+  assert.ok(vilagAsks.includes('Esik az eső. Mit viszünk magunkkal?') && vilagAsks.includes('Melyik lámpánál állnak meg az autók?'));
   assert.equal(where('Hogyan mosunk fogat? Koppints sorrendben!'), 'egeszseg');
 });
 
