@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Csillagkert – mesék átnézésre</title>
+<style>
+  /* A kör meséi (js/story.js) a szülőnek, átnézésre (képernyőn és nyomtatva). Nem játszik hangot, a mentéshez nem nyúl;
+     a kihúzott meséket csak ez az oldal jegyzi meg (külön kulcson). */
+  :root { --ink: #2b2140; --mute: #6d6480; --line: #d9d2e6; --ok: #2fa84f; --x: #b26b00; --cut: #c0392b; }
+  body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--ink); background: #fff; margin: 0; padding: 18px; font-size: 14px; line-height: 1.35; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--mute); margin: 0 0 10px; }
+  .how { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; margin: 10px 0 4px; background: #faf8fd; }
+  .how p { margin: 4px 0; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 12px; color: var(--mute); font-weight: 600; border-bottom: 2px solid var(--line); padding: 4px 6px; }
+  td { border-bottom: 1px solid var(--line); padding: 8px 6px; vertical-align: top; }
+  tr { break-inside: avoid; }
+  .n { width: 110px; color: var(--mute); }
+  .n small { display: block; font-size: 10px; overflow-wrap: anywhere; }
+  .who { color: var(--mute); margin: 2px 0; } .who span { font-size: 20px; vertical-align: middle; } .tag { font-size: 11px; color: var(--x); border: 1px solid var(--x); border-radius: 6px; padding: 0 4px; margin-left: 4px; white-space: nowrap; }
+  .val { font-size: 11px; color: var(--ok); border: 1px solid var(--ok); border-radius: 6px; padding: 0 4px; white-space: nowrap; }
+  .title { font-weight: 700; font-size: 15px; } .intro::before { content: '🌅 '; } .end::before { content: '🎉 '; }
+  ol { margin: 4px 0 4px 18px; padding: 0; } ol li { margin: 1px 0; }
+  .at { font-size: 13px; color: var(--mute); margin-top: 4px; } .at b { color: var(--ink); font-weight: 600; }
+  .cut { width: 44px; text-align: center; } .cut input { width: 22px; height: 22px; }
+  tr.out td { opacity: .45; } tr.out .title { text-decoration: line-through; color: var(--cut); }
+  #bar { position: sticky; top: 0; background: #fff; padding: 8px 0; border-bottom: 1px solid var(--line); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; z-index: 2; }
+  #bar button { font: inherit; padding: 6px 12px; border-radius: 8px; border: 1px solid #8e5be8; background: #f3ecff; }
+  #out { font-size: 13px; color: var(--mute); }
+  @media print { #bar { display: none; } body { padding: 0; font-size: 11.5px; } td { padding: 5px 6px; } .n { width: 76px; } @page { size: A4; margin: 12mm; } }
+</style>
+</head>
+<body>
+<div id="bar"><span id="cnt"></span><button id="copy">Kihúzottak másolása</button><button id="clear">Jelölések törlése</button><span id="out"></span></div>
+<div id="doc"></div>
+<script type="module">
+  import { STORIES } from '../js/story.js';
+  import { friendById } from '../js/friends.js';
+  import { ALL_STATIONS } from '../js/curriculum.js';
+
+  const KEY = 'csillagkert-mesek';
+  let cut = new Set(); try { cut = new Set(JSON.parse(localStorage.getItem(KEY) || '[]')); } catch (e) {}
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const MONTHS = ['január', 'február', 'március', 'április', 'május', 'június', 'július', 'augusztus', 'szeptember', 'október', 'november', 'december'];
+  const stName = id => ALL_STATIONS.find(s => s.id === id)?.name || id;
+  const today = new Date().toISOString().slice(0, 10);
+  const rows = STORIES.map((s, i) => {
+    const who = s.who.length ? s.who.map(w => { const f = friendById(w); return `<span title="${esc(f.name)}">${f.emoji || ''}</span> ${esc(f.name)}`; }).join(', ') : 'csak Rozi és a gyerek';
+    return `<tr data-id="${s.id}" class="${cut.has(s.id) ? 'out' : ''}"><td class="n">${i + 1}<small>${s.id}</small></td>
+      <td><div class="title">${esc(s.title)} <span class="val">${esc(s.value)}</span>${s.months ? `<span class="tag">csak ${s.months.map(m => MONTHS[m - 1]).join(', ')}</span>` : ''}</div>
+        <div class="who">${who}</div>
+        <div class="intro">${esc(s.intro)}</div>
+        <ol>${s.beats.map(b => `<li>${esc(b)}</li>`).join('')}</ol>
+        <div class="end">${esc(s.end)}</div>
+        <div class="at">${Object.entries(s.at).map(([k, v]) => `<b>${esc(stName(k))}:</b> ${esc(v)}`).join('<br>')}</div></td>
+      <td class="cut"><input type="checkbox" aria-label="kihúzom" ${cut.has(s.id) ? 'checked' : ''}></td></tr>`;
+  }).join('');
+  document.getElementById('doc').innerHTML = `<h1>A kör meséi: lista átnézésre</h1>
+    <p class="sub">${today} · ${STORIES.length} mese · mindegyik egy jutalomkörig tart</p>
+    <div class="how"><p><b>Hogyan működik?</b> Egy mese egy jutalomkörön át tart. A kör elején Rozi elmondja, mire készülünk (🌅). A feladatokat továbbra is a tanulási sorrend választja, a mese nem változtat rajtuk.</p>
+    <p>Egy állomás első feladata előtt a mese mondata szólhat Rozi szokásos hívása helyett (a szürke sorok, állomásonként). Kész feladat után, ahogy telik a csillagmérő, néha egy lépés hangzik el a „Szuper!” helyett (a számozott sorok; rövid körben egy-kettő kimarad). A jutalomkapunál a mese vége szól (🎉), utána jön a játékválasztás.</p>
+    <p>Etetés után nincs mesemondat (ott az állat beszél), és ha új barát érkezik, Rozi őt jelenti be. Egy mese csak olyan barátról szól, aki már a kertben lakik; az évszakos mesék csak a maguk hónapjaiban jönnek. A tanulság (zöld címke) a kiáltvány értékeiből való, és a mese következménye mutatja meg, nem kioktatás.</p>
+    <p><b>Kérlek, húzd ki</b>, ami nem tetszik (pipáld be, vagy írd meg a sor számát).</p></div>
+    <table><thead><tr><th>#</th><th>A mese</th><th>Kihúzom</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const counter = () => { document.getElementById('cnt').textContent = `${STORIES.length} mese, kihúzva: ${cut.size}`; };
+  counter();
+  document.getElementById('doc').addEventListener('change', e => {
+    const tr = e.target.closest('tr[data-id]'); if (!tr) return;
+    e.target.checked ? cut.add(tr.dataset.id) : cut.delete(tr.dataset.id);
+    tr.classList.toggle('out', e.target.checked);
+    try { localStorage.setItem(KEY, JSON.stringify([...cut])); } catch (err) {}
+    counter();
+  });
+  document.getElementById('copy').onclick = async () => {
+    const nums = [...document.querySelectorAll('tr.out .n')].map(td => td.firstChild.textContent + ' (' + td.querySelector('small').textContent + ')');
+    const txt = `Mesék – kihúzandó: ${nums.join(', ') || 'semmi'}`;
+    try { await navigator.clipboard.writeText(txt); document.getElementById('out').textContent = 'Kimásolva, beillesztheted az üzenetbe.'; }
+    catch (e) { document.getElementById('out').textContent = txt; }
+  };
+  document.getElementById('clear').onclick = () => { cut.clear(); try { localStorage.removeItem(KEY); } catch (e) {} location.reload(); };
+</script>
+</body>
+</html>

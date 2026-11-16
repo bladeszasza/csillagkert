@@ -542,6 +542,44 @@ A mondatok a `js/lines.js` fájlban vannak; szándékonként legalább hat vált
 - A generált feladatokban egy kimondott mondat legfeljebb 12 szó, a kézzel írt tények legfeljebb kb. 70 betűsek,
   mert a hosszú mondatot a felolvasó levághatja (mindkettő teszt).
 
+### 4.1 A kör meséje (`js/story.js`, 34 mese)
+
+A terv „napi mesét” írt (1b, 2. pillér). **Eltérés**: egy mese nem egy napig, hanem **egy jutalomkörig** tart (a
+csillagmérő kiürülésétől a jutalomkapuig), mert egy nap több kör is lehet, és a mese íve így a gyerek szemével látható
+haladáshoz (a csillagmérőhöz és a lemenő naphoz) kötődik. A **feladatokat továbbra is az ütemező választja** (2. rész);
+a mese a feladatok tartalmához nem nyúl, csak keretet ad:
+
+- **Kezdet**: a kör elején Rozi elmondja, mire készülünk (legfeljebb két mondat, a köszönés helyén). Félbehagyott
+  körnél csak egy rövid emlékeztető szól („Folytassuk! A nyuszi szülinapjára készülünk.").
+- **Hívó mondat**: egy állomás első feladata előtt a mese mondata szólhat az állomás szokásos hívása helyett. Ez a
+  mondat soha nem állítja, mi lesz a feladatban, csak azt, miért csináljuk („Számoljunk együtt, hogy mindenkinek jusson
+  torta!"), mert a feladat tartalmát az ütemező dönti el. Mesénként öt állomásnak van ilyen mondata, és minden
+  állomásnak legalább öt mesében (teszt).
+- **Lépések**: kész feladat után, a csillagmérő haladásával, egy-egy lépés hangzik el a „Szuper!” helyett (hat lépés
+  mesénként, egyenletesen elosztva: egy tízcsillagos körben a 2., 3., 5., 6., 8. és 9. csillag után). Rövid körben egy-kettő kimarad,
+  hosszú körben a legtöbb feladat után a szokásos rövid dicséret szól. Rozi tehát alig beszél többet, mint eddig: a
+  mesemondat egy meglévő mondatot vált ki. Egy különbség van: az állomás hívó mondata eddig ülésenként egyszer szólt,
+  most körönként egyszer (az új mesének is lehet ide illő mondata).
+- **Vége**: a jutalomkapunál a mese vége szól, aztán a játékválasztás. A tanulság a kiáltvány értékeiből való
+  (osztozás, türelem, bocsánatkérés, vigasztalás, hála, bátorság, őszinteség…), és **a következménye mutatja meg**, nem
+  kioktatás („A nyuszi mindenkinek adott a tortából. Együtt ünnepelni a legjobb!").
+- **Csend, ahol más beszél**: etetés után nincs mesemondat (ott az állat köszön a saját hangján), és ha új barát
+  érkezik vagy új fa nő, Rozi azt jelenti be; a lépés a következő feladatnál jön (a mérő szerint legfrissebb).
+- **Csak a gyerek kertjéből**: egy mese csak olyan barátról szólhat, aki már a kertben lakik. Az első napokra hét
+  mese szól csak a cicáról vagy Roziról és a gyerekről (teszt: minden hónapban legalább hat választható, amíg csak a
+  cica lakik a kertben). Ha a mese barátja a tóparton vagy a tanyán lakik, a kamera a kezdetnél odasiklik.
+- **Évszakok**: öt mese csak a maga hónapjaiban jön (pillangók tavasszal, locsolás nyáron, falevelek és a maci
+  téli vacka ősszel, hóember télen). Vallási ünnep nincs a mesék között.
+- **Sorrend**: a mesék sorban jönnek, ismétlés nélkül, amíg mind sorra nem került; utána elölről, de ugyanaz kétszer
+  egymás után soha (teszt). A mentésben profilonként ott a mostani mese és a már sorra kerültek listája; ha egy mentett
+  mese már nem létezik (a szülő kihúzta), helyette tisztán új jön.
+- **Mondat-szabályok**: minden mondat kézzel írt (nincs ragozott név-behelyettesítés, lásd F5.1), legfeljebb 12 szó,
+  számjegy és emoji nélkül (teszt: `tests/story.test.mjs`). Egy mesében egy felnőtt szedi össze az eltört bögre
+  darabjait, nem a gyerek.
+- **Átnézés**: `tests/mesek.html` (nyomtatható lista, kihúzós jelölőkkel, mint a ténytábláknál).
+- **Nem készült el**: az ülés végi „este” (a barátok elalszanak, Rozi elbúcsúzik); a mese a kertben nem játszik külön
+  jelenetet, csak a kapunál ugrik egyet mindenki.
+
 ---
 
 ## 5. Ami még hátra van, és amit nem tudunk

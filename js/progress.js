@@ -28,6 +28,8 @@ const fresh = () => ({
   friends: [],       // akit már megetettek: a csillagoktól függetlenül is a kertben lakik
   rewardsDone: 0,    // hány jutalomjátékot játszott már: minden kör után több csillag kell
   dress: null,       // az öltöztető állása
+  story: null,       // a mostani kör meséje { id, step, ended } (js/story.js)
+  storiesUsed: [],   // a már sorra került mesék (hogy ne ismétlődjenek, amíg mind sorra nem kerül)
   name: '', nameAsked: false, mark: MARKS[0], age: 5,
   rewardMinutes: 4, perReward: 10, feedGap: 2, sinceFeed: 0, v2: true,
 });
@@ -41,7 +43,8 @@ function normalize(raw) {
   if (!s.seen || typeof s.seen !== 'object') s.seen = {};      // nagyon régi mentésben nem volt: üresről indul
   if (!Array.isArray(s.friends)) s.friends = [];
   for (const k of ['sk', 'rv', 'stAt']) if (!s[k] || typeof s[k] !== 'object' || Array.isArray(s[k])) s[k] = {};
-  for (const k of ['hist', 'lastSt']) if (!Array.isArray(s[k])) s[k] = [];
+  for (const k of ['hist', 'lastSt', 'storiesUsed']) if (!Array.isArray(s[k])) s[k] = [];
+  if (!s.story || typeof s.story !== 'object' || Array.isArray(s.story)) s.story = null;
   for (const k of ['total', 'meter', 'rewardsDone']) s[k] = Math.max(0, Math.floor(+s[k] || 0));
   if (!MARKS.includes(s.mark)) s.mark = MARKS[0];
   if (had && !raw.v2) s.perReward = 10;                         // korábbi mentés: 3 helyett 10 csillag
@@ -76,6 +79,9 @@ function sanitize(raw) {
   if (Array.isArray(raw.lastSt)) s.lastSt = raw.lastSt.filter(word).slice(-2);
   if (obj(raw.stAt)) for (const [k, v] of Object.entries(raw.stAt).slice(0, 60)) if (word(k) && Number.isFinite(+v)) s.stAt[k] = +v;
   if (Array.isArray(raw.friends)) s.friends = [...new Set(raw.friends.filter(word))].slice(0, 60);
+  // a mese állása: az ismeretlen mese-azonosítót a js/story.js kezeli (helyette új mese jön)
+  if (obj(raw.story) && word(raw.story.id)) s.story = { id: raw.story.id, step: int(raw.story.step, 0, 20, 0), ended: raw.story.ended === true };
+  if (Array.isArray(raw.storiesUsed)) s.storiesUsed = raw.storiesUsed.filter(word).slice(-80);
   if (raw.dress && typeof raw.dress === 'object' && !Array.isArray(raw.dress)) {
     s.dress = {};
     for (const k of DRESS_KEYS) if (word(raw.dress[k])) s.dress[k] = raw.dress[k];

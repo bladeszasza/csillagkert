@@ -238,8 +238,14 @@ async function testGarden() {
       for (const id of area.friends) {
         const r = g.screen[id];
         if (!r.visible || r.left < 0 || r.right > 900 || r.top < 80 || r.bottom > 650 - 90) { bad.push(`${id} ${Math.round(r.left)}–${Math.round(r.right)} × ${Math.round(r.top)}–${Math.round(r.bottom)}`); continue; }
-        const n = soundMark(); pev(canvas, 'pointerdown', r.cx, r.cy); await wait(60);
-        if (!since(n).some(x => x.kind === VOICE[id])) mute.push(id);
+        // a lakó a mérés óta arrébb léphetett (a szökdelők terhelés alatt messzebb jutnak): friss helyére koppintunk, és ha
+        // nem hallatszott, egyszer még
+        const n = soundMark(); let heard = false;
+        for (let k = 0; k < 2 && !heard; k++) {
+          const p = garden.debug().screen[id] || r; pev(canvas, 'pointerdown', p.cx, p.cy); await wait(k ? 300 : 60);
+          heard = since(n).some(x => x.kind === VOICE[id]);
+        }
+        if (!heard) mute.push(id);
       }
       if (area.friends.includes('owl')) owlAfter = garden.debug().awake.owl;      // a koppintás után 4,5 mp-ig ébren van
       ok(`kertrész (${area.id}): minden lakó a képen van, a gombsor fölött`, bad.length === 0 && area.friends.length >= 6, bad.join(' · ') || area.friends.join(', '));

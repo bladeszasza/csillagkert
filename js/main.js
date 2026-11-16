@@ -19,6 +19,7 @@ import { showGift, giftBusy, clearGifts, floatHeart, BOX_SVG } from './gift-mome
 import { REWARDS } from './rewards/index.js';
 import { icon } from './icons.js';
 import { applyCalm, setupPress } from './motion.js';
+import { startRound, activeStory, storyById, openingLine, inviteLine, beatAfter, endingLine } from './story.js';
 
 const $ = id => document.getElementById(id);
 // A felület saját ikonjai: a [data-icon] elemek emojija csak tartalék (ha a modul nem töltődne be)
@@ -66,6 +67,23 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const name = () => progress.get().name;
 // Egyre több csillag kell: az alapérték + 2 minden megjátszott jutalomkör után (legfeljebb 30)
 const perReward = () => roundStars(progress.get().perReward, progress.get().rewardsDone);
+
+// --- A mese (js/story.js): egy jutalomkörön át tart. A feladatokat továbbra is az ütemező választja; a mese csak keretet ad
+// (a kör elején mire készülünk, egy állomás előtt miért csináljuk, a csillagokkal haladó lépések, a kapunál a vége).
+const month = () => new Date().getMonth() + 1;
+const storyOpen = () => { const s = activeStory(progress.get()); return !!s && !s.ended; };
+function newStory() {
+  const p = startRound(progress.get(), friendsFor(progress.get().total, progress.get().friends), month());
+  if (p) progress.set(p);
+  invited.clear();                                           // az új mese hívó mondatai is elhangozhatnak
+  return p ? openingLine(progress.get(), 0) : '';
+}
+// ha a mese barátja a tóparton vagy a tanyán lakik, a kamera odasiklik, amíg Rozi meséli (kicsivel később vissza)
+function showStoryFriend() {
+  const st = activeStory(progress.get()), w = st && storyById(st.id).who[0], f = w && friendById(w);
+  if (!f?.area || !garden) return;
+  goArea(f.area); areaTimer = setTimeout(() => { if (!running && garden.area() === f.area) goArea(null); }, 6500);
+}
 
 let garden = null;
 try { garden = createGarden($('garden')); window.__garden = garden; }
@@ -196,7 +214,12 @@ async function begin() {
   const justIntro = !progress.get().introDone;
   if (justIntro) await introduce();                          // Rozi bemutatkozik (egyszer)
   if (!name() && !progress.get().nameAsked) await askName();
-  say(justIntro ? named('Örülök, hogy megismertelek{, N}! Gyere, fedezzük fel együtt a világot!', name(), Math.random, 1) : lineNamed('hello', name(), Math.random, 1), { remember: false });
+  // a kör meséje: új kör elején a kezdete, félbehagyott körnél egy rövid emlékeztető (teli mérőnél a kapunál a vége szól)
+  const st = progress.get(), cur = activeStory(st);
+  const open = st.meter >= perReward() ? '' : cur && !cur.ended ? openingLine(st, st.meter) : newStory();
+  const hello = named(justIntro ? 'Örülök, hogy megismertelek{, N}!' : 'Szia{, N}!', name(), Math.random, 1);
+  say(open ? `${hello} ${open}` : justIntro ? named('Örülök, hogy megismertelek{, N}! Gyere, fedezzük fel együtt a világot!', name(), Math.random, 1) : lineNamed('hello', name(), Math.random, 1), { remember: false });
+  if (open) showStoryFriend();
   if (progress.get().meter >= perReward()) openReward(); else $('home').hidden = false;
 }
 
@@ -237,7 +260,7 @@ async function runItem(item, station, via) {
     const aborted = new Promise(r => { currentAbort = () => r('abort'); });
     // ülésenként egyszer egy-egy állomáson: meleg hívás a felfedezésre (etetésnél nem: ott az állat beszél)
     let go = 'go';
-    if (!inGarden && !invited.has(station)) { invited.add(station); const t = stationLine(station, name()); if (t) go = await Promise.race([say(t, { remember: false }).then(() => 'go'), aborted]); }
+    if (!inGarden && !invited.has(station)) { invited.add(station); const t = inviteLine(progress.get(), station) || stationLine(station, name()); if (t) go = await Promise.race([say(t, { remember: false }).then(() => 'go'), aborted]); }
     res = go === 'abort' ? 'abort' : await Promise.race([Promise.resolve(mod.run($('stage'), item, { signal: ac.signal, garden })).then(r => { outcome = r && typeof r === 'object' ? r : {}; return 'done'; }), aborted]);
   } catch (e) { console.error('Feladat-hiba', e); logError(e, item.type); res = 'error'; }
   currentAbort = null; setRepeatHandler(null);
@@ -275,7 +298,11 @@ async function runItem(item, station, via) {
   // Új barátnál Rozi egy mondatban bejelenti; etetés után különben hallgat (ott az állat a saját hangján köszöni meg)
   if (arrived.length) say(`Új barát érkezett: ${withArt(friendById(arrived[0]).name)}!`, { remember: false });
   else if (grown.length) say(`Új fa nőtt a kertben: ${withArt(grown[0].name)}!`, { remember: false });
-  else if (!inGarden) say(lineNamed('star', name(), Math.random, meter >= perReward() ? 0.6 : 0.3), { remember: false });
+  else if (!inGarden) {
+    const b = beatAfter(progress.get(), meter, perReward());   // a mese a csillagokkal halad: néha egy lépése szól a dicséret helyett
+    if (b) { progress.set({ story: b.story }); say(b.text, { remember: false }); }
+    else if (meter < perReward() || !storyOpen()) say(lineNamed('star', name(), Math.random, meter >= perReward() ? 0.6 : 0.3), { remember: false });
+  }
   await flyStar(Math.min(meter, perReward()) - 1, Math.min(meter, perReward()));
   garden?.setGifts(progress.get(), true);                    // az etetés szíve a Barátság fáján
   if (starGift) {
@@ -299,7 +326,9 @@ $('next').addEventListener('click', () => {
 function openReward() {
   $('reward').hidden = false;
   renderTreasure();
-  say(named('Ügyes voltál{, N}! Válassz egy játékot!', name(), Math.random, 0.5));
+  const e = endingLine(progress.get());                       // a kör meséjének vége (egyszer), utána a választás
+  if (e) { progress.set({ story: e.story }); garden?.cheer(); }
+  say(e ? `${e.text} ${named('Válassz egy játékot{, N}!', name(), Math.random, 0.5)}` : named('Ügyes voltál{, N}! Válassz egy játékot!', name(), Math.random, 0.5));
 }
 $('reward-x').addEventListener('click', () => {      // ha nem akar játszani: a megszerzett csillagok megmaradnak
   $('reward').hidden = true; $('home').hidden = false;
@@ -358,5 +387,7 @@ function endReward(fromBye = false) {
   progress.completeReward();                       // a következő jutalomhoz több csillag kell
   progress.resetMeter(); renderMeter(0, perReward());
   $('home').hidden = false;
-  say(fromBye ? named('Gyere{, N}, fedezzünk fel még valamit együtt!', name(), Math.random, 0.5) : lineNamed('again', name()));
+  const open = newStory();                                   // új kör, új mese
+  say(open || (fromBye ? named('Gyere{, N}, fedezzünk fel még valamit együtt!', name(), Math.random, 0.5) : lineNamed('again', name())));
+  if (open && !nd.length) showStoryFriend();
 }

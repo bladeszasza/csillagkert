@@ -189,3 +189,22 @@ test('az eszköz beállításai (hang, beszéd hangereje) minden gyereknél köz
   assert.deepEqual(p.device.get(), { voiceURI: 'hang-1', speechVol: 0 });
   assert.equal(p.get().speechVol, undefined);
 });
+
+test('a mese állása profilonként mentődik, és a fájlba mentésen át is megmarad; sérült adat nem jut be', () => {
+  const st = new FakeStorage(), p = openProfiles(st);
+  assert.equal(p.get().story, null); assert.deepEqual(p.get().storiesUsed, []);
+  p.set({ story: { id: 'cica-labda', step: 3, ended: false }, storiesUsed: ['cica-labda'] });
+  const back = openProfiles(st).get();
+  assert.deepEqual(back.story, { id: 'cica-labda', step: 3, ended: false });
+  const pid = p.importData(p.exportData());
+  assert.ok(p.use(pid));
+  assert.deepEqual(p.get().story, { id: 'cica-labda', step: 3, ended: false });
+  assert.deepEqual(p.get().storiesUsed, ['cica-labda']);
+  const bad = p.exportData(); bad.profile.story = { id: '<b>rossz</b>', step: 999 }; bad.profile.storiesUsed = ['jó-id', 7, '<x>'];
+  assert.ok(p.use(p.importData(bad)));
+  assert.equal(p.get().story, null);
+  assert.deepEqual(p.get().storiesUsed, ['jó-id']);
+  const odd = p.exportData(); odd.profile.story = { id: 'cica-labda', step: 999, ended: 'igen' };
+  assert.ok(p.use(p.importData(odd)));
+  assert.deepEqual(p.get().story, { id: 'cica-labda', step: 20, ended: false });
+});

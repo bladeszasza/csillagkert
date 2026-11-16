@@ -86,6 +86,14 @@ Az M4 mérföldkő kész: **mind a 8 generálható állomás** sablonokból kés
   `tests/tenyek.html?st=egeszseg`. Az utolsó az Időutazás (171 tény, 258 kérdés; saját rajz a piramisról, a gémeskútról
   és a kemencéről, és egy naptárcsík a tegnap-ma-holnaphoz): `tests/tenyek.html?st=ido`. Mind a hat tábla élesben van,
   a régi, kézzel írt feladatok mind kikerültek ([`docs/pedagogia.md`](docs/pedagogia.md) 3.9–3.14).
+- **A kör meséje (M6)** (`js/story.js`, 34 mese): minden jutalomkörnek van egy rövid meséje (a nyuszi szülinapja, a
+  cica elveszett labdája, hóemberépítés…). A kör elején Rozi elmondja, mire készülünk; egy állomás előtt a mese mondata
+  szólhat a szokásos hívás helyett; kész feladat után, ahogy telik a csillagmérő, néha egy lépése hangzik el a dicséret
+  helyett; a jutalomkapunál a mese vége, amelynek tanulságát a következménye mutatja meg. A feladatokat továbbra is az
+  ütemező választja, és a mesemondat egy meglévő mondatot vált ki (Rozi alig beszél többet). Egy mese csak a kertben már lakó barátokról szól, az
+  évszakos mesék csak a maguk hónapjaiban jönnek. **Eltérés a tervtől**: a mese nem egy napig, hanem egy jutalomkörig
+  tart, és az ülés végi „este” (a barátok elalszanak) még nem készült el. Átnézés: `tests/mesek.html`
+  ([`docs/pedagogia.md`](docs/pedagogia.md) 4.1).
 
 ## Hang
 
