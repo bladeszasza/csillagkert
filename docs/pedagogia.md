@@ -405,6 +405,32 @@ készségeken egy szinttel feljebb indul.
 
 **Amit nem tudunk**: a 🫀 szív és a 🫁 tüdő emoji csak iPadOS 13.2-től látszik.
 
+### 3.11 Szívkert (236 helyzet, 263 kérdés, 7 készség), jóváhagyva: 2026-11-16
+
+A tábla: `js/content/facts/sziv.js`. Ez az új állomás a kiáltvány erényeit, tiszteletét és kedvességét tanítja, a
+DIFER szocialitás területén és a szociális-érzelmi tanulás öt területén (CASEL, lásd 6.) belül. **Készségek**: érzések
+felismerése (arcról és helyzetből); mit érez a másik (a tetteink hatása); kedves szavak (köszönöm, légy szíves,
+bocsánat, csókolom, gratulálok…); segítség és osztozás; türelem, igazmondás, kitartás és kibékülés; tisztelet
+(emberek, állatok, természet); ha nagy érzés jön (mély levegő, elmondom valakinek). Szintek: 56, 83, 63, 43 és 18 kérdés.
+
+**Hogyan kérdez**: minden kérdés egy rövid helyzet a kert barátaival („Elveszett a nyuszi labdája. Hogy érzi
+magát?”), a helyzet képe is látszik. **Rossz viselkedés soha nem választható**: a válaszok mind érzések, kedves szavak
+vagy jó tettek, a gyerek azt keresi meg, amelyik ehhez a helyzethez illik. Így a helyzetgyakorlat nem prédikál, és
+nem mutat mintát a csúnya viselkedésre. A jó válasz után egy teljes, igaz mondat hangzik el („Ha megosztjuk valakivel
+az uzsonnánkat, ő örül.”). A tévedés itt sem baj: Rozi elmondja, mit jelent a választott kép, és újra kérdez.
+
+**Vitatható válaszok**: egy helyzetre gyakran több jó válasz is van (a szomorú barátot megölelhetjük, meghallgathatjuk,
+játszani hívhatjuk). Ezek a képek az adott kérdésnél soha nem rossz válaszok. Az érzéseknél ugyanez: aki ajándékot
+kap, az vidám és meglepett is lehet; aki elveszít egy versenyt, szomorú, de mérges is lehet. A rossz válaszok így
+biztosan nem illenek a helyzethez. Ha négy hosszú válasz („kivárom a soromat”) túl hosszú felsorolás lenne, három
+választás marad.
+
+**A kertben**: a Szívkert helye a cica mögötti **Barátság fája**, amely a jó tettekért kapott szívekből nő. Az
+állomás jele a fa lombján ül.
+
+**Amit nem tudunk**: hogy egy helyzet a gyerek saját életében mit jelent, azt a játék nem tudja. Ha egy kérdés
+rosszul esik vagy félreérthető, a szülő kihúzhatja (`tests/tenyek.html?st=sziv`).
+
 ---
 
 ## 4. Rozi mondatai (monológ-könyvtár)

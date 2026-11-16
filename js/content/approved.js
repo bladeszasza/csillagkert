@@ -3,4 +3,5 @@
 export const APPROVED = {
   allat: '2026-11-15',      // Állatok: a szülő minden tényt jónak talált
   test: '2026-11-15',       // Testünk csodái: a szülő a többi táblát előre jóváhagyta
+  sziv: '2026-11-16',       // Szívkert (előre jóváhagyva)
 };

@@ -3,7 +3,7 @@
 import { scheduleNote, buildChain } from '../js/audio.js';
 import { setScope } from '../js/scope.js';
 import { stopSpeaking } from '../js/voice.js';
-import { CURRICULUM } from '../js/curriculum.js';
+import { CURRICULUM, STATIONS } from '../js/curriculum.js';
 import { createGarden } from '../js/garden.js';
 import { soundLog, soundMark, VOICE } from '../js/sounds.js';
 import { MEALS, ANY, friendById, FRIENDS, AREAS, MAX_FLOWERS, FLORA, floraFor, friendsFor } from '../js/friends.js';
@@ -166,7 +166,7 @@ async function testGarden() {
   for (let i = 0; i < ids.length; i++) for (let j = 0; j < i; j++) if (Math.abs(pl[ids[i]].x - pl[ids[j]].x) < 70 && Math.abs(pl[ids[i]].y - pl[ids[j]].y) < 70) near.push(`${ids[i]}~${ids[j]}`);
   const off = ids.filter(k => pl[k].x < 33 || pl[k].x > 867 || pl[k].y < 80 || pl[k].y > 617);
   const onFriend = ids.filter(k => Object.values(center).some(r => pl[k].x > r.left + 10 && pl[k].x < r.right - 10 && pl[k].y > r.top + 10 && pl[k].y < r.bottom - 10));
-  ok('térkép: mind a 13 állomásnak van megkoppintható helye a kertben', ids.length === 13 && !near.length && !off.length && !onFriend.length, `jelek: ${ids.length}; egymáson: ${near.join(' ') || '–'}; képen kívül: ${off.join(' ') || '–'}; baráton: ${onFriend.join(' ') || '–'}`);
+  ok(`térkép: mind a(z) ${STATIONS.length} állomásnak van megkoppintható helye a kertben`, ids.length === STATIONS.length && ids.every(k => STATIONS.some(s => s.id === k)) && !near.length && !off.length && !onFriend.length, `jelek: ${ids.length}; egymáson: ${near.join(' ') || '–'}; képen kívül: ${off.join(' ') || '–'}; baráton: ${onFriend.join(' ') || '–'}`);
   ok('kert: 70 csillagnál tizenkét barát lakik itt', d.friends.join() === ['cat', 'bunny', 'dog', 'fox', 'duck', 'bear', 'frog', 'hedgehog', 'hen', 'panda', 'squirrel', 'owl'].join() && d.flowers === 70, `lakók: ${d.friends.join(', ')}`);
   ok('kert: puha foltárnyék minden lakó alatt (egy közös hálóban), a felbontást a minőség-figyelő adja', d.shadows === d.friends.length && d.quality.ratio === Math.max(1, Math.min(devicePixelRatio || 1, 2)) && d.quality.drops === 0,
     `árnyékok: ${d.shadows}/${d.friends.length}; felbontás: ${d.quality.ratio}, lépcső: ${d.quality.drops}`);

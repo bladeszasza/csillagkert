@@ -50,9 +50,12 @@ export function factTemplates({ station, icon, banks, skills, facts }) {
       const bad = Object.keys(bank).filter(n => !q.a.includes(n) && !q.x.includes(n));
       const k = t.level >= 4 && bad.length >= 3 ? 3 : 2;
       const right = bank[r.pick(q.a)];
+      // Rozi felsorolja a válaszokat: négy hosszú név ("kivárom a soromat") túl hosszú mondat lenne, ilyenkor három választás marad
+      let wrong = r.sample(bad, k);
+      if (!q.quiet && wrong.length > 2 && [right.n, ...wrong].join(' ').split(/\s+/).length + 1 > 12) wrong = wrong.slice(0, 2);
       return {
         type: 'pick', prompt: q.ask, ask: { show: q.show || '' }, ...(q.show ? { qHtml: `<span class="${q.sil ? 'silsrc sil' : 'big1'}">${q.show}</span>` } : {}), ...(q.quiet ? { noList: true } : {}),
-        options: r.shuffle([optionOf(right, true, q.quiet), ...r.sample(bad, k).map(n => optionOf(bank[n], false, q.quiet))]),
+        options: r.shuffle([optionOf(right, true, q.quiet), ...wrong.map(n => optionOf(bank[n], false, q.quiet))]),
         fact: factOf(f, q, right.n), hint: q.hint || s.hint,
       };
     },

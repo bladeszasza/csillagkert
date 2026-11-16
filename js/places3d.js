@@ -267,7 +267,7 @@ export function buildLand(id) {
 export function buildPlaces() {
   const parts = [];
   const at = (x, z, list, k = 1) => { const m = new THREE.Matrix4().makeTranslation(x, 0, z).scale(new THREE.Vector3(k, k, k)); for (const q of list) { q.matrix.premultiply(m); parts.push(q); } };
-  for (const p of PLACES) at(p.x, p.z, BUILD[p.id](), p.scale || 1);
+  for (const p of PLACES) if (!p.tree) at(p.x, p.z, BUILD[p.id](), p.scale || 1);      // a Szívkert helye a Barátság fája (decor3d.js)
   TREES.forEach(([x, z, k], i) => at(x, z, tree(k, i)));
   buildAreas(at);
   // a távoli földek talaja (mindig látszik, a fő rét alatt egy hajszállal, így az átfedésben a rét zöldje marad felül)

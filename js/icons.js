@@ -57,6 +57,11 @@ export const ICONS = {
   'st-test': `<circle cx="32" cy="14" r="9" fill="#ffd9b8" ${L()}/><circle cx="29" cy="14" r="1.6" fill="${K}"/><circle cx="35" cy="14" r="1.6" fill="${K}"/><path d="M29.5 18q2.5 2 5 0" fill="none" ${L(K, 1.8)}/>
     <path d="M18 29q14-8 28 0l7 10-6 4-4-5v19h-7l-4-10-4 10h-7V38l-4 5-6-4z" fill="#4aa8ff" ${L()}/>
     <path d="${heartPath(32, 33, 0.62)}" fill="#ff5d8f" ${L(K, 2)}/>`,
+  // Szívkert: a Barátság fája, szívekkel a lombján
+  'st-sziv': `<path d="M27 60l2-22h6l2 22z" fill="#c98a52" ${L()}/>
+    <circle cx="19" cy="31" r="12" fill="#7fd88a" ${L()}/><circle cx="45" cy="31" r="12" fill="#7fd88a" ${L()}/><circle cx="32" cy="21" r="15" fill="#96e39c" ${L()}/>
+    <circle cx="19" cy="31" r="10.5" fill="#7fd88a"/><circle cx="45" cy="31" r="10.5" fill="#7fd88a"/><circle cx="32" cy="21" r="13.5" fill="#96e39c"/><rect x="20" y="28" width="24" height="12" fill="#7fd88a"/>
+    <path d="${heartPath(32, 22, 0.6)}" fill="#ff5d8f" ${L(K, 2)}/><path d="${heartPath(19, 33, 0.4)}" fill="#ff8fc8" ${L(K, 2)}/><path d="${heartPath(45, 33, 0.4)}" fill="#ff8fc8" ${L(K, 2)}/>${shine(25, 13, 3, 5, -40)}`,
   'st-ido': `<path d="M15 7h34M15 57h34" ${L(K, 4.5)}/>
     <path d="M20 8c0 12 12 15 12 24s-12 12-12 24h24c0-12-12-15-12-24s12-12 12-24z" fill="#e6f7ff" ${L()}/>
     <path d="M24.5 15h15c-2 6-7.5 8.5-7.5 12 0-3.5-5.5-6-7.5-12z" fill="#ffcf3f"/><path d="M23 55c1-7 9-10 9-14 0 4 8 7 9 14z" fill="#ffcf3f"/><path d="M32 30v12" ${L('#ffcf3f', 2)}/>`,

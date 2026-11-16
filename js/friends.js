@@ -193,6 +193,8 @@ export const PLACES = [
   { id: 'zene', x: 1.15, z: FRONT_Z, r: 0.7, scale: 0.44, sign: [0, 0.3] },
   { id: 'test', x: 2.3, z: FRONT_Z, r: 0.7, sign: [0, 0.3] },
   { id: 'allat', x: 3.45, z: FRONT_Z, r: 0.7, sign: [0, 0.3] },
+  // a Szívkert a cica mögötti Barátság fája (decor3d.js FRIEND_TREE): nincs külön tereptárgya, a jel a fa lombján ül
+  { id: 'sziv', x: 0, z: -10.2, r: 1.4, sign: [2.5, 0], tree: true },
 ];
 
 // --- virágok helye: determinisztikus; szabadon hagyja a barátok zugait, a tereptárgyakat és az etetőhely előtti sávot ---

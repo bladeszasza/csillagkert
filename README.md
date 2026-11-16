@@ -21,7 +21,7 @@ Feladatok → csillagok → jutalomjáték. Hibázásért nincs büntetés: szel
   indul a feladat. Fekvő és álló képernyőn mérve egyik jel sem takar gombot, és egyik barátot sem (legfeljebb a koppintási
   területe 7%-át), így a barátok is koppinthatók maradnak.
 - **A kert a térkép:** az állomások helyek a kertben (ceruzatorony, házikó, almafa, földgömb, robot, festőállvány,
-  számolókockák, harangok, piknik…), a jelükre koppintva lehet odamenni. A „Tovább" gomb megmaradt annak, aki nem akar választani.
+  számolókockák, harangok, piknik…; a Szívkert a Barátság fája), a jelükre koppintva lehet odamenni. A „Tovább" gomb megmaradt annak, aki nem akar választani.
 - **Rozi, a robot** beszél (böngésző-hang), bemutatkozik, ő osztja a csillagokat; az arca a hangulathoz igazodik.
 - **Feladatok:** vonalkövetés, számok, nagybetűk és szavak átírása, útvesztő, pöttyösszekötő, számolás 20-ig, összeadás/kivonás, formák, színek és téri viszonyok,
   gondolkodtató feladatok (sorminta, kakukktojás, ellentétek, párok, „Mi tűnt el?", memória), hangok és rímek
@@ -78,8 +78,10 @@ Az M4 mérföldkő kész: **mind a 8 generálható állomás** sablonokból kés
   tény arról az állatról szól, amit a gyerek választott. **Egy állomás csak a szülő jóváhagyása után élesedik**
   (`js/content/approved.js`); addig a régi feladatai maradnak a játékban. Az első kész tábla az Állatoké (265 tény,
   289 kérdés), a szülő 2026-11-15-én jóváhagyta, a játékban az etetéssel váltakozik. Átnézés: `tests/tenyek.html?st=allat`.
-  A Testünk csodái tábla (242 tény, 264 kérdés, saját testábrával) is élesben van: `tests/tenyek.html?st=test`. A többi
-  táblát a szülő előre jóváhagyta, ezek elkészültük után élesednek ([`docs/pedagogia.md`](docs/pedagogia.md) 3.9–3.10).
+  A Testünk csodái tábla (242 tény, 264 kérdés, saját testábrával) is élesben van: `tests/tenyek.html?st=test`, és az új
+  Szívkert is (236 helyzet, 263 kérdés a kert barátaival; a válaszok mind érzések, kedves szavak vagy jó tettek):
+  `tests/tenyek.html?st=sziv`. A többi táblát a szülő előre jóváhagyta, ezek elkészültük után élesednek
+  ([`docs/pedagogia.md`](docs/pedagogia.md) 3.9–3.11).
 
 ## Hang
 
