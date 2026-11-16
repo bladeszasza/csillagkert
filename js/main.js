@@ -346,7 +346,9 @@ document.querySelectorAll('.choice').forEach(btn => btn.addEventListener('click'
     // Egy jutalomkör: legfeljebb egy ajándék (az első igazi játék-pillanatnál) és játékonként korlátos számú szív (js/economy.js)
     const src = btn.dataset.game; rewardSess = newRewardSession();
     const sess = rewardSess;
+    const w = progress.world();
     const ctx = {
+      world: { seed: w.seed, found: w.found.slice(), onFind: lm => progress.foundLandmark(lm) },   // a Varázsvilág saját világa
       avatar: progress.avatar(),                             // a saját unikornis ruhája (futás, verseny, Barátom)
       gift() { if (sess !== rewardSess) return null; const g = progress.rewardGift(sess, src); if (g) { renderTreasure(); showGift(g, { name: name() }); } return g; },
       heart(at) { if (sess !== rewardSess) return false; const ok = progress.rewardHeart(sess, src); if (ok) { renderTreasure(); floatHeart(at); } return ok; },

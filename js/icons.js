@@ -121,6 +121,11 @@ export const ICONS = {
   'ui-heart': `<path d="${heartPath(32, 46, 1.9)}" fill="#ff3d7f" ${L()}/>${shine(21, 22, 3, 5.5, 35)}`,
   'ui-retry': `<path d="M50 30a19 19 0 1 1-6-13" fill="none" ${L(K, 6)}/><path d="M48 6l-2 15-14-4z" fill="${K}" ${L(K, 3)}/>`,
   'ui-jump': `<path d="M32 8L12 30h12v24h16V30h12z" fill="#ffcf3f" ${L()}/>`,
+  // a Varázsvilág nevezetességei (js/world-map.js)
+  'lm-kut': `<path d="M12 30L32 10l20 20z" fill="#ff8fc8" ${L()}/><path d="M18 30v14M46 30v14" ${L(K, 4)}/><rect x="12" y="42" width="40" height="14" rx="5" fill="#cfc6e0" ${L()}/><path d="M32 3l2 4 4 .5-3 3 1 4.5-4-2-4 2 1-4.5-3-3 4-.5z" fill="#ffd84a" ${L(K, 2)}/>`,
+  'lm-kokor': `<rect x="6" y="20" width="12" height="32" rx="4" fill="#c6bed6" ${L()}/><rect x="46" y="22" width="12" height="30" rx="4" fill="#b8b0c8" ${L()}/><rect x="26" y="12" width="12" height="26" rx="4" fill="#cfc6e0" ${L()}/><ellipse cx="32" cy="51" rx="12" ry="5" fill="#cfc6e0" ${L()}/><path d="M32 38l4 5-4 5-4-5z" fill="#9bf0ff" ${L(K, 2)}/>`,
+  'lm-fa': `<path d="M27 36h10l3 22H24z" fill="#8a5a3c" ${L()}/><circle cx="32" cy="22" r="17" fill="#c9a0ff" ${L()}/><circle cx="20" cy="36" r="4" fill="#ffcf3f" ${L(K, 2)}/><circle cx="44" cy="36" r="4" fill="#ff8fc8" ${L(K, 2)}/><circle cx="32" cy="41" r="4" fill="#9bb8ff" ${L(K, 2)}/>`,
+  'lm-kapu': `<path d="M8 50a24 24 0 0 1 48 0" fill="none" stroke="#ff5d5d" stroke-width="7"/><path d="M15 50a17 17 0 0 1 34 0" fill="none" stroke="#ffe14d" stroke-width="7"/><path d="M22 50a10 10 0 0 1 20 0" fill="none" stroke="#5aa9ff" stroke-width="7"/><ellipse cx="11" cy="52" rx="9" ry="6" fill="#fff" ${L(K, 2.5)}/><ellipse cx="53" cy="52" rx="9" ry="6" fill="#fff" ${L(K, 2.5)}/>`,
   'ui-friends': `<ellipse cx="15" cy="13" rx="4" ry="9" transform="rotate(-10 15 13)" fill="#fff" ${L(K, 2.5)}/><ellipse cx="26" cy="12" rx="4" ry="9" transform="rotate(10 26 12)" fill="#fff" ${L(K, 2.5)}/>
     <circle cx="21" cy="29" r="12" fill="#fff" ${L()}/><circle cx="17" cy="28" r="1.8" fill="${K}"/><circle cx="25" cy="28" r="1.8" fill="${K}"/><ellipse cx="21" cy="33" rx="2" ry="1.4" fill="#ff6f9f"/>
     <path d="M31 37l-1-14 9 7zM55 37l1-14-9 7z" fill="#ffb347" ${L(K, 2.5)}/><circle cx="43" cy="43" r="14" fill="#ffb347" ${L()}/>

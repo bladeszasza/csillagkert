@@ -109,6 +109,20 @@ Az M4 mérföldkő kész: **mind a 8 generálható állomás** sablonokból kés
   össze: mindig a legutóbb letett ujj irányít, Apple Pencil mellett a tenyér nem számít.
 - **Ugrás:** a kis köveket és rönköket magától átugorja, a tetejükre is fel tud ugrani. A fák kerülhetők, nem lehet
   beléjük ragadni; ha egy lomb a kamera elé kerül, összemegy, hogy az unikornis látsszon.
+- **Varázsvilág (M7, 1. szelet): nevezetességek.** A szabad futás világában négy saját tervezésű nevezetesség áll
+  (Csillagkút, Ősi kőkör, Varázsfa, Szivárványkapu; `js/world-map.js`, `js/rewards/landmarks3d.js`). Az első néhány
+  másodperc futásra van a kezdőhelytől, a többi nagyjából negyed percenként követi egymást, és bármelyik közelében
+  mind a négy fajta megvan. Körülöttük sík a talaj és nincs akadály.
+  - **Tájékozódás olvasás nélkül:** egy kis fény repül az unikornis előtt a következő, még meg nem talált nevezetesség
+    felé, és a képernyő szélén egy kerek jelző mutatja a képét és az irányát. A jelzőre koppintva az unikornis magától
+    elindul oda. Fent egy sorban látszik a négy nevezetesség képe: ami még nincs meg, halvány.
+  - **Megtalálás:** elég a közelébe érni. A nevezetesség ugrik egyet, csengés szól, Rozi egy mondatban megnevezi, és
+    egy szív jár érte (a körönkénti szív-korláton belül). Amit a gyerek megtalált, azt a profilja megjegyzi, és **a
+    világa is ugyanaz marad** (minden gyereknek saját világa van), így legközelebb folytathatja a keresést. A már
+    megtalált nevezetességnél csak egy halk csengés szól.
+  - **Eltérés a tervtől:** a terv messziről látszó fényoszlopot írt, de a köd és a kamera miatt a távoli tárgy nem
+    látszik, ezért a fény és a képes jelző vezet. A térkép, a kalandok, az élőhelyek, a varázslények és az album a
+    következő szeletekben jönnek.
 - **Barátok:** akinek köszönsz (odafutsz hozzá), veled jön; egyszerre legfeljebb négyen, sorban, egymást kikerülve.
   A követő barát nem tűnik el, akármilyen messzire futsz.
 - **Hangok:** patadobogás, ugrás, érkezés, koccanás; a versenyben visszaszámlálás, rajt és ujjongás. A verseny végén a két

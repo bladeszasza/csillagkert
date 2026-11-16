@@ -3,12 +3,17 @@
 // Irányítás: rövid koppintás = oda fut, és ott megáll; tartott ujj (vagy Pencil) = arra fut, amerre mutat.
 // Ugrás: a nagy gomb, de a kis akadályokat (kő, rönk) magától is átugorja, és a tetejükre is felérhet.
 // Barátok: némelyik csatlakozik és veled fut (legfeljebb négy, V alakban), némelyik csak integet.
+// Varázsvilág (M7): a világban nevezetességek állnak (js/world-map.js). Egy kis fény és egy képes jelző mutatja, merre
+// van a következő; amit a gyerek megtalált, azt a profilja megjegyzi (a világ magjával együtt, így a világa ugyanaz marad).
 import { icon } from '../icons.js';
 import * as THREE from '../../vendor/three.module.js';
 import { mat as lookMat, addLights, createQuality } from '../three/look.js';
 import { makeCharacter, animateCharacter, animateRunner, createCharacterBatch, CHARACTER_KINDS } from '../three/characters.js';
 import { say } from '../voice.js';
 import { play, animalVoice } from '../sounds.js';
+import { makeTerrain, guideGoal, LANDMARKS, landmarkById, WORLD_LINES, SITE_CLEAR, FIND_R } from '../world-map.js';
+import { buildLandmark } from './landmarks3d.js';
+export { makeTerrain };
 
 const CHUNK = 30, GEN_R = 2, KEEP_R = 3;
 const WALK = 7.5, JUMP_V = 8, GRAV = -14;          // csúcsmagasság ≈ 2,3, légi idő ≈ 1,1 mp: bőven elég idő
@@ -26,20 +31,6 @@ export const angDiff = (a, b) => { let d = (b - a) % (Math.PI * 2); if (d > Math
 
 // --- determinisztikus véletlen, zaj és terep (a világ magja alapján) ---
 function mulberry(a) { return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-const smooth = t => t * t * (3 - 2 * t);
-export function makeTerrain(seed) {
-  const hash2 = (x, z, s = seed) => { let h = (Math.imul(x, 374761393) + Math.imul(z, 668265263) + s) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
-  function noise(x, z) {
-    const x0 = Math.floor(x), z0 = Math.floor(z), fx = smooth(x - x0), fz = smooth(z - z0);
-    const a = hash2(x0, z0), b = hash2(x0 + 1, z0), c = hash2(x0, z0 + 1), d = hash2(x0 + 1, z0 + 1);
-    return a + (b - a) * fx + (c - a) * fz + (a - b - c + d) * fx * fz;
-  }
-  function heightAt(x, z) {
-    const d = Math.hypot(x, z), flat = smooth(Math.min(1, d / 14));        // a kezdőpont körül sík
-    return ((noise(x * 0.035, z * 0.035) - 0.5) * 6 + (noise(x * 0.1, z * 0.1) - 0.5) * 1.4) * flat;
-  }
-  return { hash2, noise, heightAt };
-}
 
 // A játékoshoz (px, pz) legközelebbi pont egy ütközőn: kör (fa, kő) vagy kapszula (rönk, a hossztengelye mentén)
 export function separation(o, px, pz, out = {}) {
@@ -61,11 +52,15 @@ const PASTEL = [0xff8fc8, 0xffcf3f, 0xffffff, 0x9bb8ff, 0xc9a0ff, 0xff9f43];
 const CROWNS = [0x6fcf7f, 0x57c46f, 0xffa8d4, 0x8fe08f];
 
 // opts.seed: a világ magja (teszt); opts.manual: nincs saját képkocka-ciklus, a teszt lépteti (update/render)
+// opts.world: { seed, found, onFind(fajta) } – a gyerek saját világa és a már megtalált nevezetességek (js/progress.js)
 export function run(container, opts = {}) {
-  const seed = Number.isFinite(opts.seed) ? opts.seed | 0 : (Math.random() * 1e9) | 0, manual = !!opts.manual;
-  const { hash2, noise, heightAt } = makeTerrain(seed);
+  const seed = Number.isFinite(opts.seed) ? opts.seed | 0 : Number.isFinite(opts.world?.seed) ? opts.world.seed | 0 : (Math.random() * 1e9) | 0, manual = !!opts.manual;
+  const terrain = makeTerrain(seed), { hash2, noise, heightAt, siteAt } = terrain;
+  const found = new Set((opts.world?.found || []).filter(id => landmarkById(id)));
   container.innerHTML = `<div class="ow"><canvas class="ow-gl"></canvas><div class="ow-load">🌍 Világ építése…</div>
-    <div class="ow-hint">Koppints oda, ahová fusson az unikornis! ${icon('ui-point')}</div><button class="ow-jump round" aria-label="Ugrás">${icon('ui-jump')}</button></div>`;
+    <div class="ow-hint">Koppints oda, ahová fusson az unikornis! ${icon('ui-point')}</div><button class="ow-jump round" aria-label="Ugrás">${icon('ui-jump')}</button>
+    <div class="ow-album">${LANDMARKS.map(l => `<button class="ow-lm round" data-lm="${l.id}" aria-label="${l.name}">${icon('lm-' + l.id)}</button>`).join('')}</div>
+    <button class="ow-guide round" aria-label="Merre van?" hidden><span class="ow-guide-ic"></span><span class="ow-guide-arrow">${icon('ui-jump')}</span></button></div>`;
   const root = container.querySelector('.ow'), canvas = root.querySelector('.ow-gl');
   const loadEl = root.querySelector('.ow-load'), hint = root.querySelector('.ow-hint'), jumpBtn = root.querySelector('.ow-jump');
 
@@ -81,6 +76,7 @@ export function run(container, opts = {}) {
     trunk: new THREE.CylinderGeometry(0.18, 0.26, 1.4, 7), cone: new THREE.ConeGeometry(1.1, 2.6, 8), round: new THREE.SphereGeometry(1.0, 10, 8),
     flower: new THREE.SphereGeometry(0.13, 5, 4), rock: new THREE.DodecahedronGeometry(1, 0), log: new THREE.CylinderGeometry(0.32, 0.32, 2.0, 8),
     puddle: new THREE.CircleGeometry(1, 16), heart: heartGeometry(),
+    fly: new THREE.SphereGeometry(0.16, 8, 6), halo: new THREE.SphereGeometry(0.42, 10, 8),
   };
   const M = {
     ground: lookMat({ vertexColors: true }),
@@ -88,6 +84,8 @@ export function run(container, opts = {}) {
     flower: lookMat({ color: 0xffffff }), rock: lookMat({ color: 0xb8b0c8, flatShading: true }),
     log: lookMat({ color: 0x9b6b43 }), puddle: lookMat({ color: 0x8fd0ff, transparent: true, opacity: 0.7 }),
     heart: lookMat({ color: 0xff4f8f, emissive: 0x661030 }),
+    landmark: lookMat({ vertexColors: true }),
+    fly: new THREE.MeshBasicMaterial({ color: 0xfff7b0, fog: false }), halo: new THREE.MeshBasicMaterial({ color: 0xfff08a, transparent: true, opacity: 0.35, depthWrite: false, fog: false }),
   };
   const tmp = new THREE.Object3D(), col = new THREE.Color(), UP = new THREE.Vector3(0, 1, 0), dirV = new THREE.Vector3();
   function instanced(geo, mat, list, place, colors) {
@@ -103,10 +101,15 @@ export function run(container, opts = {}) {
 
   // --- világ: chunkok ---
   const chunks = new Map(), key = (cx, cz) => cx + ',' + cz;
+  const landmarks = new Map();                        // a most legyártott nevezetességek: hely kulcsa → { site, mesh, sy }
   function makeChunk(cx, cz) {
     const rnd = mulberry(hash2(cx, cz, seed + 7) * 4294967296 | 0);
     const ox = cx * CHUNK, oz = cz * CHUNK, group = new THREE.Group(), k = key(cx, cz);
     const colliders = [], occ = [];
+    // a chunkot érintő nevezetességek: körülöttük nem nő akadály (a véletlen-sor ettől nem változik: a hely kisorsolódik,
+    // csak nem kerül oda semmi)
+    const sites = [...new Set([[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([a, b]) => siteAt(ox + a * CHUNK / 2, oz + b * CHUNK / 2)))];
+    const inSite = (x, z, r) => sites.some(s => Math.hypot(s.x - x, s.z - z) < SITE_CLEAR + r);
     // talaj
     const geo = new THREE.PlaneGeometry(CHUNK, CHUNK, 15, 15); geo.rotateX(-Math.PI / 2);
     const pos = geo.attributes.position, colors = new Float32Array(pos.count * 3);
@@ -125,7 +128,7 @@ export function run(container, opts = {}) {
         if (Math.hypot(x, z) < 6 + r) continue;                                  // a kezdőhely szabad
         if (occ.some(o => Math.hypot(o.x - x, o.z - z) < o.r + r + GAP)) continue;
         if (ok && !ok(x, z)) continue;
-        occ.push({ x, z, r }); return [x, z];
+        occ.push({ x, z, r }); return [x, z, inSite(x, z, r)];
       }
       return null;
     };
@@ -135,6 +138,7 @@ export function run(container, opts = {}) {
     for (let i = 0; i < nTrees; i++) {
       const s = 0.8 + rnd() * 0.9, r = 0.5 * s + 0.25, p = place(r); if (!p) continue;
       const t = { x: p[0], z: p[1], s, r, gy: heightAt(p[0], p[1]), round: rnd() < 0.4, k: 1, idx: 0, color: CROWNS[(rnd() * 4) | 0] };
+      if (p[2]) continue;
       trees.push(t); colliders.push({ x: t.x, z: t.z, r, h: 99, solid: true });
     }
     group.add(instanced(G.trunk, M.trunk, trees, (o, t) => { o.position.set(t.x, t.gy + 0.7 * t.s, t.z); o.scale.setScalar(t.s); }));
@@ -146,7 +150,8 @@ export function run(container, opts = {}) {
     const rocks = [], nR = 2 + ((rnd() * 3) | 0);
     for (let i = 0; i < nR; i++) {
       const s = 0.45 + rnd() * 0.3, r = s + 0.2, p = place(r); if (!p) continue;
-      rocks.push({ x: p[0], z: p[1], s, a: rnd() * 6.28 }); colliders.push({ x: p[0], z: p[1], r, h: s * 1.2, solid: false, rock: true });
+      const a = rnd() * 6.28; if (p[2]) continue;
+      rocks.push({ x: p[0], z: p[1], s, a }); colliders.push({ x: p[0], z: p[1], r, h: s * 1.2, solid: false, rock: true });
     }
     group.add(instanced(G.rock, M.rock, rocks, (o, r) => { o.position.set(r.x, heightAt(r.x, r.z) + r.s * 0.4, r.z); o.scale.set(r.s, r.s * 0.8, r.s); o.rotation.set(0, r.a, 0); }));
     // rönkök: csak ott, ahol a talaj nagyjából sík; a lejtőhöz igazodnak, az ütközőjük kapszula a rönk mentén
@@ -158,7 +163,7 @@ export function run(container, opts = {}) {
         const s1 = heightAt(x + az * 0.4, z - ax * 0.4), s2 = heightAt(x - az * 0.4, z + ax * 0.4);
         return Math.abs(h1 - h2) < 0.5 && Math.abs(hc - (h1 + h2) / 2) < 0.1 && Math.abs(s1 - s2) < 0.2;
       });
-      if (!p) continue;
+      if (!p || p[2]) continue;
       const [x, z] = p, h1 = heightAt(x - ax * LEN, z - az * LEN), h2 = heightAt(x + ax * LEN, z + az * LEN);
       logs.push({ x, z, ax, az, h1, h2 }); colliders.push({ x, z, ax, az, len: LEN, r: LR, h: 2 * LR, solid: false, log: true });
     }
@@ -169,7 +174,7 @@ export function run(container, opts = {}) {
     // tócsák: csak sík helyen (különben a lapos korong lebegne vagy elsüllyedne)
     const puddles = [], nP = 1 + ((rnd() * 3) | 0);
     for (let i = 0; i < nP; i++) {
-      const s = i % 2 ? 1.6 : 0.9, p = place(s, (x, z) => { const f = flatness(x, z, s); return f.hi - f.lo < 0.12; }); if (!p) continue;
+      const s = i % 2 ? 1.6 : 0.9, p = place(s, (x, z) => { const f = flatness(x, z, s); return f.hi - f.lo < 0.12; }); if (!p || p[2]) continue;
       puddles.push({ x: p[0], z: p[1], s, y: flatness(p[0], p[1], s).hi + 0.03 });
     }
     group.add(instanced(G.puddle, M.puddle, puddles, (o, p) => { o.position.set(p.x, p.y, p.z); o.rotation.set(-Math.PI / 2, 0, 0); o.scale.setScalar(p.s); }));
@@ -177,17 +182,25 @@ export function run(container, opts = {}) {
     const flowers = [], nFl = 50 + ((rnd() * 40) | 0);
     for (let i = 0; i < nFl; i++) {
       const x = ox + (rnd() - 0.5) * CHUNK, z = oz + (rnd() - 0.5) * CHUNK;
-      if (occ.some(o => Math.hypot(o.x - x, o.z - z) < o.r)) continue;
+      if (occ.some(o => Math.hypot(o.x - x, o.z - z) < o.r) || inSite(x, z, -3)) continue;
       flowers.push([x, z]);
     }
     group.add(instanced(G.flower, M.flower, flowers, (o, f, i) => { o.position.set(f[0], heightAt(f[0], f[1]) + 0.14, f[1]); o.scale.setScalar(0.8 + (i % 3) * 0.3); }, (f, i) => PASTEL[i % PASTEL.length]));
+    // nevezetesség: abban a chunkban készül el, amelyikben a közepe áll (egy összeolvasztott test, egy rajzolási hívás)
+    for (const s of sites) {
+      if (s.x < ox - CHUNK / 2 || s.x >= ox + CHUNK / 2 || s.z < oz - CHUNK / 2 || s.z >= oz + CHUNK / 2) continue;
+      const b = buildLandmark(s.type), mesh = new THREE.Mesh(b.geo, M.landmark);
+      mesh.position.set(s.x, s.y, s.z); group.add(mesh);
+      for (const c of b.colliders) colliders.push({ ...c, x: s.x + c.x, z: s.z + c.z });
+      landmarks.set(s.key, { site: s, mesh, sy: 1, chunk: k });
+    }
     scene.add(group);
     // barátságos állatok helye: együtt futnak, vagy csak mosolyognak és integetnek (a figura csak közelről készül el)
     const spawns = [];
     if (rnd() < 0.75) {
       const n = 1 + (rnd() < 0.3 ? 1 : 0);
       for (let i = 0; i < n; i++) {
-        const kind = KINDS[(rnd() * KINDS.length) | 0], mode = rnd() < 0.5 ? 'follow' : 'wave', ang = rnd() * 6.28, p = place(0.6); if (!p) continue;
+        const kind = KINDS[(rnd() * KINDS.length) | 0], mode = rnd() < 0.5 ? 'follow' : 'wave', ang = rnd() * 6.28, p = place(0.6); if (!p || p[2]) continue;
         spawns.push({ id: k + ':' + i, kind, x: p[0], z: p[1], mode, ang, pal: null });
       }
     }
@@ -199,6 +212,7 @@ export function run(container, opts = {}) {
   }
   function disposeChunk(c) {
     scene.remove(c.group);
+    for (const [lk, l] of landmarks) if (l.chunk === c.key) landmarks.delete(lk);
     c.group.traverse(o => { if (o.isInstancedMesh) o.dispose(); else if (o.isMesh) o.geometry.dispose(); });   // a közös geometriák és anyagok maradnak
     for (const s of c.spawns) if (s.pal && !s.pal.follow) dropPal(s);
   }
@@ -290,6 +304,7 @@ export function run(container, opts = {}) {
 
   function update(dt) {
     t += dt;
+    updateWorld(dt);
     if (steer) aim(steer.x, steer.y);                 // tartott ujj: minden képkockában újra célzunk (a kamera is mozog)
     // irány: a cél felé vagy nyilakkal
     let dx = 0, dz = 0;
@@ -379,6 +394,55 @@ export function run(container, opts = {}) {
     batch.update();
   }
 
+  // --- nevezetességek: felfedezés, vezető fény, képes jelző ---
+  const fly = new THREE.Mesh(G.fly, M.fly); fly.add(new THREE.Mesh(G.halo, M.halo)); fly.frustumCulled = false; scene.add(fly);
+  const album = root.querySelector('.ow-album'), guideBtn = root.querySelector('.ow-guide'), guideIc = guideBtn.querySelector('.ow-guide-ic'), guideArrow = guideBtn.querySelector('.ow-guide-arrow');
+  let goal = null, goalT = -9, finaleT = -9, bounce = null, lastVisit = null, sayT = -9, chip = '';
+  const renderAlbum = () => { for (const b of album.children) b.classList.toggle('got', found.has(b.dataset.lm)); };
+  renderAlbum();
+  const speak = text => { if (t - sayT < 2) return; sayT = t; say(text, { remember: false }); };
+  album.addEventListener('click', e => { const b = e.target.closest('.ow-lm'); if (b) speak(found.has(b.dataset.lm) ? landmarkById(b.dataset.lm).name + '. ' + WORLD_LINES.again : WORLD_LINES.notYet); });
+  // a jelzőre koppintva az unikornis elindul a nevezetesség felé, és Rozi megmondja, mi van arra
+  guideBtn.addEventListener('click', () => { if (!goal) return; TGT.x = goal.x; TGT.z = goal.z; P.target = TGT; P.tap = true; P.best = Infinity; P.stall = 0; hint.style.opacity = 0; speak(landmarkById(goal.type).way); });
+  function updateWorld(dt) {
+    // megtalálás: elég a közelébe érni
+    const s = siteAt(P.x, P.z), d = Math.hypot(s.x - P.x, s.z - P.z);
+    if (d < FIND_R && lastVisit !== s.key) {
+      lastVisit = s.key; bounce = { key: s.key, t0: t };
+      if (!found.has(s.type)) {
+        found.add(s.type); finaleT = t; goalT = -9; renderAlbum(); play('yay');
+        sayT = t; say(landmarkById(s.type).found, { remember: false });
+        opts.world?.onFind?.(s.type); opts.heart?.();
+      } else play('magic');
+    } else if (d > 14 && lastVisit === s.key) lastVisit = null;
+    if (t - goalT > 0.5) { goalT = t; goal = guideGoal(terrain, P.x, P.z, found); }
+    // a nevezetesség összemegy, ha eltakarná az unikornist (mint a fák lombja), és megtaláláskor ugrik egyet
+    for (const l of landmarks.values()) {
+      const hide = P.z < l.site.z - 0.5 && P.z > l.site.z - 8 && Math.abs(P.x - l.site.x) < 4.5;
+      l.sy += ((hide ? 0.35 : 1) - l.sy) * Math.min(1, dt * 6);
+      const a = bounce && bounce.key === l.site.key ? t - bounce.t0 : 9, b = a < 2 ? 0.22 * Math.sin(a * 11) * Math.exp(-a * 2.5) : 0;
+      l.mesh.scale.set(1 + b, l.sy * (1 + b), 1 + b);
+    }
+    // a kis fény a cél felé repül az unikornis előtt; a nevezetességnél fölötte köröz
+    if (goal) {
+      const gx = goal.x - P.x, gz = goal.z - P.z, gd = Math.hypot(gx, gz) || 1;
+      let fx, fy, fz;
+      if (gd < 6) { fx = goal.x + Math.cos(t * 1.5) * 1.6; fz = goal.z + Math.sin(t * 1.5) * 1.6; fy = goal.y + 3.3; }
+      else { const k = Math.min(4, gd) / gd; fx = P.x + gx * k; fz = P.z + gz * k; fy = heightAt(fx, fz) + 1.7 + Math.sin(t * 3) * 0.25; }
+      const q = Math.min(1, dt * 3); fly.position.set(fly.position.x + (fx - fly.position.x) * q, fly.position.y + (fy - fly.position.y) * q, fly.position.z + (fz - fly.position.z) * q);
+      fly.scale.setScalar(1 + Math.sin(t * 7) * 0.15);
+      // képes jelző a képernyő szélén (amíg a nevezetesség messze van): a kép mutatja, mi az, a nyíl, hogy merre
+      const show = gd > 16, w = root.clientWidth || 1, h = root.clientHeight || 1, R = Math.min(w, h) * 0.36;
+      const cx = Math.round(w / 2 + gx / gd * R), cy = Math.round(h / 2 + gz / gd * R * 0.8), deg = Math.round(Math.atan2(gx, -gz) * 180 / Math.PI);
+      const sig = show ? goal.type + '|' + cx + '|' + cy + '|' + deg : '';
+      if (sig !== chip) {
+        chip = sig; guideBtn.hidden = !show;
+        if (show) { if (guideBtn.dataset.lm !== goal.type) { guideBtn.dataset.lm = goal.type; guideIc.innerHTML = icon('lm-' + goal.type); } guideBtn.style.left = cx + 'px'; guideBtn.style.top = cy + 'px'; guideArrow.style.transform = 'rotate(' + deg + 'deg)'; }
+      }
+    }
+  }
+  container.__busy = () => t - finaleT < 2.5;           // a megtalálás pillanatában a jutalomidő nem ér véget
+
   function updatePals(dt) {
     const used = new Set(pals.filter(p => p.follow).map(p => p.slot));
     let hi = 0;
@@ -455,7 +519,7 @@ export function run(container, opts = {}) {
   const render = () => renderer.render(scene, camera);
   function start() {
     ready = true; loadEl.style.display = 'none'; hint.style.opacity = 1; setTimeout(() => { if (alive) hint.style.opacity = 0; }, 8000);
-    say('Szabad futás! Koppints oda, ahová fusson az unikornis. Köszönj a barátoknak!');
+    say(found.size < LANDMARKS.length ? WORLD_LINES.start : WORLD_LINES.startAll);
   }
   // kezdeti világ előre legenerálva (néhány darab képkockánként), csak utána indul a futás
   function preload() {
@@ -474,6 +538,7 @@ export function run(container, opts = {}) {
     pals: () => pals, followers: () => pals.filter(p => p.follow),
     colliders: () => [...chunks.values()].flatMap(c => c.colliders),
     trees: () => [...chunks.values()].flatMap(c => c.trees),
+    siteAt, landmarks: () => [...landmarks.values()], found: () => [...found], goal: () => goal, guide: guideBtn, album,
     setTarget: (x, z) => { TGT.x = x; TGT.z = z; P.target = TGT; P.tap = true; P.best = Infinity; P.stall = 0; },
     stats: () => ({ chunks: chunks.size, pals: pals.length, batch: batch.size - 1 /* a játékos unikornisa nélkül */, instances: batch.meshes.reduce((s, m) => s + m.count, 0), calls: renderer.info.render.calls, triangles: renderer.info.render.triangles }),
   };
@@ -482,7 +547,7 @@ export function run(container, opts = {}) {
     alive = false; cancelAnimationFrame(raf); ro?.disconnect();
     window.removeEventListener('resize', size); window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku);
     for (const c of chunks.values()) disposeChunk(c);
-    chunks.clear(); pals.length = 0; batch.dispose(); hearts.dispose();
+    chunks.clear(); landmarks.clear(); pals.length = 0; batch.dispose(); hearts.dispose(); delete container.__busy;
     Object.values(G).forEach(g => g.dispose()); Object.values(M).forEach(m => m.dispose());
     renderer.dispose(); renderer.forceContextLoss?.();
   };

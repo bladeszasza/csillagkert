@@ -158,6 +158,50 @@ export async function testOpenWorld(ok) {
     ok('szabad futás: kilépés után nincs élő 3D-kontextus', !gl || gl.isContextLost(), gl ? 'kontextus elengedve' : 'nincs kontextus');
     h.remove();
   }
+
+  // 3) Varázsvilág: nevezetességek, vezető fény, képes jelző, megtalálás
+  for (const seed of [101, 555]) {
+    const h2 = box(), finds = [], hearts = [];
+    const stop = runWorld(h2, { manual: true, world: { seed, found: [], onFind: id => finds.push(id) }, heart: () => hearts.push(1) }), w = h2.__ow, Q = w.P;
+    try {
+      steps(w, 0.6); w.render();
+      const s = w.siteAt(0, 0), d0 = Math.hypot(s.x, s.z), lm = w.landmarks().find(l => l.site.key === s.key);
+      const hs = []; for (let a = 0; a < 6.28; a += 0.5) hs.push(w.heightAt(s.x + Math.sin(a) * 6, s.z + Math.cos(a) * 6) - s.y);
+      const inWay = w.colliders().filter(o => !o.lm && Math.hypot(o.x - s.x, o.z - s.z) < 8.5).length;
+      ok(`Varázsvilág (mag ${seed}): az első nevezetesség közel áll, sík, akadálymentes helyen`, w.seed === seed && d0 >= 36 && d0 <= 42 && !!lm && Math.max(...hs.map(Math.abs)) < 1e-6 && inWay === 0, `${s.type} ${r1(d0)} egységre; akadály a helyén: ${inWay}`);
+      const g0 = w.goal(), chip0 = !w.guide.hidden && w.guide.dataset.lm === s.type, r = w.guide.getBoundingClientRect();
+      const dim = [...w.album.children].filter(b => !b.classList.contains('got')).length;
+      ok(`Varázsvilág (mag ${seed}): a jelző az első nevezetesség képét mutatja a képernyőn belül, az album még halvány`, g0?.key === s.key && chip0 && r.left >= 0 && r.right <= 1024 && r.top >= 0 && r.bottom <= 768 && r.width >= 56 && dim === 4, `cél: ${g0?.type}; jelző: ${w.guide.dataset.lm} (${Math.round(r.left)}, ${Math.round(r.top)}); halvány: ${dim}`);
+      // a jelzőre koppintva elindul oda, és megtalálja
+      const s0 = spoken(), m0 = soundMark(); w.guide.click(); await wait(250);
+      let secs = 0; while (!finds.length && secs < 25) { steps(w, 0.5); secs += 0.5; }
+      const busy = h2.__busy(); await wait(250); const said = window.__spoken.slice(s0);
+      ok(`Varázsvilág (mag ${seed}): a jelzőre koppintva odafut és megtalálja (egy mondat az útra, egy a megtalálásra, szív, hang)`,
+        finds.length === 1 && finds[0] === s.type && hearts.length === 1 && said.length === 2 && /Megtaláltad/.test(said[1]) && busy && soundLog.filter(x => x.n > m0).some(x => x.kind === 'yay') && w.album.querySelector(`[data-lm=${s.type}]`).classList.contains('got'),
+        `${secs} mp; megtalálva: ${finds.join(',') || '–'}; ${said.join(' | ')}`);
+      steps(w, 3);
+      const g1 = w.goal(), still = Math.hypot(Q.x - s.x, Q.z - s.z);
+      ok(`Varázsvilág (mag ${seed}): utána a fény egy másik, még meg nem talált fajtához visz, és a jutalomidő újra véget érhet`, !!g1 && g1.key !== s.key && g1.type !== s.type && !h2.__busy() && still < 8, `új cél: ${g1?.type}, ${r1(Math.hypot(g1.x - Q.x, g1.z - Q.z))} egységre`);
+      // elfut és visszajön: nem "találja meg" még egyszer, Rozi sem mondja újra
+      const s1 = spoken(); w.setTarget(s.x + 20, s.z); steps(w, 5); w.setTarget(s.x, s.z); steps(w, 6);
+      ok(`Varázsvilág (mag ${seed}): visszatéréskor nincs újabb megtalálás és nincs újabb mondat`, finds.length === 1 && hearts.length === 1 && spoken() === s1, `megtalálások: ${finds.length}, új mondat: ${spoken() - s1}`);
+      w.render(); const st2 = w.stats();
+      ok(`Varázsvilág (mag ${seed}): a nevezetességgel együtt is a kereten belül`, st2.calls <= 150 && st2.triangles <= 150000, `${st2.calls} hívás, ${Math.round(st2.triangles / 1000)}k háromszög`);
+    } finally { stop(); h2.remove(); }
+  }
+  // a már megtalált fajták nem ünneplődnek újra, és a mentett világ ugyanaz marad
+  {
+    const h3 = box(), finds = [];
+    const stop = runWorld(h3, { manual: true, world: { seed: 555, found: ['kut', 'kokor', 'fa', 'kapu', 'nincs-ilyen'], onFind: id => finds.push(id) } }), w = h3.__ow;
+    try {
+      steps(w, 0.6);
+      const s = w.siteAt(0, 0), s0 = spoken(), m0 = soundMark(); w.setTarget(s.x, s.z);
+      let secs = 0; while (Math.hypot(w.P.x - s.x, w.P.z - s.z) > 4 && secs < 25) { steps(w, 0.5); secs += 0.5; }
+      steps(w, 1);
+      ok('Varázsvilág: ha már minden megvan, nincs újabb ünneplés, csak egy kis csengés; a fénynek akkor is van célja', finds.length === 0 && spoken() === s0 && soundLog.filter(x => x.n > m0).some(x => x.kind === 'magic') && w.found().length === 4 && !!w.goal() && [...w.album.children].every(b => b.classList.contains('got')),
+        `megtalálások: ${finds.length}, mondat: ${spoken() - s0}, megvan: ${w.found().join(',')}`);
+    } finally { stop(); h3.remove(); }
+  }
 }
 
 // --- minijátékok: a 6.2-es lista géppel ellenőrizhető része ---

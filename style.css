@@ -239,6 +239,14 @@ button { touch-action: none; }
 
 .ow-load { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 900; background: #bfe9ff; z-index: 3; }
 .ow-hint { position: absolute; left: 0; right: 0; bottom: 6vh; text-align: center; font-size: 24px; font-weight: 900; color: #fff; text-shadow: 0 3px 8px rgba(60,20,120,.7); transition: opacity .6s; pointer-events: none; }
+/* Varázsvilág: a megtalálható nevezetességek sora (ami még nincs meg, halvány) és a képes iránymutató */
+.ow-album { position: absolute; top: calc(10px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 4; }
+.ow-lm { width: 60px; height: 60px; font-size: 40px; background: rgba(255,255,255,.75); padding: 0; }
+.ow-lm .ico { opacity: .28; filter: grayscale(1); transition: opacity .4s, filter .4s; }
+.ow-lm.got { background: rgba(255,255,255,.95); } .ow-lm.got .ico { opacity: 1; filter: none; }
+.ow-guide { position: absolute; width: 72px; height: 72px; margin: -36px 0 0 -36px; font-size: 44px; z-index: 4; background: rgba(255,255,255,.92); padding: 0; transition: left .12s linear, top .12s linear; }
+.ow-guide[hidden] { display: none; }
+.ow-guide-arrow { position: absolute; inset: -16px; font-size: 20px; pointer-events: none; display: flex; justify-content: center; align-items: flex-start; }
 .ow-jump { position: absolute; right: 22px; bottom: 22px; width: 96px; height: 96px; font-size: 48px; z-index: 4; background: rgba(255,255,255,.9); }
 
 .fc { position: absolute; inset: 0; background: linear-gradient(#bfe9ff, #ffe6f2); overflow: hidden; touch-action: none; }
