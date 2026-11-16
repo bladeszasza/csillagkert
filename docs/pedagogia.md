@@ -457,6 +457,38 @@ csibéé az Állatok táblájában. Aki a régiekből sokat megoldott, az új k�
 húsvéti tojásfestés, farsang, szilveszter, szülinap, anyák napja), vallási tartalom nincs. Ha egy család másként
 ünnepel, a szülő kihúzhatja a kérdést (`tests/tenyek.html?st=vilag`).
 
+### 3.13 Egészség (194 tény, 264 kérdés, 8 készség), jóváhagyva: 2026-11-16
+
+A tábla: `js/content/facts/egeszseg.js`. **Készségek** (az Óvodai nevelés országos alapprogramjában az egészséges
+életmód alakítása az óvoda egyik fő feladata; a DIFER tapasztalati következtetés területe): tisztálkodás (fürdés,
+hajmosás, az eszközök); kézmosás, fogmosás és orrfújás; gyümölcs és zöldség; gyakran vagy néha (édesség és ital); mozgás
+és játék; napirend és alvás; vigyázunk magunkra (ami forró, éles vagy veszélyes); ha betegek vagyunk. Szintek: 61, 94,
+62, 33 és 14 kérdés.
+
+**Új feladatforma a táblában: sorba rakás.** Tíz tény kérdése nem választás, hanem sorrend („Koppints sorrendben!”):
+fürdés, hajmosás, kézmosás, fogmosás, orrfújás, gyümölcssaláta, lefekvés, reggel, ebéd az oviban, és mit teszünk, ha
+megvágtuk az ujjunkat. A lépések nevét Rozi kimondja, a kártyákon nincs számjegy. Ezzel a Robotpálya régi
+szendvics-sorrendje helyett is van hétköznapi sorrend.
+
+**Nincs szégyenítés**: az ételek nem „jók” és „rosszak”, hanem „gyakran” vagy „néha” esszük őket. Az édesség, az üdítő és
+a sült krumpli a „néha” csoportba tartozik, de egyik mondat sem mondja, hogy aki eszik belőle, az rossz. A gyümölcsös
+kérdéseknél csak gyümölcsök, a zöldségeseknél csak zöldségek a válaszok, így a kérdés nem oldható meg úgy, hogy a
+gyerek kizárja a kenyeret vagy a csokit.
+
+**Saját rajzok**: ahol nincs jó emoji (fogkrém, törölköző, fésű, sampon, zsebkendő, pizsama), saját rajz van. A
+napirendnél a Világunk napszak-rajzai jönnek vissza (ugyanaz a táj reggel, délben, este és éjszaka).
+
+**Vitatható válaszok**: ami szintén igaz lehet, az soha nem rossz válasz. Piros és ropogós a cseresznye is, este és
+éjszaka is alszunk, ha ég a ház, a rendőr és az orvos is kijöhet, megnyugodni mesekönyvvel vagy kirakóval is lehet.
+
+**A régi feladatok**: a négy kézzel írt Egészség-feladat kikerült (az egészséges étel, a fogkefe és a két sorrend). A
+kéz- és a fogmosás sorrendje a táblában él tovább; a kézmosásnál a dörzsölést hab mutatja, nem taps. Aki a régiekből
+sokat megoldott, az új készségeken egy szinttel feljebb indul.
+
+**Amit nem tudunk**: a biztonsági kérdések (tűz, kés, gyógyszer, gomba) nem helyettesítik a felnőtt felügyeletét, a
+betegségnél pedig csak hétköznapi dolgok szerepelnek (lázmérő, tea, pihenés, sebtapasz), orvosi tanács nincs. Ha egy
+család másként csinálja (például nincs kád, csak zuhany), a szülő kihúzhatja a kérdést (`tests/tenyek.html?st=egeszseg`).
+
 ---
 
 ## 4. Rozi mondatai (monológ-könyvtár)
@@ -482,9 +514,8 @@ A mondatok a `js/lines.js` fájlban vannak; szándékonként legalább hat vált
   egyenként jön a lá, a dó és a ré; a fá és a ti csak később, mert a félhangot a gyerekek nehezen éneklik tisztán
   ([Wikipédia: Kodály method](https://en.wikipedia.org/wiki/Kod%C3%A1ly_method), Choksy: *The Kodály Method I*, 1999,
   9–12. o. alapján, [másodlagos]).
-- **A Robotpálya régi feladatai**: a hét régi pálya helyett generáltak jöttek. A szendvics-sorrend (hétköznapi
-  sorrend) és a „Ha sötét van a szobában…" kérdés most kimarad, az M6 ténytábláiban (Egészség, Világunk) térhet
-  vissza; a „Hány taps lesz összesen?" számolást a Számoló rét, a színes sormintát az Okoskodó sorminta-feladatai
+- **A Robotpálya régi feladatai**: a hét régi pálya helyett generáltak jöttek. A szendvics-sorrend helyett az Egészség
+  táblájában vannak hétköznapi sorrendek (3.13); a „Ha sötét van a szobában…" kérdés nem tért vissza; a „Hány taps lesz összesen?" számolást a Számoló rét, a színes sormintát az Okoskodó sorminta-feladatai
   fedik le.
 - **Szívkert** (M6): a szociális-érzelmi tanulás öt területe (CASEL: önismeret, önszabályozás, társas tudatosság,
   kapcsolati készségek, felelős döntéshozatal [másodlagos, CASEL-t idéző oldalak alapján; a CASEL saját oldalán
@@ -492,8 +523,8 @@ A mondatok a `js/lines.js` fájlban vannak; szándékonként legalább hat vált
 - **A számok hangolandók**: a 2.2 táblázat minden értéke saját kiinduló beállítás. A szülő tapasztalata (túl könnyű?
   túl nehéz? unalmas?) alapján változhatnak.
 - **Amit asztali gépről nem lehet ellenőrizni**: az iPad felolvasójának kiejtése és ritmusa, az érintés
-  pontossága, és az, hogy egy adott gyereknek mi az érdekes. Néhány újabb emoji (🫘 mag, 🫧 hab, 🪥 fogkefe, 🫁 tüdő)
-  csak frissebb iPadOS-en látszik; ha valamelyik helyén üres négyzet van, azt jelezni kell.
+  pontossága, és az, hogy egy adott gyereknek mi az érdekes. Néhány újabb emoji (🫘 mag és 🫧 hab iPadOS 15.4-től; 🪥 fogkefe,
+  🫁 tüdő, 🪞 tükör, 🪜 létra és 🫑 paprika iPadOS 14.2-től) csak frissebb rendszeren látszik; ha valamelyik helyén üres négyzet van, azt jelezni kell.
 
 ---
 
@@ -508,7 +539,7 @@ A tervezéskor mind a 136 régi feladatot átnéztük; 61-et jelöltünk javíta
 | Okoskodó | 3 | kivéve, a generált feladatok váltják ki (a sorminta rossz válaszai a mintából jönnek, a memória kimondja a kártyák nevét) |
 | Állatetetés | 4 | javítva az M2a-ban (kutya, egér, maci, mókus) |
 | Világunk | 5 | 4 javítva; 1 kiváltva: a „Melyik nap jön péntek után?" önkényes képei (lufi, táska, könyvek) helyett az M6 ténytáblájában naptárlap van (3.12) |
-| Egészség | 5 | 5 javítva (3 áthelyezés az M1-ben; a kézmosás képei és a fogkefe-kérdés rossz válaszai most) |
+| Egészség | 5 | 3 javítva (áthelyezés az M1-ben); 2 kiváltva: a kézmosás félreérthető képei és a fogkefe-kérdés komolytalan rossz válaszai helyett az M6 ténytáblája jött (3.13) |
 | Testünk csodái | 5 | 5 javítva (az „erek" helyett most „Mivel hallunk?", így a fül is lehet helyes válasz) |
 | Időutazás | 5 | 4 javítva; 1 kivéve: a piramis (az emoji a háromszög jele), az M6-ban rajzolt képpel térhet vissza |
 | Robotpálya | 5 | 5 javítva (áthelyezések és a „kétszer, háromszor" kiejtése korábban; a nyelvtan és a taps-tény az M4/1-ben); az M4/2-ben az egész állomás generált lett |
@@ -517,7 +548,7 @@ A tervezéskor mind a 136 régi feladatot átnéztük; 61-et jelöltünk javíta
 | Zenevár | 4 | kivéve, a generált feladatok váltják ki (nincs abszolút hallás: a harangok előbb a nevükkel szólnak; a hangnév mindig harang neve; a felirat „ti") |
 | Rajzasztal | 0 | a négy régi rajzos feladat (nap, ház és virág kiszínezése, szabad rajz) helyett generált feladatok jöttek (3.8) |
 
-Összesen: 31 kiváltva generált feladattal vagy ténytáblával, 29 javítva, 1 kivéve, nyitott nincs.
+Összesen: 33 kiváltva generált feladattal vagy ténytáblával, 27 javítva, 1 kivéve, nyitott nincs.
 
 ---
 

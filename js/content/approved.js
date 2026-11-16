@@ -5,4 +5,5 @@ export const APPROVED = {
   test: '2026-11-15',       // Testünk csodái: a szülő a többi táblát előre jóváhagyta
   sziv: '2026-11-16',       // Szívkert (előre jóváhagyva)
   vilag: '2026-11-16',      // Világunk (előre jóváhagyva)
+  egeszseg: '2026-11-16',   // Egészség (előre jóváhagyva)
 };

@@ -81,8 +81,10 @@ Az M4 mérföldkő kész: **mind a 8 generálható állomás** sablonokból kés
   A Testünk csodái tábla (242 tény, 264 kérdés, saját testábrával) is élesben van: `tests/tenyek.html?st=test`, és az új
   Szívkert is (236 helyzet, 263 kérdés a kert barátaival; a válaszok mind érzések, kedves szavak vagy jó tettek):
   `tests/tenyek.html?st=sziv`. A Világunk is élesben van (231 tény, 270 kérdés; az évszakokat, a napszakokat és a naptárt
-  saját rajzok mutatják): `tests/tenyek.html?st=vilag`. A többi táblát a szülő előre jóváhagyta, ezek elkészültük után
-  élesednek ([`docs/pedagogia.md`](docs/pedagogia.md) 3.9–3.12).
+  saját rajzok mutatják): `tests/tenyek.html?st=vilag`, és az Egészség is (194 tény, 264 kérdés; az ételek „gyakran” vagy
+  „néha” csoportba tartoznak, nincs szégyenítés, és először vannak sorba rakós kérdések egy ténytáblában):
+  `tests/tenyek.html?st=egeszseg`. A többi táblát a szülő előre jóváhagyta, ezek elkészültük után élesednek
+  ([`docs/pedagogia.md`](docs/pedagogia.md) 3.9–3.13).
 
 ## Hang
 

@@ -42,6 +42,8 @@ test('tény-állomások: az audit szerint javított feladatok', () => {
   // a csibe kérdésénél látszik a csibe (most az Állatok táblájában); a mag képe nem gesztenye; a kézmosásnál nincs taps
   assert.ok(FACT_TABLES.find(t => t.station === 'allat').facts.some(f => f.q.some(q => q.ask === 'Kinek a kicsinye a csibe?' && q.show === '🐥')));
   assert.ok(!orders.some(o => o.steps.some(s => s.t === '🌰' || s.t === '👏')), 'félrevezető kártyakép');
+  const egOrders = FACT_TABLES.find(t => t.station === 'egeszseg').facts.flatMap(f => f.q.filter(q => q.kind === 'order'));
+  assert.ok(egOrders.length >= 5 && !egOrders.some(o => o.steps.some(s => s.t === '👏')), 'kézmosás: taps a dörzsölés helyett');
 });
 
 test('kimondott tények legfeljebb kb. 70 betűsek (a hosszú mondatot a hang levághatja)', () => {
@@ -76,7 +78,9 @@ test('rosszul besorolt feladatok a helyükön vannak', () => {
   // az esernyő és a lámpa a Világunk ténytáblájába került (a régi, kézzel írt Világunk-feladatok kikerültek)
   const vilagAsks = FACT_TABLES.find(t => t.station === 'vilag').facts.flatMap(f => f.q.map(q => q.ask));
   assert.ok(vilagAsks.includes('Esik az eső. Mit viszünk magunkkal?') && vilagAsks.includes('Melyik lámpánál állnak meg az autók?'));
-  assert.equal(where('Hogyan mosunk fogat? Koppints sorrendben!'), 'egeszseg');
+  // a fogmosás sorrendje az Egészség ténytáblájába került (a régi, kézzel írt Egészség-feladatok kikerültek)
+  const egAsks = FACT_TABLES.find(t => t.station === 'egeszseg').facts.flatMap(f => f.q.map(q => q.ask));
+  assert.ok(egAsks.includes('Hogyan mosunk fogat? Koppints sorrendben!') && egAsks.includes('Hogyan mosunk kezet? Koppints sorrendben!'));
 });
 
 test('zene: Kodály-sorrend (szó–mi-vel kezd, fá és ti csak az 5. szinten), és csak viszonyított hallás', async () => {

@@ -25,6 +25,7 @@ const OLD = {
   ceruza: [/^trace\|/, /^betu\|/],
   rajz: [/^draw\|/],
   test: [/^pick\|(Melyik szerv pumpálja|Mivel gondolkodunk|Mivel látunk|Mivel lélegzünk|Mivel rágunk|Mivel hallunk|Mivel fogjuk meg a kanalat|Mivel szagolunk|Mivel érezzük az ízeket|Mivel ízlelünk|Hány ujjunk van|Mit csinálunk, ha álmosak|Mi folyik az ereinkben|Mi segít, hogy kipihenjük)/, /^order\|(Hogyan változunk|Hogyan növünk)/],
+  egeszseg: [/^pick\|(Melyik az egészséges|Mivel mosunk fogat|Mit használunk fogmosáshoz)/, /^order\|(Hogyan mossunk kezet|Hogyan mosunk fogat)/],
   vilag: [/^pick\|(Melyik évszakban esik a hó|Ki oltja a tüzet|Mikor látjuk a csillagokat|Kinek a kicsinye a csibe|Melyik nap jön péntek után|Esik az eső|Piros a lámpa|Mikor megyünk aludni)/, /^order\|(Mi történik a nap folyamán|Rakd sorba a hét napjait|Hogyan nő a virág)/],
   algo: [/^algo\|/, /^order\|Hogyan készítünk szendvicset/, /^pick\|(Hány taps lesz|Mi jön ezután\? Találd ki|Ha sötét van)/],
 };

@@ -128,6 +128,9 @@ const banks = {
   ]),
 };
 
+// a napszakok rajzait az Egészség napirendje is használja
+export const NAPSZAK = banks.napszak;
+
 const skills = {
   'vilag.fogl': { name: 'Foglalkozások', hint: 'Gondold végig: ki szokta ezt csinálni?' },
   'vilag.hely': { name: 'Helyek a városban', hint: 'Hova mennél, ha ezt szeretnéd csinálni?' },

@@ -12,10 +12,8 @@ const FACTS = {
   'Mivel látunk?|szem': 'A szemünkkel látunk.',
   'Mivel melegedtek az ősemberek?|tűz': 'Az ősemberek a tűz mellett melegedtek.',
   'Mivel lélegzünk?|tüdő': 'A tüdőnkkel lélegzünk.',
-  'Melyik az egészséges?|répa': 'A répa egészséges, sok vitamin van benne.',
   'Hol laktak a királyok és a lovagok régen?|vár': 'A királyok és a lovagok régen várban laktak.',
   'Mivel rágunk?|fog': 'A fogunkkal rágunk.',
-  'Mivel mosunk fogat?|fogkefe': 'Fogat fogkefével mosunk.',
   'Mivel hallunk?|fül': 'A fülünkkel hallunk.',
   'Kik védték a várat?|lovagok': 'A várat a lovagok védték.',
   'Mivel fogjuk meg a kanalat?|kéz': 'A kanalat a kezünkkel fogjuk meg.',
@@ -28,10 +26,8 @@ const FACTS = {
   'Melyik állat élt nagyon régen, és ma már nem él?|dinoszaurusz': 'A dinoszauruszok nagyon régen éltek, ma már nincsenek.',
 };
 const ORDER_FACTS = {
-  'Hogyan mossunk kezet? Koppints sorrendben!': 'Víz, szappan, dörzsölés, öblítés, végül törölközés.',
   'Hogyan változunk az évek alatt? Koppints sorrendben!': 'Előbb baba vagyunk, aztán gyerek, felnőtt, végül idős.',
   'Hogyan változott a közlekedés? Koppints sorrendben!': 'Régen lovon jártak, aztán jött a vonat, az autó, és végül a repülő.',
-  'Hogyan mosunk fogat? Koppints sorrendben!': 'Fogkrém a kefére, fogmosás, öblítés, és jöhet a mosoly!',
 };
 const opt = (s, ok) => { const i = s.indexOf(' '); return i < 0 ? { t: s, ok } : { t: s.slice(0, i), name: s.slice(i + 1), ok }; };
 const pick = (icon, prompt, correct, ...wrong) => ({ type: 'pick', icon, prompt, fact: FACTS[prompt + '|' + (opt(correct, true).name || '')], options: [opt(correct, true), ...wrong.map(w => opt(w, false))] });
@@ -45,24 +41,18 @@ const feed = ([kind, good, ...rest]) => {
 };
 
 const BASE = [
-  // 🍎 Egészség · 🏺 Időutazás (a többi állomás feladatai sablonokból és ténytáblákból jönnek)
+  // 🏺 Időutazás (a többi állomás feladatai sablonokból és ténytáblákból jönnek)
   pick('🏺', 'Melyik állat élt nagyon régen, és ma már nem él?', '🦖 dinoszaurusz', '🐶 kutya', '🐱 cica'),
 
   pick('🏺', 'Mivel melegedtek az ősemberek?', '🔥 tűz', '🧊 jég', '🌧️ eső'),
 
-  order('🍎', 'Hogyan mossunk kezet? Koppints sorrendben!', '🚰 vizezd be', '🧼 szappanozd be', '🫧 dörzsöld habosra', '💧 öblítsd le', '🧻 töröld meg'),
-
-  pick('🍎', 'Melyik az egészséges?', '🥕 répa', '🍭 nyalóka', '🍟 sült krumpli'),
   pick('🏺', 'Hol laktak a királyok és a lovagok régen?', '🏰 vár', '🏢 felhőkarcoló', '⛺ sátor'),
-
-  pick('🍎', 'Mivel mosunk fogat?', '🪥 fogkefe', '🧼 szappan', '🧽 szivacs'),
 
   pick('🏺', 'Kik védték a várat?', '⚔️ lovagok', '🧑‍🏫 tanítók', '🧑‍🎨 festők'),
 
   order('🏺', 'Hogyan változott a közlekedés? Koppints sorrendben!', '🐎 ló', '🚂 vonat', '🚗 autó', '✈️ repülő'),
 
   pick('🏺', 'Melyikhez nem kell villany?', '🕯️ gyertya', '💡 villanykörte', '📺 tévé'),
-  order('🍎', 'Hogyan mosunk fogat? Koppints sorrendben!', '🪥 fogkrémet teszünk a kefére', '🦷 megmossuk minden fogunkat', '🚰 kiöblítjük a szánkat', '😁 mosolygunk'),
 ];
 
 const FEED = MEALS.map(feed);

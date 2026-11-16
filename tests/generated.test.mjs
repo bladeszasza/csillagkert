@@ -68,6 +68,15 @@ test('minden feladat megoldható: a független megoldó ugyanazt a választ tal�
       // hallásos feladat: minden hang ismert, és amit a gyerek választ, az a hallottból dől el (a megoldó a hangsort nézi)
       if (it.sound) for (const e of [...it.sound.events, ...(it.sound.again || []), ...(it.intro?.steps || []).flatMap(s => s.events)]) assert.ok(e.rest || e.clap || NOTES[e.n], `ismeretlen hang: ${where}`);
       if (it.fixed) assert.ok(it.sound, `kötött sorrend csak hallásos feladatnál: ${where}`);
+    } else if (it.type === 'order') {
+      // sorba rakás (ténytábla): legalább három lépés, mindegyiknek saját képe és kimondható neve; a megoldó a kérdésből
+      // vett helyes sorrendet adja, a feladat a lépéseket ebben a sorrendben várja; a végén egy tény hangzik el
+      assert.ok(Array.isArray(it.steps) && it.steps.length >= 3 && it.steps.length <= 6, `rossz lépésszám: ${where}`);
+      assert.equal(new Set(it.steps.map(s => s.t)).size, it.steps.length, `ismétlődő kép: ${where}`);
+      assert.ok(it.steps.every(s => s.t && s.name), `lépés kép vagy név nélkül: ${where}`);
+      assert.equal(ans, it.steps.map(s => s.name).join(', '), `a megoldó mást talált: ${where}`);
+      assert.ok(it.fact, `hiányzó tény: ${where}`);
+      spoken(it.prompt, where); spoken(it.fact, where); for (const s of it.steps) spoken(s.name, where);
     } else if (it.type === 'count') {
       assert.ok(Number.isInteger(it.n) && it.n >= 1 && it.n <= 20, where); assert.equal(ans, it.n);
     } else if (it.type === 'math') {
