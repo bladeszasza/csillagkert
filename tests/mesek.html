@@ -37,6 +37,7 @@
 <div id="doc"></div>
 <script type="module">
   import { STORIES } from '../js/story.js';
+  import { WEEKS, WEEK_START } from '../js/story-week.js';
   import { friendById } from '../js/friends.js';
   import { ALL_STATIONS } from '../js/curriculum.js';
 
@@ -57,14 +58,27 @@
         <div class="at">${Object.entries(s.at).map(([k, v]) => `<b>${esc(stName(k))}:</b> ${esc(v)}`).join('<br>')}</div></td>
       <td class="cut"><input type="checkbox" aria-label="kihúzom" ${cut.has(s.id) ? 'checked' : ''}></td></tr>`;
   }).join('');
-  document.getElementById('doc').innerHTML = `<h1>A kör meséi: lista átnézésre</h1>
+  // a nagy mesék (js/story-week.js): öt fejezet öt játéknapon át
+  const whoOf = list => list.map(w => { const f = friendById(w); return `<span title="${esc(f.name)}">${f.emoji || ''}</span> ${esc(f.name)}`; }).join(', ');
+  const weekRows = WEEKS.map((w, i) => `<tr data-id="nagy:${w.id}" class="${cut.has('nagy:' + w.id) ? 'out' : ''}"><td class="n">N${i + 1}<small>${w.id}</small></td>
+      <td><div class="title">${esc(w.title)} <span class="val">${esc(w.value)}</span></div>
+        <div class="who">${whoOf(w.who)}</div>
+        <ol>${w.ch.map((c, k) => `<li><b>${k + 1}. nap.</b> 🌅 ${k === 0 ? esc(WEEK_START) + ' ' : esc(w.ch[k - 1].sum) + ' '}${esc(c.open)}<br>${c.end ? '🎉 ' + esc(c.end) : '⏳ ' + esc(c.cliff)}</li>`).join('')}</ol></td>
+      <td class="cut"><input type="checkbox" aria-label="kihúzom" ${cut.has('nagy:' + w.id) ? 'checked' : ''}></td></tr>`).join('');
+  document.getElementById('doc').innerHTML = `<h1>Nagy mesék: öt nap, öt fejezet</h1>
+    <p class="sub">${today} · ${WEEKS.length} nagy mese · a kör meséi fölött ívelnek át</p>
+    <div class="how"><p><b>Hogyan működik?</b> Minden játéknapon egy fejezet. A nap első indulásakor Rozi felidézi, hol tartunk, és elmondja a fejezet elejét (🌅). Ilyenkor a kör meséjéből csak a címe hangzik el, hogy Rozi ne beszéljen túl sokat.</p>
+    <p>Az aznapi első jutalomkapunál jön a fejezet izgalmas vége (⏳), az ötödik napon a nagy mese vége (🎉), és a kert barátai ünnepelnek. Játéknapokhoz kötött, nem a naptárhoz: ha egy nap kimarad, nem marad le fejezetről. Ha egy napon nem ért el a kapuig, legközelebb ugyanaz a fejezet jön újra. Ezért nincs a mondatokban „tegnap” vagy „holnap”, hanem „múltkor”.</p>
+    <p>Csak olyan nagy mese jön, amelynek a szereplői már a kertben laknak. Az elsőhöz elég a cica.</p></div>
+    <table><thead><tr><th>#</th><th>A nagy mese</th><th>Kihúzom</th></tr></thead><tbody>${weekRows}</tbody></table>
+    <h1 style="margin-top:26px">A kör meséi: lista átnézésre</h1>
     <p class="sub">${today} · ${STORIES.length} mese · mindegyik egy jutalomkörig tart</p>
     <div class="how"><p><b>Hogyan működik?</b> Egy mese egy jutalomkörön át tart. A kör elején Rozi elmondja, mire készülünk (🌅). A feladatokat továbbra is a tanulási sorrend választja, a mese nem változtat rajtuk.</p>
     <p>Egy állomás első feladata előtt a mese mondata szólhat Rozi szokásos hívása helyett (a szürke sorok, állomásonként). Kész feladat után, ahogy telik a csillagmérő, néha egy lépés hangzik el a „Szuper!” helyett (a számozott sorok; rövid körben egy-kettő kimarad). A jutalomkapunál a mese vége szól (🎉), utána jön a játékválasztás.</p>
     <p>Etetés után nincs mesemondat (ott az állat beszél), és ha új barát érkezik, Rozi őt jelenti be. Egy mese csak olyan barátról szól, aki már a kertben lakik; az évszakos mesék csak a maguk hónapjaiban jönnek. A tanulság (zöld címke) a kiáltvány értékeiből való, és a mese következménye mutatja meg, nem kioktatás.</p>
     <p><b>Kérlek, húzd ki</b>, ami nem tetszik (pipáld be, vagy írd meg a sor számát).</p></div>
     <table><thead><tr><th>#</th><th>A mese</th><th>Kihúzom</th></tr></thead><tbody>${rows}</tbody></table>`;
-  const counter = () => { document.getElementById('cnt').textContent = `${STORIES.length} mese, kihúzva: ${cut.size}`; };
+  const counter = () => { document.getElementById('cnt').textContent = `${WEEKS.length} nagy mese és ${STORIES.length} mese, kihúzva: ${cut.size}`; };
   counter();
   document.getElementById('doc').addEventListener('change', e => {
     const tr = e.target.closest('tr[data-id]'); if (!tr) return;

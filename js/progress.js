@@ -34,12 +34,20 @@ const fresh = () => ({
   world: null,       // a Varázsvilág: { seed, found, adv, met } – a világ magja, a megtalált nevezetességek, a kaland állása { i, n }, a varázslény-barátok (js/world-map.js)
   story: null,       // a mostani kör meséje { id, step, ended } (js/story.js)
   storiesUsed: [],   // a már sorra került mesék (hogy ne ismétlődjenek, amíg mind sorra nem kerül)
+  week: null,        // a nagy mese állása { id, ch, day, heard } (js/story-week.js: öt fejezet öt játéknapon át)
+  weeksUsed: [],     // a már sorra került nagy mesék
   name: '', nameAsked: false, mark: MARKS[0], age: 5,
   rewardMinutes: 4, perReward: 10, feedGap: 2, sinceFeed: 0, v2: true,
   breakMin: BREAK_DEFAULT,   // ennyi perc aktív játék után Rozi két feladat között pihenőt javasol (0 = soha)
 });
 const cleanName = v => String(v ?? '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 30);
 
+// a nagy mese állása: ismert alakra hozva (az ismeretlen mese-azonosítót a js/story-week.js kezeli)
+function cleanWeek(w) {
+  if (!w || typeof w !== 'object' || Array.isArray(w) || typeof w.id !== 'string' || !/^[a-z0-9-]{1,24}$/.test(w.id)) return null;
+  const ch = Math.floor(+w.ch);
+  return { id: w.id, ch: ch >= 1 && ch <= 5 ? ch : 5, day: typeof w.day === 'string' && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(w.day) ? w.day : '', heard: w.heard === true };
+}
 // Saját (megbízható) mentés rendbetétele: hiányzó mezők pótlása, régi mezők elhagyása
 function normalize(raw) {
   const had = !!raw && typeof raw === 'object';
@@ -48,8 +56,9 @@ function normalize(raw) {
   if (!s.seen || typeof s.seen !== 'object') s.seen = {};      // nagyon régi mentésben nem volt: üresről indul
   if (!Array.isArray(s.friends)) s.friends = [];
   for (const k of ['sk', 'rv', 'stAt']) if (!s[k] || typeof s[k] !== 'object' || Array.isArray(s[k])) s[k] = {};
-  for (const k of ['hist', 'lastSt', 'storiesUsed']) if (!Array.isArray(s[k])) s[k] = [];
+  for (const k of ['hist', 'lastSt', 'storiesUsed', 'weeksUsed']) if (!Array.isArray(s[k])) s[k] = [];
   if (!s.story || typeof s.story !== 'object' || Array.isArray(s.story)) s.story = null;
+  s.week = cleanWeek(s.week);
   if (typeof s.roundsDay !== 'string') s.roundsDay = '';
   if (!s.world || typeof s.world !== 'object' || !Number.isFinite(+s.world.seed)) s.world = null;
   else { if (!Array.isArray(s.world.found)) s.world.found = []; if (!Array.isArray(s.world.met)) s.world.met = []; s.world.adv = cleanAdventure(s.world.adv); }
@@ -95,6 +104,9 @@ function sanitize(raw) {
   if (obj(raw.story) && word(raw.story.id)) s.story = { id: raw.story.id, step: int(raw.story.step, 0, 20, 0), ended: raw.story.ended === true };
   if (obj(raw.world) && Number.isFinite(+raw.world.seed)) s.world = { seed: int(raw.world.seed, 0, 2147483647, 0), found: Array.isArray(raw.world.found) ? [...new Set(raw.world.found.filter(word))].slice(0, 40) : [], adv: cleanAdventure(obj(raw.world.adv) ? raw.world.adv : null), met: Array.isArray(raw.world.met) ? [...new Set(raw.world.met.filter(word))].slice(0, 20) : [] };
   if (Array.isArray(raw.storiesUsed)) s.storiesUsed = raw.storiesUsed.filter(word).slice(-80);
+  // a nagy mese állása (az ismeretlen azonosítót a js/story-week.js kezeli: helyette új nagy mese jön)
+  s.week = cleanWeek(raw.week);
+  if (Array.isArray(raw.weeksUsed)) s.weeksUsed = raw.weeksUsed.filter(word).slice(-40);
   if (raw.dress && typeof raw.dress === 'object' && !Array.isArray(raw.dress)) {
     s.dress = {};
     for (const k of DRESS_KEYS) if (word(raw.dress[k])) s.dress[k] = raw.dress[k];

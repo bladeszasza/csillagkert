@@ -6,7 +6,7 @@ mi ellenőrzi, mi az állapota. Jelek: ✅ gép ellenőrzi és zöld · ⚖️ e
 
 **Parancsok** (a böngészős részek a helyi kiszolgálón: `node serve.cjs . 8124`, a mentést módosító tesztek csak ezen a teszt-porton futnak; a README `8080`-as címei a sima kipróbálásra valók):
 
-- Node: `node --test tests/content.test.mjs tests/profiles.test.mjs tests/reward-timer.test.mjs tests/generated.test.mjs tests/scheduler.test.mjs tests/economy.test.mjs tests/avatar.test.mjs tests/quality.test.mjs tests/icons.test.mjs tests/facts.test.mjs tests/story.test.mjs tests/world.test.mjs tests/parent.test.mjs` (a CI is ezt futtatja)
+- Node: `node --test tests/content.test.mjs tests/profiles.test.mjs tests/reward-timer.test.mjs tests/generated.test.mjs tests/scheduler.test.mjs tests/economy.test.mjs tests/avatar.test.mjs tests/quality.test.mjs tests/icons.test.mjs tests/facts.test.mjs tests/story.test.mjs tests/world.test.mjs tests/parent.test.mjs tests/week.test.mjs` (a CI is ezt futtatja)
 - Böngészős füstteszt: `tests/smoke.html?only=rest`, `?only=games`, `?only=generated`
 - Szimulált ülés: `node tests/flow.mjs`; Varázsvilág tízperces próbafutása: `tests/soak.html` (GPU-val, `--js-flags=--expose-gc`)
 - Szülői átnézésre: `tests/tenyek.html?st=<állomás>`, `tests/mesek.html`, `tests/varazsvilag.html`, `tests/gallery.html`, `tests/listen.html`, `tests/ipad.html`

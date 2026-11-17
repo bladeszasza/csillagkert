@@ -13,7 +13,7 @@ import { friendsFor, friendById, floraFor, floraById, AREAS } from './friends.js
 import { withArt } from './hu.js';
 import { createRewardTimer } from './reward-timer.js';
 import { play } from './sounds.js';
-import { nextGift, newRewardSession, roundStars, roundsToday } from './economy.js';
+import { nextGift, newRewardSession, roundStars, roundsToday, dayKey } from './economy.js';
 import { giftById } from './gifts.js';
 import { showGift, giftBusy, clearGifts, floatHeart, BOX_SVG } from './gift-moment.js';
 import { REWARDS } from './rewards/index.js';
@@ -21,6 +21,7 @@ import { icon } from './icons.js';
 import { applyCalm, setupPress } from './motion.js';
 import { createBreakTimer } from './break-timer.js';
 import { startRound, activeStory, storyById, openingLine, inviteLine, beatAfter, endingLine } from './story.js';
+import { weekStart, weekGate } from './story-week.js';
 
 const $ = id => document.getElementById(id);
 // A felület saját ikonjai: a [data-icon] elemek emojija csak tartalék (ha a modul nem töltődne be)
@@ -246,7 +247,17 @@ async function begin() {
   if (!name() && !progress.get().nameAsked) await askName();
   // a kör meséje: új kör elején a kezdete, félbehagyott körnél egy rövid emlékeztető (teli mérőnél a kapunál a vége szól)
   const st = progress.get(), cur = activeStory(st);
-  const open = st.meter >= perReward() ? '' : cur && !cur.ended ? openingLine(st, st.meter) : newStory();
+  let open = st.meter >= perReward() ? '' : cur && !cur.ended ? openingLine(st, st.meter) : newStory();
+  // a nagy mese (js/story-week.js): a nap első indulásakor a mai fejezet; ilyenkor a kör meséjéből csak a címe szól,
+  // hogy Rozi ne beszéljen túl sokat (köszönés + két mondat fejezet + egy mondat kör)
+  if (open) {
+    const wk = weekStart(progress.get(), friendsFor(progress.get().total, progress.get().friends), dayKey());
+    if (wk) {
+      progress.set(wk.weeksUsed ? { week: wk.week, weeksUsed: wk.weeksUsed } : { week: wk.week });
+      const rs = activeStory(progress.get());
+      open = rs && !rs.ended ? `${wk.text} ${storyById(rs.id).title}` : wk.text;
+    }
+  }
   const hello = named(justIntro ? 'Örülök, hogy megismertelek{, N}!' : 'Szia{, N}!', name(), Math.random, 1);
   say(open ? `${hello} ${open}` : justIntro ? named('Örülök, hogy megismertelek{, N}! Gyere, fedezzük fel együtt a világot!', name(), Math.random, 1) : lineNamed('hello', name(), Math.random, 1), { remember: false });
   if (open) showStoryFriend();
@@ -359,7 +370,11 @@ function openReward() {
   renderTreasure();
   const e = endingLine(progress.get());                       // a kör meséjének vége (egyszer), utána a választás
   if (e) { progress.set({ story: e.story }); garden?.cheer(); }
-  say(e ? `${e.text} ${named('Válassz egy játékot{, N}!', name(), Math.random, 0.5)}` : named('Ügyes voltál{, N}! Válassz egy játékot!', name(), Math.random, 0.5));
+  // a nagy mese mai fejezetének izgalmas vége (az aznapi első kapunál); az ötödik fejezetnél a nagy mese vége a kör vége helyett
+  const g = weekGate(progress.get());
+  if (g) { progress.set({ week: g.week }); if (!e) garden?.cheer(); }
+  const tale = [g?.finale ? '' : e?.text, g?.text].filter(Boolean).join(' ');
+  say(tale ? `${tale} ${named('Válassz egy játékot{, N}!', name(), Math.random, 0.5)}` : named('Ügyes voltál{, N}! Válassz egy játékot!', name(), Math.random, 0.5));
 }
 $('reward-x').addEventListener('click', () => {      // ha nem akar játszani: a megszerzett csillagok megmaradnak
   $('reward').hidden = true; $('home').hidden = false;

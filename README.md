@@ -93,7 +93,14 @@ Az M4 mérföldkő kész: **mind a 8 generálható állomás** sablonokból kés
   ütemező választja, és a mesemondat egy meglévő mondatot vált ki (Rozi alig beszél többet). Egy mese csak a kertben már lakó barátokról szól, az
   évszakos mesék csak a maguk hónapjaiban jönnek. **Eltérés a tervtől**: a mese nem egy napig, hanem egy jutalomkörig
   tart, és az ülés végi „este” (a barátok elalszanak) még nem készült el. Átnézés: `tests/mesek.html`
-  ([`docs/pedagogia.md`](docs/pedagogia.md) 4.1).
+  ([`docs/pedagogia.md`](docs/pedagogia.md) 4.1). Bezárás és újranyitás után ugyanaz a mese folytatódik: Rozi a címét
+  és az utoljára elhangzott lépését mondja („Folytassuk a mesét!…”).
+- **Nagy mese** (a szülő kérése, `js/story-week.js`, 7 nagy mese): öt fejezet öt játéknapon át, a kör meséi fölött.
+  A nap első indulásakor Rozi felidézi, hol tartunk („Múltkor…”), és elmondja a fejezet elejét; ilyenkor a kör meséjéből
+  csak a címe szól. Az aznapi első jutalomkapunál a fejezet izgalmas vége, az ötödiknél a nagy mese vége. Játéknapokhoz
+  kötött, nem a naptárhoz (kimaradt nap után nem marad le fejezetről; ha a kapu nem jött el, a fejezet legközelebb
+  újra jön), ezért a mondatokban nincs „tegnap/holnap”. Csak a kertben lakó barátokról szól; az elsőhöz elég a cica.
+  Teszt: `tests/week.test.mjs`; átnézés: `tests/mesek.html` (a lap tetején).
 
 ## Hang
 
@@ -505,6 +512,7 @@ ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba ment
 - Szabad futás (a füstteszt része): egy futó-robot három különböző világban 2000 egységet tesz meg; nem ragadhat be,
   nem futhat bele fába, a követő barátok nem tűnhetnek el, és a világ széle nem látszhat. Ellenőrzi a koppintást,
   a tartott ujjat, a két ujjat, a tenyeret, az ugrást, a rajzolási terhet és a 3D-jelenet felszabadítását is.
+- Nagy mese (Node): `node --test tests/week.test.mjs` (mondat-szabályok, naptári szavak tiltása, napok léptetése, mentés).
 - Szülői sarok (Node): `node --test tests/parent.test.mjs` (pihenő-időzítő hamis órával, kiejtés-javító ékezetes
   szavakkal és jelekkel, haladás-térkép, a pihenő-beállítás mentése, fájlon át és újrakezdés után).
 - Szimulált ülés a valódi oldalon: `node tests/flow.mjs` (a 8124-es tesztszerveren, friss Chrome-profillal, kitalált
