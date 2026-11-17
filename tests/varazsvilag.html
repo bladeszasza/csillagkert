@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Csillagkert – a Varázsvilág átnézésre</title>
+<style>
+  /* A Varázsvilág (js/world-map.js) minden mondata és képe a szülőnek, átnézésre (képernyőn és nyomtatva). Nem játszik
+     hangot, a mentéshez nem nyúl; a kihúzott sorokat csak ez az oldal jegyzi meg (külön kulcson). */
+  :root { --ink: #2b2140; --mute: #6d6480; --line: #d9d2e6; --ok: #2fa84f; --cut: #c0392b; }
+  body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--ink); background: #fff; margin: 0; padding: 18px; font-size: 14px; line-height: 1.35; }
+  h1 { font-size: 22px; margin: 0 0 4px; } h2 { font-size: 17px; margin: 22px 0 6px; break-after: avoid; }
+  .sub { color: var(--mute); margin: 0 0 10px; }
+  .how { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; margin: 10px 0 4px; background: #faf8fd; }
+  .how p { margin: 4px 0; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 12px; color: var(--mute); font-weight: 600; border-bottom: 2px solid var(--line); padding: 4px 6px; }
+  td { border-bottom: 1px solid var(--line); padding: 7px 6px; vertical-align: top; }
+  tr { break-inside: avoid; }
+  .n { width: 34px; color: var(--mute); }
+  .pic { width: 54px; font-size: 44px; line-height: 1; } .pic .ico { display: block; }
+  .name { font-weight: 700; font-size: 15px; } .lbl { color: var(--mute); font-size: 12px; } .say::before { content: '🗣 '; }
+  .say { margin: 2px 0; }
+  .sw { display: inline-block; width: 18px; height: 18px; border-radius: 5px; border: 1px solid #0002; vertical-align: middle; margin-right: 2px; }
+  .cut { width: 44px; text-align: center; } .cut input { width: 22px; height: 22px; }
+  tr.out td { opacity: .45; } tr.out .name { text-decoration: line-through; color: var(--cut); }
+  #bar { position: sticky; top: 0; background: #fff; padding: 8px 0; border-bottom: 1px solid var(--line); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; z-index: 2; }
+  #bar button { font: inherit; padding: 6px 12px; border-radius: 8px; border: 1px solid #8e5be8; background: #f3ecff; }
+  #out { font-size: 13px; color: var(--mute); }
+  @media print { #bar { display: none; } body { padding: 0; font-size: 11.5px; } td { padding: 5px 6px; } .pic { font-size: 34px; width: 42px; } @page { size: A4; margin: 12mm; } }
+</style>
+</head>
+<body>
+<div id="bar"><span id="cnt"></span><button id="copy">Kihúzottak másolása</button><button id="clear">Jelölések törlése</button><span id="out"></span></div>
+<div id="doc"></div>
+<script type="module">
+  import { LANDMARKS, WORLD_LINES, ITEMS, ADVENTURES, BIOMES, CREATURES, CREATURE_LINES, biomeById } from '../js/world-map.js';
+  import { icon } from '../js/icons.js';
+
+  const KEY = 'csillagkert-varazsvilag';
+  let cut = new Set(); try { cut = new Set(JSON.parse(localStorage.getItem(KEY) || '[]')); } catch (e) {}
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const hex = v => '#' + v.toString(16).padStart(6, '0');
+  const sw = list => list.map(v => `<span class="sw" style="background:${hex(v)}"></span>`).join('');
+  const NUM = ['nulla', 'egy', 'kettő', 'három', 'négy', 'öt', 'hat', 'hét', 'nyolc', 'kilenc', 'tíz', 'tizenegy', 'tizenkettő', 'tizenhárom', 'tizennégy', 'tizenöt', 'tizenhat', 'tizenhét', 'tizennyolc'];
+  const SOUND = { chirp: 'csipogás', trill: 'trillázás', cincin: 'csilingelés', hoot: 'huhogás', peep: 'cincogás', baa: 'bégetés', chitter: 'csiripelés', ooh: 'ó-zás', chuff: 'fújtatás', ribbit: 'brekegés' };
+  const MOTE = { lepke: 'pillangók', feny: 'lebegő fénypöttyök', level: 'hulló levelek', szikra: 'szikrák', ho: 'hópelyhek' };
+  const today = new Date().toISOString().slice(0, 10);
+  let n = 0;
+  const row = (id, pic, body) => `<tr data-id="${id}" class="${cut.has(id) ? 'out' : ''}"><td class="n">${++n}</td><td class="pic">${pic}</td><td>${body}</td>
+    <td class="cut"><input type="checkbox" aria-label="kihúzom" ${cut.has(id) ? 'checked' : ''}></td></tr>`;
+  const say = (lbl, s) => `<div class="say"><span class="lbl">${lbl}:</span> ${esc(s)}</div>`;
+  const table = rows => `<table><thead><tr><th>#</th><th>Kép</th><th>Mit lát és mit hall</th><th>Kihúzom</th></tr></thead><tbody>${rows}</tbody></table>`;
+
+  const lm = LANDMARKS.map(l => row('lm:' + l.id, icon('lm-' + l.id), `<div class="name">${esc(l.name)}</div>${say('ha megtalálja', l.found)}${say('a kis fény felé mutatva', l.way)}`)).join('');
+  const adv = ADVENTURES.map((a, i) => { const it = ITEMS.find(x => x.id === a.item); return row('adv:' + a.item, icon('it-' + a.item),
+    `<div class="name">${i + 1}. kaland: ${esc(it.name)} (${NUM[a.need] || a.need} darab)</div>${say('a kaland elején', a.intro)}${say('ha mind megvan', a.done)}`); }).join('');
+  const bio = BIOMES.map(b => row('bio:' + b.id, `<span class="sw" style="width:40px;height:40px;background:${hex(b.ground[0])}"></span>`,
+    `<div class="name">${esc(b.name)}</div>${b.id === 'ret' ? '<div class="lbl">a kezdőhely tája: itt nem szól mondat</div>' : say('egyszer, amikor először odaér', b.line)}
+     <div class="lbl">talaj ${sw(b.ground)} · lomb ${sw(b.crowns)} · virág ${sw(b.flowers)} · ég ${sw([b.sky])}</div>
+     <div class="lbl">a levegőben: ${MOTE[b.mote] || b.mote} · hangok: ${b.sounds.map(s => SOUND[s] || s).join(', ')}</div>`)).join('');
+  const cr = CREATURES.map(c => row('cr:' + c.id, icon('cr-' + c.id),
+    `<div class="name">${esc(c.name)}</div><div class="lbl">tája: ${esc(biomeById(c.biome).name)} · hangja: ${SOUND[c.sound] || c.sound}</div>${say('ha megvárta, és barátok lettek', c.meet)}${say('a Varázskönyvben koppintásra', c.about)}`)).join('');
+  const gen = [
+    ['w:start', icon('ui-sunset'), 'Érkezéskor', WORLD_LINES.start],
+    ['w:startAll', icon('ui-sunset'), 'Érkezéskor, ha már minden nevezetesség megvan', WORLD_LINES.startAll],
+    ['w:notYet', icon('ui-book'), 'Albumban / könyvben egy még meg nem talált helyre koppintva', WORLD_LINES.notYet],
+    ['w:again', icon('ui-book'), 'Egy már megtalált helyre koppintva (a hely neve után)', WORLD_LINES.again],
+    ['c:shy', icon('cr-barany'), 'Ha odarohan egy varázslényhez (játékonként egyszer)', CREATURE_LINES.shy],
+    ['c:notYet', icon('ui-book'), 'A könyvben egy még ismeretlen lényre koppintva', CREATURE_LINES.notYet],
+    ['c:book', icon('ui-book'), 'A Varázskönyv kinyitásakor', CREATURE_LINES.book],
+  ].map(([id, pic, when, s]) => row(id, pic, `<div class="name">${esc(when)}</div><div class="say">${esc(s)}</div>`)).join('');
+
+  document.getElementById('doc').innerHTML = `<h1>A Varázsvilág: mondatok és képek átnézésre</h1>
+    <p class="sub">${today} · ${LANDMARKS.length} nevezetesség, ${ADVENTURES.length} kaland, ${BIOMES.length} táj, ${CREATURES.length} varázslény · a jutalomkapu szabad futás játéka</p>
+    <div class="how"><p><b>Hogyan működik?</b> A gyerek oda koppint, ahová az unikornis fusson. Egy kis fény (szentjánosbogár) mindig a következő nevezetesség felé vezet; ha megtalálja, Rozi egy mondatot mond, és szív jár. A világ minden profilnál más, de mindig ugyanaz marad, és a megtalált helyek, a kaland állása, a barátok elmentődnek.</p>
+    <p><b>Kaland:</b> egyszerre egy, jobb felül a jele és a pöttyök. A dolgok felvételekor csak egy csilingelés szól (nincs mondat), a végén ujjongás, egy mondat és egy <b>ajándék</b>: ez a közös ajándék-létráról jön, és ugyanúgy a kertbe vagy az öltözőbe kerül, mint a többi játéké (körönként legfeljebb egy).</p>
+    <p><b>Varázslények:</b> nem kergetjük, megvárjuk. Ha odarohan, a lény elugrik; ha a közelében megáll, aranygyűrű nő a lába alatt, és kb. két és fél másodperc múlva odajön: barátok lettek (egy mondat, a lény hangja, egy szív). A Varázskönyvben a barátok színesek.</p>
+    <p><b>Mennyit beszél Rozi?</b> A tízperces próbafutásban átlagosan percenként kétszer, két mondat között legalább három másodperc szünettel. A tájak hangjai és a lények saját hangjai szöveg nélkül szólnak.</p>
+    <p><b>Kérlek, húzd ki</b>, ami nem tetszik (pipáld be, vagy írd meg a sor számát).</p></div>
+    <h2>Nevezetességek</h2>${table(lm)}
+    <h2>Kalandok (sorban ismétlődnek)</h2>${table(adv)}
+    <h2>Tájak</h2>${table(bio)}
+    <h2>Varázslények</h2>${table(cr)}
+    <h2>Általános mondatok</h2>${table(gen)}`;
+  const all = document.querySelectorAll('tr[data-id]').length;
+  const counter = () => { document.getElementById('cnt').textContent = `${all} sor, kihúzva: ${cut.size}`; };
+  counter();
+  document.getElementById('doc').addEventListener('change', e => {
+    const tr = e.target.closest('tr[data-id]'); if (!tr) return;
+    e.target.checked ? cut.add(tr.dataset.id) : cut.delete(tr.dataset.id);
+    tr.classList.toggle('out', e.target.checked);
+    try { localStorage.setItem(KEY, JSON.stringify([...cut])); } catch (err) {}
+    counter();
+  });
+  document.getElementById('copy').onclick = async () => {
+    const nums = [...document.querySelectorAll('tr.out')].map(tr => tr.querySelector('.n').textContent + ' (' + tr.dataset.id + ')');
+    const txt = `Varázsvilág – kihúzandó: ${nums.join(', ') || 'semmi'}`;
+    try { await navigator.clipboard.writeText(txt); document.getElementById('out').textContent = 'Kimásolva, beillesztheted az üzenetbe.'; }
+    catch (e) { document.getElementById('out').textContent = txt; }
+  };
+  document.getElementById('clear').onclick = () => { cut.clear(); try { localStorage.removeItem(KEY); } catch (e) {} location.reload(); };
+</script>
+</body>
+</html>

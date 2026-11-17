@@ -121,8 +121,7 @@ Az M4 mérföldkő kész: **mind a 8 generálható állomás** sablonokból kés
     világa is ugyanaz marad** (minden gyereknek saját világa van), így legközelebb folytathatja a keresést. A már
     megtalált nevezetességnél csak egy halk csengés szól.
   - **Eltérés a tervtől:** a terv messziről látszó fényoszlopot írt, de a köd és a kamera miatt a távoli tárgy nem
-    látszik, ezért a fény és a képes jelző vezet. A térkép a következő
-    szeletekben jönnek.
+    látszik, ezért a fény és a képes jelző vezet.
 - **Varázsvilág (M7, 2. szelet): kalandok.** Egyszerre egy kaland fut: egyféle csillogó dolgot kell összeszedni
   (csillagszilánk, virágmag, madártoll, kristály; 12, 14, 16, 18 darab, utána elölről). A jobb felső sarokban a dolog
   képe és a megtelő pöttyök mutatják, mennyi kell még, számok nélkül. A kezdőhelytől három darab vezet az első
@@ -161,6 +160,18 @@ Az M4 mérföldkő kész: **mind a 8 generálható állomás** sablonokból kés
     nevezetesség. Ami megvan, színes és sárga keretes, ami még nincs, halvány árnyék. Koppintásra Rozi megmondja,
     ki az (a barát a hangját is hallatja), vagy hogy vele még nem találkoztunk. Új barát után a könyv ugrál.
   - **Mentés:** a barátnak fogadott lények a profilban maradnak (`world.met`).
+- **Varázsvilág (M7, 5. szelet): tízperces próbafutás és szülői áttekintő.** Egy automata „gyerek" tíz percnyi
+  játékidőt tölt a világban (vezető fény, gyűjtögetés, lényekre várás, messzi tájak, fák alá ugrás). Az utolsó mérés
+  (asztali gép, GPU): kivétel nincs; legfeljebb 103 rajzolási hívás és 123 ezer háromszög; a 3D-erőforrások és a
+  memória nem nőnek (14 MB a második és a tizedik percben is); a frissítés átlag 1 ms; nem ragad be; Rozi tíz perc
+  alatt 21 mondatot mond, kettő között legalább három másodperc; közben mind a négy nevezetesség, egy kaland-ajándék,
+  négy varázslény-barát és mind az öt táj megvolt. A mondatok és képek listája a szülőnek: `tests/varazsvilag.html`.
+  - **Ami a kertbe kerül:** a kaland ajándéka a közös ajándék-létráról (kerti dísz vagy ruha), mint a többi játéké.
+    A nevezetességek és a varázslények a Varázskönyvben élnek, a kertbe nem költöznek (eltérés a tervtől: a terv a
+    lények meghívását is említette; a kert rajzolási kerete már szűk, és a kert lakói az etetéssel érkeznek).
+  - **Ami a tervből nem készült el:** a kerek sarok-térkép (a vezető fény és a képes jelző vezet helyette), időjárás és
+    napszak, „ruha = képesség", gyümölcs gyűjtése, a további lények (Holdnyuszi, Szivárványhal, erdei manó, Fa-lélek),
+    és a világban történő tanulós kérdések. Ezek külön kérésre jöhetnek, a mostani mentés mellé.
 - **Barátok:** akinek köszönsz (odafutsz hozzá), veled jön; egyszerre legfeljebb négyen, sorban, egymást kikerülve.
   A követő barát nem tűnik el, akármilyen messzire futsz.
 - **Hangok:** patadobogás, ugrás, érkezés, koccanás; a versenyben visszaszámlálás, rajt és ujjongás. A verseny végén a két
@@ -474,6 +485,12 @@ ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba ment
 - Szabad futás (a füstteszt része): egy futó-robot három különböző világban 2000 egységet tesz meg; nem ragadhat be,
   nem futhat bele fába, a követő barátok nem tűnhetnek el, és a világ széle nem látszhat. Ellenőrzi a koppintást,
   a tartott ujjat, a két ujjat, a tenyeret, az ugrást, a rajzolási terhet és a 3D-jelenet felszabadítását is.
+- Varázsvilág tízperces próbafutása: `tests/soak.html` (`?perc=1` rövid próba). A játékidőt a teszt lépteti, minden
+  játékmásodperc után visszaadja a vezérlést a böngészőnek; a memóriát kényszerített szemétgyűjtés után méri, ehhez a
+  Chrome-ot `--js-flags=--expose-gc` kapcsolóval kell indítani (enélkül csak durva értéket lát). A frissítési időt
+  valódi GPU-val érdemes mérni, a szoftveres rajzolás lassabbnak mutatja.
+- Varázsvilág a szülőnek: `tests/varazsvilag.html` – nyomtatható lista a nevezetességek, kalandok, tájak, varázslények
+  és az általános mondatok szövegével és képével; a kihúzott sorokat csak ez az oldal jegyzi meg.
 - Jutalomjátékok (a füstteszt része): mindegyik elindul és kilép; kilépés után nem marad 3D-jelenet, hang-kontextus,
   időzítő és beszéd; a hangjaik a közös hangmotoron szólnak. A saját unikornis ruhája látszik a futásban, a versenyen,
   a Barátomban és a kertben; az öltöztető ujjal forgatható, nagyítható, és választásra rögtön átöltözik; a Sparkhorn-kulcsba

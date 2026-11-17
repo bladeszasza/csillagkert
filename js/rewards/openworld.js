@@ -765,7 +765,7 @@ export function run(container, opts = {}) {
     critters: () => [...critters.values()], met: () => [...met], bookBtn, bookPage, ring: () => ring,
     biome: () => biome.id, biomes, motes: () => motes.map(m => m.type), sky: () => scene.background.getHex(), shakeNear, adventure: () => ({ ...adv, item: cur.item, need: cur.need, pending }), advBtn,
     setTarget: (x, z) => { TGT.x = x; TGT.z = z; P.target = TGT; P.tap = true; P.best = Infinity; P.stall = 0; },
-    stats: () => ({ chunks: chunks.size, pals: pals.length, batch: batch.size - 1 /* a játékos unikornisa nélkül */, instances: batch.meshes.reduce((s, m) => s + m.count, 0), calls: renderer.info.render.calls, triangles: renderer.info.render.triangles }),
+    stats: () => ({ chunks: chunks.size, pals: pals.length, batch: batch.size - 1 /* a játékos unikornisa nélkül */, instances: batch.meshes.reduce((s, m) => s + m.count, 0), calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, objects: scene.children.length, motes: motes.length, critterMeshes: [...critters.values()].filter(c => c.mesh).length }),
   };
 
   return () => {

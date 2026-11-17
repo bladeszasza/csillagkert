@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Csillagkert – Varázsvilág próbafutás</title>
+<link rel="stylesheet" href="../style.css">
+<style>body{overflow:auto;touch-action:auto;font-family:system-ui;padding:16px;background:#fff}li.ok{color:#197a3b}li.bad{color:#b00020;font-weight:700}small{color:#555}</style>
+</head>
+<body>
+<h1>Varázsvilág – tízperces próbafutás</h1>
+<p id="sum">Fut…</p>
+<ul id="list"></ul>
+<script>
+// A tesztek SOHA nem nyúlnak a valódi mentéshez: a localStorage helyére egy üres, memóriában élő tároló kerül.
+(() => {
+  const m = new Map();
+  const mem = { get length() { return m.size; }, key: i => [...m.keys()][i] ?? null, getItem: k => (m.has(k) ? m.get(k) : null), setItem: (k, v) => { m.set(k, String(v)); }, removeItem: k => { m.delete(k); }, clear: () => m.clear() };
+  try { Object.defineProperty(window, 'localStorage', { value: mem, configurable: true }); window.__memStorage = window.localStorage === mem; } catch (e) { window.__memStorage = false; }
+})();
+// Ál-felolvasó: nem ad hangot, de rögzíti, mit mondana Rozi (window.__spoken), és gyorsan "befejezi" a mondatot.
+window.__spoken = [];
+const fake = {
+  speaking: false, pending: false,
+  getVoices: () => [{ lang: 'hu-HU', name: 'Teszt hang', voiceURI: 'teszt', localService: true }],
+  addEventListener() {}, removeEventListener() {},
+  cancel() { this.speaking = false; const u = this._u; this._u = null; if (u) { clearTimeout(u._t); setTimeout(() => u.onend && u.onend({}), 0); } },
+  speak(u) { window.__spoken.push(u.text); this.speaking = true; this._u = u; setTimeout(() => u.onstart && u.onstart({}), 0); u._t = setTimeout(() => { this.speaking = false; this._u = null; u.onend && u.onend({}); }, 120); },
+};
+Object.defineProperty(window, 'speechSynthesis', { value: fake, configurable: true });
+// Az igazi SpeechSynthesisUtterance nem fogad el ál-hangot (kivételt dob), ezért azt is helyettesítjük:
+// enélkül a napló üres maradna, és a "megszakítás után csend" ellenőrzés semmit nem mérne.
+window.SpeechSynthesisUtterance = class { constructor(text) { this.text = text; } };
+</script>
+<script type="module">
+import { runSoak } from './soak.js';
+const res = await runSoak(document.getElementById('list'));
+const bad = res.filter(r => !r.pass);
+document.getElementById('sum').textContent = bad.length ? `${bad.length} hiba / ${res.length} ellenőrzés` : `Minden rendben: ${res.length} ellenőrzés`;
+document.getElementById('list').innerHTML = res.map(r => `<li class="${r.pass ? 'ok' : 'bad'}">${r.pass ? '✔' : '✖'} ${r.name} <small>${r.info}</small></li>`).join('');
+</script>
+</body>
+</html>
