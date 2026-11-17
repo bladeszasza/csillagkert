@@ -521,11 +521,13 @@ export function startRound(state, present, month) {
   return { story: { id: s.id, step: 0, ended: false }, storiesUsed: fresh.length ? [...used, s.id].slice(-80) : [s.id] };
 }
 
-// A kör első mondata. Ha a kör már elkezdődött (újraindított játék a kör közepén), csak egy rövid emlékeztető.
+// A kör első mondata. Ha a kör már elkezdődött (bezárta és újra kinyitotta), ugyanaz a mese folytatódik: Rozi
+// felidézi, miről szól, és ha már haladtunk, az utoljára elhangzott lépést is, hogy a gyerek tudja, hol tartunk.
 export function openingLine(state, meter = 0) {
   const st = activeStory(state); if (!st || st.ended) return '';
   const s = storyById(st.id);
-  return st.step > 0 || meter > 0 ? `Folytassuk! ${s.title}` : s.intro;
+  if (st.step > 0) return `Folytassuk a mesét! ${s.title} ${s.beats[Math.min(st.step, s.beats.length) - 1]}`;
+  return meter > 0 ? `Folytassuk a mesét! ${s.intro}` : s.intro;
 }
 // Hívó mondat egy állomás első feladata előtt (ha a mesének van ide illő mondata)
 export function inviteLine(state, station) {

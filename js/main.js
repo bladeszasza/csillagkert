@@ -31,6 +31,21 @@ applyCalm(); setupPress();
 ['gesturestart', 'gesturechange', 'gestureend'].forEach(ev => document.addEventListener(ev, e => e.preventDefault(), { passive: false }));
 document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.scale && e.scale !== 1)) e.preventDefault(); }, { passive: false });
 document.addEventListener('wheel', e => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
+// Dupla koppintásos nagyítás (a szülő jelezte: iPaden a ceruzával nagyított). A gyors, közeli második koppintás
+// alapértelmezését letiltjuk; a mutató-események addigra lefutottak, a gombnak pedig magunk adjuk át a kattintást.
+let lastTap = { t: -1e9, x: 0, y: 0 };
+document.addEventListener('touchend', e => {
+  if (e.touches.length || e.changedTouches.length !== 1) return;
+  const c = e.changedTouches[0], t = e.timeStamp;
+  if (e.target.closest?.('input, select, textarea')) { lastTap.t = -1e9; return; }
+  if (t - lastTap.t < 450 && Math.hypot(c.clientX - lastTap.x, c.clientY - lastTap.y) < 70) {
+    e.preventDefault(); lastTap.t = -1e9;
+    const b = e.target.closest?.('button, a, label, summary'); if (b && !b.disabled) b.click();
+    return;
+  }
+  lastTap = { t, x: c.clientX, y: c.clientY };
+}, { passive: false });
+document.addEventListener('dblclick', e => e.preventDefault(), { passive: false });
 document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && ['+', '-', '=', '0'].includes(e.key)) e.preventDefault(); });
 
 const activities = {
