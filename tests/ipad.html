@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Csillagkert – iPades ellenőrző lista</title>
+<style>
+  /* A szülő iPades ellenőrző listája (6.3 mátrix): amit asztali gépről nem lehet eldönteni. Képernyőn kipipálható
+     (csak ez az oldal jegyzi meg, külön kulcson), és nyomtatható. A játék mentéséhez nem nyúl. */
+  :root { --ink: #2b2140; --mute: #6d6480; --line: #d9d2e6; }
+  body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--ink); background: #fff; margin: 0; padding: 18px; font-size: 15px; line-height: 1.4; }
+  h1 { font-size: 22px; margin: 0 0 4px; } h2 { font-size: 17px; margin: 20px 0 6px; break-after: avoid; } .sub { color: var(--mute); margin: 0 0 10px; }
+  .how { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; background: #faf8fd; }
+  label { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0; border-bottom: 1px solid var(--line); break-inside: avoid; }
+  label input { width: 24px; height: 24px; flex: none; margin-top: 1px; }
+  label small { display: block; color: var(--mute); font-size: 12.5px; }
+  label.done span { color: var(--mute); }
+  #bar { position: sticky; top: 0; background: #fff; padding: 8px 0; border-bottom: 1px solid var(--line); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; z-index: 2; }
+  #bar button { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid #8e5be8; background: #f3ecff; min-height: 44px; }
+  @media print { #bar { display: none; } body { padding: 0; font-size: 11.5px; } @page { size: A4; margin: 12mm; } }
+</style>
+</head>
+<body>
+<div id="bar"><span id="cnt"></span><button id="copy">Eredmény másolása</button><button id="clear">Pipák törlése</button><span id="out"></span></div>
+<div id="doc"></div>
+<script type="module">
+  // [csoport, [[azonosító, mit nézz, mire figyelj], …]]
+  const LIST = [
+    ['Hang', [
+      ['hang-zene', 'A zene és a játékhangok jól hallhatók', 'szülői sarok → Hangpróba; közepes és hangos fokozaton'],
+      ['hang-nema', 'Néma módban (harang ikon) is szól a zene és a csengő', 'ha nem: írd meg, melyik iPadOS-verzió'],
+      ['hang-arany', 'Rozi beszéde és a zene aránya jó', 'a két hangerő külön állítható'],
+      ['hang-kiejtes', 'Rozi kiejtése érthető', 'tests/listen.html: állomásonként 30 mondat; rossz szó → szülői sarok, Kiejtés-javító'],
+      ['hang-magassag', 'Rozi hangmagassága kellemes (nem mókusos)', ''],
+      ['hang-allat', 'Az állatok hangja felismerhető (a zsiráf dúdolása is hallatszik)', 'a kertben koppints a barátokra'],
+      ['hang-hallas', 'A zenei hallás-próba („Hallod a csengőt?”) működik', ''],
+    ]],
+    ['Ceruza és érintés', [
+      ['pen-nyomas', 'Az Apple Pencil vonala követi a kezet, a nyomás látszik', 'Ceruzavár'],
+      ['pen-tenyer', 'Rajz közben a lerakott tenyér nem rajzol bele', 'Ceruzavár, Rajzasztal rácsai'],
+      ['pen-turelem', 'A vonalkövetés tűrése jó (nem túl szigorú, nem túl laza)', ''],
+      ['pen-betuk', 'A betűformák olyanok, ahogy az óvodában tanulja', 'tests/gallery.html?st=ceruza'],
+      ['pen-matrica', 'A matricák ujjal és ceruzával is húzhatók', 'Rajzasztal'],
+      ['pen-gombok', 'A gombok és a térkép jelei könnyen eltalálhatók', ''],
+    ]],
+    ['Képernyő', [
+      ['scr-forgat', 'Forgatáskor (álló ↔ fekvő) semmi nem vész el, semmi nem lóg ki', 'feladat közben, a kertben, az öltöztetőben'],
+      ['scr-fohkepernyo', 'A főképernyőre telepítve teljes képernyőn indul', 'Safari → Megosztás → Főképernyőhöz'],
+      ['scr-betu', 'A betűtípus szép, az ő és ű jól látszik', ''],
+      ['scr-ikonok', 'Az ikonok érthetők és elég nagyok', ''],
+      ['scr-nyugalom', 'A „kevesebb mozgás” beállítás érezhetően nyugodtabb', 'szülői sarok → Mozgás a képernyőn'],
+    ]],
+    ['Sebesség és melegedés', [
+      ['spd-kert', 'A kert sok baráttal is folyamatos', ''],
+      ['spd-vilag', 'A Varázsvilág 10 perc után sem lassul, nem melegszik túl', ''],
+      ['spd-minoseg', 'Az automatikus minőség nem teszi homályossá a képet', ''],
+      ['spd-etetes', 'Etetés közben folyamatos', ''],
+    ]],
+    ['Mentés', [
+      ['save-ujra', 'Bezárás és újranyitás után minden megvan', ''],
+      ['save-fajl', 'Mentés fájlba és visszatöltés Safariban működik', 'szülői sarok → Mentés fájlba'],
+      ['save-ket', 'Két gyerek egymástól függetlenül játszik', ''],
+    ]],
+    ['Szülői sarok (új)', [
+      ['par-haladas', 'A haladás-térkép érthető', 'szülői sarok → Haladás; egy sorra koppintva részletek'],
+      ['par-nyomtat', 'A „Haladás nyomtatása” gomb működik a főképernyős alkalmazásban is', 'ha nem: Safariban próbáld'],
+      ['par-piheno', 'A pihenő-javaslat jól időzít, és nem zavaró', 'alapból 20 perc; állítható vagy kikapcsolható'],
+      ['par-kiejtes', 'A kiejtés-javító javítása hallatszik', ''],
+    ]],
+    ['Tetszik-e?', [
+      ['like-kert', 'A kert, a barátok és a díszek', ''],
+      ['like-vilag', 'A Varázsvilág: tájak, lények, a várakozás a lényekre', ''],
+      ['like-mese', 'A kör meséi és Rozi mondatai', ''],
+      ['like-ajandek', 'Az ajándék-pillanat és a szívek', ''],
+      ['like-gyerek', 'A gyereknek melyik a kedvence, mi untatja?', 'írd meg pár szóban'],
+    ]],
+  ];
+  const KEY = 'csillagkert-ipad';
+  let done = new Set(); try { done = new Set(JSON.parse(localStorage.getItem(KEY) || '[]')); } catch (e) {}
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let n = 0;
+  document.getElementById('doc').innerHTML = `<h1>iPades ellenőrző lista</h1>
+    <p class="sub">${new Date().toISOString().slice(0, 10)} · amit csak az iPaden lehet eldönteni</p>
+    <div class="how">Pipáld ki, ami rendben van. Amit nem pipálsz ki, arról írj pár szót (vagy csak a sor számát), és megjavítom.</div>` +
+    LIST.map(([g, rows]) => `<h2>${esc(g)}</h2>` + rows.map(([id, t, h]) => `<label class="${done.has(id) ? 'done' : ''}"><input type="checkbox" data-id="${id}" ${done.has(id) ? 'checked' : ''}><span>${++n}. ${esc(t)}${h ? `<small>${esc(h)}</small>` : ''}</span></label>`).join('')).join('');
+  const all = LIST.flatMap(([, r]) => r.map(x => x[0]));
+  const counter = () => { document.getElementById('cnt').textContent = `${all.length} pont, rendben: ${[...done].filter(x => all.includes(x)).length}`; };
+  counter();
+  document.getElementById('doc').addEventListener('change', e => {
+    const id = e.target.dataset.id; if (!id) return;
+    e.target.checked ? done.add(id) : done.delete(id); e.target.closest('label').classList.toggle('done', e.target.checked);
+    try { localStorage.setItem(KEY, JSON.stringify([...done])); } catch (err) {}
+    counter();
+  });
+  document.getElementById('copy').onclick = async () => {
+    const open = all.map((id, i) => done.has(id) ? null : i + 1).filter(Boolean);
+    const txt = `iPad-lista: rendben ${all.length - open.length}/${all.length}; nincs kipipálva: ${open.join(', ') || 'semmi'}`;
+    try { await navigator.clipboard.writeText(txt); document.getElementById('out').textContent = 'Kimásolva.'; } catch (e) { document.getElementById('out').textContent = txt; }
+  };
+  document.getElementById('clear').onclick = () => { done.clear(); try { localStorage.removeItem(KEY); } catch (e) {} location.reload(); };
+</script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Csillagkert – kiejtés meghallgatása</title>
+<style>
+  /* Kiejtés-próba a szülőnek (6.1 mátrix): állomásonként 30 véletlen mondat a valódi feladatokból, ugyanúgy felolvasva,
+     ahogy Rozi mondja (ugyanaz a szövegtisztítás, a szülő kiejtés-javításai és a beépített szótár). A mentéshez nem nyúl:
+     a kiejtés-javításokat csak olvassa. Ha egy szó rosszul hangzik, a szülői sarok kiejtés-javítójában javítható. */
+  :root { --ink: #2b2140; --mute: #6d6480; --line: #d9d2e6; }
+  body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--ink); background: #fff; margin: 0; padding: 18px; font-size: 16px; line-height: 1.4; }
+  h1 { font-size: 22px; margin: 0 0 4px; } .sub { color: var(--mute); margin: 0 0 12px; }
+  #bar { position: sticky; top: 0; background: #fff; padding: 8px 0; border-bottom: 1px solid var(--line); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; z-index: 2; }
+  select, button { font: inherit; padding: 10px 14px; border-radius: 10px; border: 1px solid #8e5be8; background: #f3ecff; min-height: 48px; }
+  ol { padding-left: 28px; } li { padding: 6px 0; border-bottom: 1px solid var(--line); display: list-item; }
+  li .row { display: flex; gap: 10px; align-items: center; } li .t { flex: 1; } li.now { background: #fff6d6; }
+  li small { display: block; color: var(--mute); font-size: 12px; }
+  #warn { color: #b26b00; }
+</style>
+</head>
+<body>
+<h1>Kiejtés meghallgatása</h1>
+<p class="sub">Állomásonként 30 véletlen mondat a valódi feladatokból, úgy felolvasva, ahogy Rozi mondja. Ha egy szó rosszul hangzik, írd fel, és a szülői sarok kiejtés-javítójában javítsd ki (ott ki is próbálhatod).</p>
+<div id="bar"><select id="st" aria-label="állomás"></select><button id="all">▶ Mind sorban</button><button id="stop">■ Állj</button><button id="more">🔀 Másik 30</button><span id="warn"></span></div>
+<ol id="list"></ol>
+<script type="module">
+  import { POOL, materialize } from '../js/content/index.js';
+  import { ALL_STATIONS } from '../js/curriculum.js';
+  import { rng } from '../js/content/rng.js';
+  import { speechText } from '../js/speech-fix.js';
+
+  const $ = id => document.getElementById(id);
+  let device = {}; try { device = JSON.parse(localStorage.getItem('csillagkert:device') || '{}') || {}; } catch (e) {}   // csak olvassuk
+  const fixes = device.fix || [];
+  const stations = ALL_STATIONS.filter(s => POOL.some(e => e.station === s.id));
+  for (const s of stations) { const o = document.createElement('option'); o.value = s.id; o.textContent = s.name; $('st').append(o); }
+  const strip = s => String(s || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  // a feladat kimondott szövegei: kérdés, bevezetés, tény, a válaszok neve; a szótaghoz a szó
+  function lines(it) {
+    const out = [];
+    for (const k of ['say', 'prompt', 'fact']) if (typeof it[k] === 'string') out.push(strip(it[k]));
+    for (const o of it.options || []) if (o.said) out.push(strip(o.said));
+    for (const st of it.steps || []) if (st.name) out.push(strip(st.name));
+    if (it.word?.name) out.push(it.word.name + '. ' + (it.word.parts || []).join(', ') + '.');
+    return out.filter(t => /\p{L}/u.test(t));
+  }
+  let seed = Date.now() % 100000, items = [];
+  function fill() {
+    const st = $('st').value, r = rng(seed), mine = POOL.filter(e => e.station === st), seen = new Set();
+    items = [];
+    for (let k = 0; k < 400 && items.length < 30; k++) {
+      const e = mine[Math.floor(r() * mine.length)];
+      let it = null; try { it = materialize(e, rng(seed + k)); } catch (err) {}
+      if (!it) continue;
+      const ls = lines(it).filter(t => !seen.has(t));
+      if (!ls.length) continue;
+      const t = ls[Math.floor(r() * ls.length)]; seen.add(t); items.push({ t, id: e.id });
+    }
+    $('list').textContent = '';
+    items.forEach((x, i) => {
+      const li = document.createElement('li'), row = document.createElement('div'); row.className = 'row';
+      const t = document.createElement('span'); t.className = 't'; t.textContent = x.t;
+      const sm = document.createElement('small'); sm.textContent = x.id; t.append(sm);
+      const b = document.createElement('button'); b.textContent = '▶'; b.setAttribute('aria-label', 'meghallgatom'); b.onclick = () => { stop(); speak(i); };
+      row.append(t, b); li.append(row); $('list').append(li);
+    });
+  }
+  const voiceOf = () => { const vs = speechSynthesis.getVoices().filter(v => /^hu/i.test(v.lang)); return vs.find(v => v.voiceURI === device.voiceURI) || vs[0] || null; };
+  let chain = false;
+  function speak(i) {
+    const lis = [...$('list').children]; lis.forEach(l => l.classList.remove('now'));
+    if (!items[i]) { chain = false; return; }
+    lis[i].classList.add('now'); lis[i].scrollIntoView({ block: 'nearest' });
+    const u = new SpeechSynthesisUtterance(speechText(items[i].t, fixes)), v = voiceOf();
+    if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = 'hu-HU'; $('warn').textContent = 'Nincs magyar felolvasóhang ezen az eszközön.'; }
+    u.rate = 0.85; u.pitch = 1.1;
+    u.onend = () => { if (chain) setTimeout(() => speak(i + 1), 500); };
+    speechSynthesis.speak(u);
+  }
+  function stop() { chain = false; try { speechSynthesis.cancel(); } catch (e) {} }
+  $('all').onclick = () => { stop(); chain = true; speak(0); };
+  $('stop').onclick = stop;
+  $('more').onclick = () => { stop(); seed += 7919; fill(); };
+  $('st').onchange = () => { stop(); fill(); };
+  fill();
+  window.__listen = () => items;      // tesztekhez
+</script>
+</body>
+</html>

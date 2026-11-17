@@ -511,6 +511,12 @@ ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba ment
   tesztnévvel): indulás → feladatok és etetés a jutalomkapuig → jutalomjáték és vissza → pihenő (az órát a teszt
   előreállítja) → szülői sarok (haladás-térkép, pihenő-beállítás, kiejtés-javító) → újratöltés után minden megmaradt →
   nincs kivétel, konzol-hiba és hibanapló-bejegyzés. `SHOTS=<mappa>` képernyőképet és a haladás nyomtatási nézetét is menti.
+- **Ellenőrzési mátrix** (a terv 6. része, M8): `docs/ellenorzes.md` – soronként mi ellenőrzi és mi az állapota, a
+  kiáltvány-táblázat (melyik hely melyik értéket szolgálja) és a tervtől való eltérések egy helyen.
+- Kiejtés meghallgatása: `tests/listen.html` – állomásonként 30 véletlen mondat a valódi feladatokból, úgy felolvasva,
+  ahogy Rozi mondja (a szülő javításaival együtt); a mentéshez nem nyúl.
+- iPades ellenőrző lista a szülőnek: `tests/ipad.html` – kipipálható és nyomtatható (hang, ceruza, képernyő, sebesség,
+  mentés, szülői sarok, tetszik-e); a pipákat csak ez az oldal jegyzi meg.
 - Varázsvilág tízperces próbafutása: `tests/soak.html` (`?perc=1` rövid próba). A játékidőt a teszt lépteti, minden
   játékmásodperc után visszaadja a vezérlést a böngészőnek; a memóriát kényszerített szemétgyűjtés után méri, ehhez a
   Chrome-ot `--js-flags=--expose-gc` kapcsolóval kell indítani (enélkül csak durva értéket lát). A frissítési időt
