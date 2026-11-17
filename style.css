@@ -159,6 +159,28 @@ input, select, textarea { -webkit-user-select: text; user-select: text; -webkit-
 .station small { font-size: 12px; font-weight: 800; line-height: 1.1; text-align: center; }
 #p-stats { text-align: left; font-size: 16px; margin-top: 10px; max-height: 28vh; overflow: auto; }
 #p-stats .stat { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dashed #e0d6f5; }
+#p-stats { max-height: none; overflow: visible; }
+#p-stats details.pm { border-bottom: 1px dashed #e0d6f5; padding: 4px 0; }
+#p-stats details.pm summary { display: flex; gap: 8px; align-items: center; cursor: pointer; list-style: none; min-height: 44px; }
+#p-stats details.pm summary::-webkit-details-marker { display: none; }
+#p-stats .pm-name { flex: 1; font-weight: 700; } #p-stats .pm-lv { display: inline-flex; gap: 3px; } #p-stats .pm-lv i { width: 12px; height: 12px; border-radius: 50%; background: #e6defa; } #p-stats .pm-lv i.on { background: #8e5be8; }
+#p-stats .pm-lvname { font-size: 13px; color: #6d6480; min-width: 70px; } #p-stats .pm-done { min-width: 48px; text-align: right; font-weight: 700; }
+#p-stats table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 4px 0 6px; } #p-stats td { padding: 2px 4px; border-top: 1px solid #f0eafb; } #p-stats td.n { text-align: right; width: 60px; } #p-stats .again { color: #b26b00; }
+#p-stats .pm-note { font-size: 13px; color: #6d6480; margin: 6px 0; }
+#p-fix, #p-errbox { text-align: left; margin: 10px 0; } #p-fix summary, #p-errbox summary { font-weight: 700; cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 6px; }
+#p-fix summary::before, #p-errbox summary::before { content: '▸'; } #p-fix[open] summary::before, #p-errbox[open] summary::before { content: '▾'; }
+#parent .fixrow { display: flex; gap: 8px; } #parent .fixrow input { flex: 1; }
+#p-fix-list .fx { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px dashed #e0d6f5; } #p-fix-list .fx span { flex: 1; }
+@media print {
+  body.print-progress > *:not(#parent) { display: none !important; }
+  body.print-progress #parent { position: static; background: none; }
+  body.print-progress #parent .card > *:not(#p-stats):not(.pm-title) { display: none !important; }
+  body.print-progress #parent .card { max-height: none; overflow: visible; box-shadow: none; }
+  body.print-progress #p-stats { max-height: none; overflow: visible; }
+  body.print-progress { background: #fff !important; }
+  body.print-progress #parent .card { background: #fff; padding: 0; width: auto; max-width: none; }
+  body.print-progress #p-stats details.pm { break-inside: avoid; }
+}
 #parent .card { max-height: 92vh; overflow: auto; }
 #reward .card { max-height: 94vh; overflow: auto; }
 .choice { width: min(42vw, 260px); }
@@ -629,6 +651,13 @@ button { touch-action: none; }
 .choice[data-game="dressup"].new { position: relative; }
 .choice[data-game="dressup"].new::after { content: '❤'; position: absolute; right: 10px; top: 8px; width: 34px; height: 34px; border-radius: 50%; background: #ff3d7f; color: #fff;
   font-size: 20px; line-height: 34px; text-align: center; animation: win 1s infinite; }
+
+#break { position: fixed; inset: 0; z-index: 54; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle, rgba(225,245,255,.92), rgba(60,30,120,.45)); animation: fadein .4s; }
+#break[hidden] { display: none; }
+#break .card { text-align: center; }
+#break .break-icon { font-size: min(34vw, 34vh, 180px); line-height: 1; animation: breathe 4s ease-in-out infinite; }
+#break-go { font-size: 54px; min-width: 120px; }
+@keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
 
 #gift-moment { position: fixed; inset: 0; z-index: 55; display: flex; align-items: center; justify-content: center;
   background: radial-gradient(circle, rgba(255,247,200,.6), rgba(60,30,120,.38)); animation: fadein .3s; }

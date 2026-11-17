@@ -3,6 +3,7 @@
 // A hang "Rozi, a robot" szájából szól: a kissé gépies hangzás így a karakter része.
 import { progress } from './progress.js';
 import { getScope } from './scope.js';
+import { speechText, LEXICON } from './speech-fix.js';
 
 let voice = null;
 let enabled = true;
@@ -45,17 +46,11 @@ export function setVoiceEnabled(v) { enabled = v; }
 export function onSpeaking(cb) { listeners.add(cb); return () => listeners.delete(cb); }
 const emit = v => { speakingNow = v; listeners.forEach(cb => { try { cb(v); } catch (e) {} }); };
 
-// Kiejtési korrekciók (csak ha egy hang tévesen ejt valamit). Szülői hangpróba: "csillag, tyúk, szék".
-// A hangok eszközönként eltérnek, ezért csak keveset javítunk vakon; bővíthető: [minta, helyettesítés].
-export const LEXICON = [
-  [/csillag/gi, 'csil-lag'],   // a kettőzött l hallható legyen
-];
-
-// Szövegtisztítás beszédhez: emoji ki (különben "kör pirosan..."-ként olvassa), kiejtési szótár be
+// Szövegtisztítás beszédhez (emoji ki, a szülő javításai, a beépített kiejtési szótár): js/speech-fix.js
+export { LEXICON };
 export function forSpeech(text) {
-  let t = String(text).replace(/\p{Extended_Pictographic}|️|‍|[⃣]/gu, ' ').replace(/<br>/g, ' ').replace(/\s+/g, ' ').trim();
-  for (const [re, rep] of LEXICON) t = t.replace(re, rep);
-  return t;
+  let fixes = []; try { fixes = progress.device.get().fix; } catch (e) {}
+  return speechText(text, fixes);
 }
 // Hosszú szöveg mondatokra bontva megy (egyes hangok a hosszú szöveget levágják), kb. 140 betűs darabokban
 export function chunks(text) {

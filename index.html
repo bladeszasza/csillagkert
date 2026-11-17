@@ -104,6 +104,12 @@
   <div id="game-bye" hidden><div class="card"><div class="bye-icon"><span data-icon="tab-matrica">🌟</span><span data-icon="ui-home">🏡</span><span data-icon="tab-matrica">🌟</span></div><h2>Ez nagyon jó volt!</h2><button id="game-bye-home" class="giant"><span data-icon="ui-home">🏡</span> Haza</button></div></div>
 </section>
 
+<!-- Pihenő: a beállított játékidő után, két feladat között (a szülői sarokban állítható vagy kikapcsolható) -->
+<section id="break" hidden>
+  <div class="card"><div class="break-icon"><span data-icon="ui-rest">🥛</span></div><h2>Pihenő!</h2>
+    <button id="break-go" class="giant" aria-label="Folytatom"><span data-icon="ui-play">▶</span></button></div>
+</section>
+
 <!-- Szülői sarok: 3 mp-ig nyomva tartva nyílik -->
 <button id="parent-btn" aria-label="Szülői beállítások (tartsd nyomva)" data-icon="ui-gear">⚙</button>
 <div id="parent" hidden>
@@ -139,6 +145,9 @@
     <label class="child">Hány csillag kell a nap első jutalomjátékához? (aznap minden kör után +2, másnap elölről)
       <select id="p-per"><option value="5">5 csillag</option><option value="7">7 csillag</option><option value="10">10 csillag</option><option value="15">15 csillag</option></select>
     </label>
+    <label class="child">Pihenő-javaslat (ennyi perc játék után, két feladat között Rozi pihenőt és egy pohár vizet javasol)
+      <select id="p-break"><option value="0">soha</option><option value="15">15 perc után</option><option value="20">20 perc után</option><option value="30">30 perc után</option></select>
+    </label>
     <label>Játékhangok és zene hangereje
       <select id="p-volume"><option value="0">halk</option><option value="1">közepes</option><option value="2">hangos</option></select>
     </label>
@@ -153,6 +162,13 @@
     </label>
     <p id="p-voice"></p>
     <div id="p-stats" class="child"></div>
+    <div class="row child"><button id="p-print" class="small">🖨 Haladás nyomtatása</button></div>
+    <details id="p-fix"><summary>Kiejtés-javító (ha Rozi egy szót rosszul mond)</summary>
+      <p class="hint">Írd be a szót, és mellé úgy, ahogy jól hangzik (például: csillag → csil-lag). Ezen az eszközön minden gyereknél érvényes.</p>
+      <div class="fixrow"><input id="p-fix-word" type="text" autocomplete="off" maxlength="30" placeholder="a szó" aria-label="a rosszul ejtett szó"><input id="p-fix-say" type="text" autocomplete="off" maxlength="30" placeholder="így mondja" aria-label="így mondja"></div>
+      <div class="row"><button id="p-fix-try" class="small">🔊 Kipróbálom</button><button id="p-fix-add" class="small ok">Megjegyzi</button></div>
+      <div id="p-fix-list"></div>
+    </details>
     <div class="row">
       <button id="p-export" class="small child">💾 Mentés fájlba</button>
       <button id="p-import" class="small">📂 Visszatöltés fájlból</button>
@@ -166,7 +182,7 @@
     </div>
     <p class="hint">Ha nincs magyar hang: Beállítások → Kisegítő lehetőségek → Felolvasott tartalom → Hangok → Magyar.</p>
     <p class="hint">Ha a zene és a játékhangok nem szólnak, de Rozi beszél: kapcsold ki a néma módot (Vezérlőközpont → harang ikon), és hangosítsd fel az iPadet.</p>
-    <div id="p-errors" class="hint"></div>
+    <details id="p-errbox" hidden><summary id="p-errors" class="hint"></summary><ol id="p-errlist" class="hint"></ol><div class="row"><button id="p-errclear" class="small">Hibanapló törlése</button></div></details>
   </div>
 </div>
 <div id="fly-layer"></div>

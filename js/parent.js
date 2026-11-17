@@ -6,6 +6,10 @@ import { STATIONS } from './curriculum.js';
 import { unlock, getLevel, setLevel, playNote, isRunning } from './audio.js';
 import { calmChoice, setCalm } from './motion.js';
 import { icon } from './icons.js';
+import { progressMap } from './progress-map.js';
+import { POOL } from './content/index.js';
+import { cleanFixes, FIX_MAX } from './speech-fix.js';
+import { BREAK_CHOICES, BREAK_DEFAULT } from './break-timer.js';
 
 // restart(profil-azonosító?): újratölti az oldalt; ha kap azonosítót, azzal a gyerekkel indul
 export function setupParent(restart) {
@@ -15,6 +19,8 @@ export function setupParent(restart) {
   const voiceInfo = $('p-voice'), voiceSel = $('p-voicesel'), stats = $('p-stats');
   const volume = $('p-volume'), speech = $('p-speech'), errors = $('p-errors'), calmSel = $('p-calm');
   const kids = $('p-kids'), del = $('p-del'), newBox = $('p-new'), file = $('p-file');
+  const brk = $('p-break'), fixWord = $('p-fix-word'), fixSay = $('p-fix-say'), fixList = $('p-fix-list');
+  const errBox = $('p-errbox'), errList = $('p-errlist');
   let timer = null;
   mark.textContent = ''; for (const m of MARKS) { const o = document.createElement('option'); o.value = o.textContent = m; mark.append(o); }
 
@@ -38,6 +44,7 @@ export function setupParent(restart) {
     age.value = String(p.age || 5); mark.value = p.mark;
     minutes.value = String(p.rewardMinutes);
     perReward.value = String(p.perReward || 10);
+    brk.value = String(BREAK_CHOICES.includes(p.breakMin) ? p.breakMin : BREAK_DEFAULT);
     volume.value = String(getLevel());
     speech.value = String(dev.speechVol ?? 1);
     const cc = calmChoice(); calmSel.value = cc === null ? '' : cc ? '1' : '0';
@@ -49,12 +56,64 @@ export function setupParent(restart) {
     voiceSel.parentElement.hidden = voices.length < 1;
     voiceSel.textContent = ''; for (const v of voices) { const o = document.createElement('option'); o.value = v.voiceURI; o.textContent = v.name; voiceSel.append(o); }
     if (dev.voiceURI) voiceSel.value = dev.voiceURI;
-    stats.innerHTML = `<b>Összes csillag: ${p.total || 0}</b>` + STATIONS.map(s => `<div class="stat"><span>${icon('st-' + s.id) || s.emoji} ${s.name}</span><b>${p.done[s.id] || 0}</b></div>`).join('');
-    let log = [];
-    try { log = JSON.parse(localStorage.getItem('csillagkert_errors') || '[]'); } catch (e) {}
-    errors.textContent = log.length ? `Hibanapló (${log.length}): ` + log.slice(-3).map(x => `${x.where}: ${x.msg}`).join(' · ') : '';
+    renderMap(p);
+    renderFixes();
+    renderErrors();
     panel.hidden = false;
   }
+  // Haladás-térkép: állomásonként a szint (a DIFER öt szintjének nevével) és a megoldott feladatok; kinyitva készségenként
+  // hányszor gyakorolta, és hány feladat vár ismétlésre (legutóbb nem ment elsőre). Nem mér és nem diagnosztizál.
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  function renderMap(p) {
+    const map = progressMap(p, STATIONS, POOL), day = t => (t ? new Date(t).toLocaleDateString('hu-HU', { month: 'long', day: 'numeric' }) : '');
+    stats.innerHTML = `<h3 class="pm-title">Haladás · összes csillag: ${p.total || 0}</h3>` +
+      `<p class="pm-note">A pöttyök a terület szintjét mutatják (előkészítő → kezdő → haladó → befejező → optimum). A játék ehhez igazítja a következő feladatot; nem vizsga és nem diagnózis. Koppints egy sorra a részletekért.</p>` +
+      map.map(m => `<details class="pm" data-st="${m.id}"><summary>${icon('st-' + m.id)}<span class="pm-name">${esc(m.name)}</span>` +
+        `<span class="pm-lv" aria-label="${m.lv}. szint">${[1, 2, 3, 4, 5].map(i => `<i class="${i <= m.lv ? 'on' : ''}"></i>`).join('')}</span><span class="pm-lvname">${m.level || 'még nem járt itt'}</span><span class="pm-done">${m.done} ★</span></summary>` +
+        `<table>${m.skills.map(s => `<tr><td>${esc(s.name)}${s.again ? ` <span class="again">· ${s.again} feladat még gyakorlásra vár</span>` : ''}</td><td class="n">${s.n ? s.n + '×' : '–'}</td></tr>`).join('')}</table>` +
+        `<p class="pm-note">${m.practiced} / ${m.skills.length} készséget gyakorolt${m.at ? ` · utoljára: ${day(m.at)}` : ''}</p></details>`).join('');
+  }
+  $('p-print').addEventListener('click', () => {
+    const all = [...stats.querySelectorAll('details.pm')], was = all.map(d => d.open);
+    all.forEach(d => { d.open = true; }); document.body.classList.add('print-progress');
+    let t = null;
+    const done = () => { clearTimeout(t); document.body.classList.remove('print-progress'); all.forEach((d, i) => { d.open = was[i]; }); window.removeEventListener('afterprint', done); };
+    window.addEventListener('afterprint', done);
+    t = setTimeout(done, 60000);
+    try { window.print(); } catch (e) { done(); }
+  });
+  // Kiejtés-javító: eszköz-beállítás, sima szöveg (soha nem minta); a lista szövegként kerül ki
+  const fixes = () => cleanFixes(progress.device.get().fix);
+  function renderFixes() {
+    fixList.textContent = '';
+    for (const [w, r] of fixes()) {
+      const row = document.createElement('div'); row.className = 'fx';
+      const t = document.createElement('span'); t.textContent = w + ' → ' + r;
+      const play = document.createElement('button'); play.className = 'small'; play.textContent = '🔊'; play.setAttribute('aria-label', 'meghallgatom');
+      play.addEventListener('click', () => say(w, { remember: false }));
+      const x = document.createElement('button'); x.className = 'small danger'; x.textContent = '✕'; x.setAttribute('aria-label', 'törlöm');
+      x.addEventListener('click', () => { progress.device.set({ fix: fixes().filter(([a]) => a !== w) }); renderFixes(); });
+      row.append(t, play, x); fixList.append(row);
+    }
+  }
+  $('p-fix-try').addEventListener('click', () => { const r = fixSay.value.trim() || fixWord.value.trim(); if (r) say(r, { remember: false }); });
+  $('p-fix-add').addEventListener('click', () => {
+    const w = fixWord.value.trim(), r = fixSay.value.trim(); if (!w || !r) return;
+    const known = fixes().some(([a]) => a.toLowerCase() === w.toLowerCase());
+    if (!known && fixes().length >= FIX_MAX) { alert('Legfeljebb ' + FIX_MAX + ' javítás fér el; törölj egyet.'); return; }
+    progress.device.set({ fix: cleanFixes([...fixes(), [w, r]]) }); fixWord.value = ''; fixSay.value = ''; renderFixes();
+    say(w, { remember: false });
+  });
+  // Hibanapló: a teljes lista (legújabb elöl) és törlés
+  function renderErrors() {
+    let log = [];
+    try { log = JSON.parse(localStorage.getItem('csillagkert_errors') || '[]'); } catch (e) {}
+    if (!Array.isArray(log)) log = [];
+    errBox.hidden = !log.length; errors.textContent = log.length ? 'Hibanapló (' + log.length + ' bejegyzés)' : '';
+    errList.textContent = '';
+    for (const x of log.slice().reverse()) { const li = document.createElement('li'); li.textContent = (x.t || x.at ? new Date(x.t || x.at).toLocaleString('hu-HU') + ' · ' : '') + (x.where || '?') + ': ' + (x.msg || ''); errList.append(li); }
+  }
+  $('p-errclear').addEventListener('click', () => { try { localStorage.removeItem('csillagkert_errors'); } catch (e) {} renderErrors(); });
   const start = e => { e.preventDefault(); clearTimeout(timer); timer = setTimeout(open, 3000); };
   const stop = () => clearTimeout(timer);
   btn.addEventListener('pointerdown', start);
@@ -104,7 +163,7 @@ export function setupParent(restart) {
     if (!progress.ready()) return;
     const before = progress.get(), per = +perReward.value || 10;
     const changed = per !== (before.perReward || 10) || mark.value !== before.mark;
-    progress.set({ name: name.value.trim(), rewardMinutes: +minutes.value || 4, perReward: per, age: +age.value || 5, mark: MARKS.includes(mark.value) ? mark.value : before.mark });
+    progress.set({ name: name.value.trim(), rewardMinutes: +minutes.value || 4, perReward: per, breakMin: BREAK_CHOICES.includes(+brk.value) ? +brk.value : BREAK_DEFAULT, age: +age.value || 5, mark: MARKS.includes(mark.value) ? mark.value : before.mark });
     if (changed) restart(progress.id());                 // a csillagmérő és a jel újraépül
   });
   $('p-reset').addEventListener('click', () => {

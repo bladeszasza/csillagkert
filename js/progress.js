@@ -7,6 +7,7 @@
 import { migrateEconomy, payStarGift, sessionGift, sessionHeart, adventureReward, dayKey, roundsToday } from './economy.js';
 import { cleanAdventure, adventureAt } from './world-map.js';
 import { normalizeDress } from './avatar.js';
+import { BREAK_CHOICES, BREAK_DEFAULT } from './break-timer.js';
 
 const INDEX = 'csillagkert:profiles', DEVICE = 'csillagkert:device', PREFIX = 'csillagkert:p:';
 const OLD = 'csillagkert_v1', OLD_DRESS = 'csillagkert_dress_v1';
@@ -35,6 +36,7 @@ const fresh = () => ({
   storiesUsed: [],   // a már sorra került mesék (hogy ne ismétlődjenek, amíg mind sorra nem kerül)
   name: '', nameAsked: false, mark: MARKS[0], age: 5,
   rewardMinutes: 4, perReward: 10, feedGap: 2, sinceFeed: 0, v2: true,
+  breakMin: BREAK_DEFAULT,   // ennyi perc aktív játék után Rozi két feladat között pihenőt javasol (0 = soha)
 });
 const cleanName = v => String(v ?? '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 30);
 
@@ -54,6 +56,7 @@ function normalize(raw) {
   s.roundsToday = Math.max(0, Math.floor(+s.roundsToday || 0));
   for (const k of ['total', 'meter', 'rewardsDone']) s[k] = Math.max(0, Math.floor(+s[k] || 0));
   if (!MARKS.includes(s.mark)) s.mark = MARKS[0];
+  if (!BREAK_CHOICES.includes(+s.breakMin)) s.breakMin = BREAK_DEFAULT; else s.breakMin = +s.breakMin;
   if (had && !raw.v2) s.perReward = 10;                         // korábbi mentés: 3 helyett 10 csillag
   delete s.index; delete s.sp; delete s.voiceURI; delete s.speechVol;   // az utóbbi kettő az eszköz beállítása lett
   migrateEconomy(s, had ? raw : undefined);
@@ -71,6 +74,7 @@ function sanitize(raw) {
   if (typeof raw.roundsDay === 'string' && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(raw.roundsDay)) { s.roundsDay = raw.roundsDay; s.roundsToday = int(raw.roundsToday, 0, 1000, 0); }
   s.rewardMinutes = [2, 4, 6, 10].includes(+raw.rewardMinutes) ? +raw.rewardMinutes : 4;
   s.perReward = [5, 7, 10, 15].includes(+raw.perReward) ? +raw.perReward : 10;
+  s.breakMin = BREAK_CHOICES.includes(+raw.breakMin) ? +raw.breakMin : BREAK_DEFAULT;
   s.feedGap = int(raw.feedGap, 2, 3, 2); s.sinceFeed = int(raw.sinceFeed, 0, 10, 0);
   s.age = AGES.includes(+raw.age) ? +raw.age : 5;
   s.name = typeof raw.name === 'string' ? cleanName(raw.name) : '';
@@ -236,7 +240,7 @@ export function openProfiles(storage) {
     set(patch) { Object.assign(state, patch); save(); },
     // Újrakezdés: a csillagok, a kert és a ruhatár törlődik; a gyerek neve, jele, életkora és a beállítások megmaradnak
     reset() {
-      const keep = { name: state.name, nameAsked: state.nameAsked, introDone: state.introDone, mark: state.mark, age: state.age, rewardMinutes: state.rewardMinutes, perReward: state.perReward };
+      const keep = { name: state.name, nameAsked: state.nameAsked, introDone: state.introDone, mark: state.mark, age: state.age, rewardMinutes: state.rewardMinutes, perReward: state.perReward, breakMin: state.breakMin };
       state = { ...fresh(), ...keep }; save();
     },
   };

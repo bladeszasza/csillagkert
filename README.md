@@ -438,6 +438,26 @@ nem a belépéskor:
   (vagy a főképernyőre telepített példányban) visszatölthető. A visszatöltött mentés mindig új gyerekként jelenik meg.
 - Minden adat az eszközön marad (`localStorage`, `js/progress.js`); a hang beállításai az eszközhöz tartoznak, nem a gyerekhez.
 
+## Szülői sarok (M8)
+
+A bal alsó fogaskerék gombot 3 mp-ig nyomva tartva nyílik. A gyerekek kezelése, a mentés és a hangok mellett:
+
+- **Haladás-térkép** (`js/progress-map.js`): állomásonként a terület szintje öt pöttyel és a DIFER öt szintjének nevével
+  (előkészítő, kezdő, haladó, befejező, optimum), és hány csillagot gyűjtött ott. Egy sorra koppintva készségenként
+  látszik, hányszor gyakorolta, és hány feladat vár ismétlésre, mert legutóbb nem ment elsőre. Csak azt mutatja, amit
+  a mentés tényleg tud (a szint területenként van, nem készségenként); nem vizsga és nem diagnózis. A „Haladás
+  nyomtatása" gomb csak ezt a részt nyomtatja ki, minden sort kinyitva. A készségek neve: `js/content/skill-names.js`.
+- **Pihenő-javaslat** (`js/break-timer.js`, profilonként; alapból 20 perc, választható 15, 30 vagy soha): a látható
+  lapon töltött játékidő után, **két feladat között** (amikor a gyerek a következőt választja) Rozi egy mondatban pihenőt
+  és egy pohár vizet javasol, a képernyőn egy nagy pohár és egy indító gomb látszik. Nem zár le semmit: a gombra a
+  választott feladat indul. Feladat, jutalomjáték, mese- vagy érkezés-mondat közben nem jön. Ha a lap legalább öt percig
+  a háttérben volt, az már pihenőnek számít, és elölről számol.
+- **Kiejtés-javító** (`js/speech-fix.js`, az eszközé, minden gyereknél érvényes): ha Rozi egy szót rosszul mond, a szülő
+  beírja a szót és mellé a jól hangzó írásmódot („csillag" → „csil-lag"); „Kipróbálom" meghallgatja, „Megjegyzi"
+  elmenti. Egész szóra illeszt, kis- és nagybetűtől függetlenül; a beírt szöveg sima szöveg, legfeljebb 30 javítás.
+  A szülő javítása elsőbb a beépített kiejtési szótárnál.
+- **Hibanapló:** ha volt hiba, a teljes lista (legújabb elöl, időponttal) kinyitható, és törölhető.
+
 ## Telepítés a főképernyőre
 
 Safari → Megosztás → „Főképernyőhöz adás". Így teljes képernyőn indul.
@@ -485,6 +505,12 @@ ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba ment
 - Szabad futás (a füstteszt része): egy futó-robot három különböző világban 2000 egységet tesz meg; nem ragadhat be,
   nem futhat bele fába, a követő barátok nem tűnhetnek el, és a világ széle nem látszhat. Ellenőrzi a koppintást,
   a tartott ujjat, a két ujjat, a tenyeret, az ugrást, a rajzolási terhet és a 3D-jelenet felszabadítását is.
+- Szülői sarok (Node): `node --test tests/parent.test.mjs` (pihenő-időzítő hamis órával, kiejtés-javító ékezetes
+  szavakkal és jelekkel, haladás-térkép, a pihenő-beállítás mentése, fájlon át és újrakezdés után).
+- Szimulált ülés a valódi oldalon: `node tests/flow.mjs` (a 8124-es tesztszerveren, friss Chrome-profillal, kitalált
+  tesztnévvel): indulás → feladatok és etetés a jutalomkapuig → jutalomjáték és vissza → pihenő (az órát a teszt
+  előreállítja) → szülői sarok (haladás-térkép, pihenő-beállítás, kiejtés-javító) → újratöltés után minden megmaradt →
+  nincs kivétel, konzol-hiba és hibanapló-bejegyzés. `SHOTS=<mappa>` képernyőképet és a haladás nyomtatási nézetét is menti.
 - Varázsvilág tízperces próbafutása: `tests/soak.html` (`?perc=1` rövid próba). A játékidőt a teszt lépteti, minden
   játékmásodperc után visszaadja a vezérlést a böngészőnek; a memóriát kényszerített szemétgyűjtés után méri, ehhez a
   Chrome-ot `--js-flags=--expose-gc` kapcsolóval kell indítani (enélkül csak durva értéket lát). A frissítési időt

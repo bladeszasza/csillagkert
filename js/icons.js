@@ -118,6 +118,8 @@ export const ICONS = {
     <rect x="27" y="38" width="10" height="16" rx="3" fill="#8e5be8" ${L(K, 2.5)}/>`,
   'ui-sunset': `<path d="M12 44a20 20 0 0 1 40 0z" fill="#ffb020" ${L()}/><path d="M32 12V6M14 22l-4-4M50 22l4-4M4 44h56M12 53h40" ${L()}/>`,
   'ui-zoom': `<circle cx="26" cy="26" r="15" fill="#e6f7ff" ${L(K, 3.5)}/><path d="M37 37l16 16" ${L(K, 8)}/>${shine(20, 20, 3, 5, 40)}`,
+  'ui-rest': `<path d="M18 14h28l-4 40a4 4 0 0 1-4 3.6H26a4 4 0 0 1-4-3.6z" fill="#eaf6ff" ${L()}/><path d="M20.6 28h22.8l-2.6 25.4a2 2 0 0 1-2 1.8H25.2a2 2 0 0 1-2-1.8z" fill="#6fc8ff"/><path d="M18 14h28l-4 40a4 4 0 0 1-4 3.6H26a4 4 0 0 1-4-3.6z" fill="none" ${L()}/><path d="M27 36v12" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`,
+  'ui-play': `<path d="M22 12l30 20-30 20z" fill="#fff" ${L()}/>`,
   'ui-heart': `<path d="${heartPath(32, 46, 1.9)}" fill="#ff3d7f" ${L()}/>${shine(21, 22, 3, 5.5, 35)}`,
   'ui-retry': `<path d="M50 30a19 19 0 1 1-6-13" fill="none" ${L(K, 6)}/><path d="M48 6l-2 15-14-4z" fill="${K}" ${L(K, 3)}/>`,
   'ui-jump': `<path d="M32 8L12 30h12v24h16V30h12z" fill="#ffcf3f" ${L()}/>`,

@@ -19,6 +19,7 @@ import { showGift, giftBusy, clearGifts, floatHeart, BOX_SVG } from './gift-mome
 import { REWARDS } from './rewards/index.js';
 import { icon } from './icons.js';
 import { applyCalm, setupPress } from './motion.js';
+import { createBreakTimer } from './break-timer.js';
 import { startRound, activeStory, storyById, openingLine, inviteLine, beatAfter, endingLine } from './story.js';
 
 const $ = id => document.getElementById(id);
@@ -206,8 +207,21 @@ if (!progress.ready()) {
     row.append(b);
   }
 }
+// Pihenő (törődés): a beállított aktív játékidő után két feladat között Rozi pihenőt javasol; csak a látható lap számít
+const breaks = createBreakTimer({ minutes: () => (progress.ready() ? progress.get().breakMin : 0) });
+$('break').__timer = breaks;                                // tesztekhez
+document.addEventListener('visibilitychange', () => breaks.visible(document.visibilityState === 'visible'));
+const BREAK_LINES = ['Pihenjünk egy kicsit! Igyál egy pohár vizet, és nyújtózz egy nagyot!', 'Ügyes voltál! Most tarts egy kis szünetet. Igyál egy kis vizet!', 'Sokat játszottunk! Állj fel, nyújtózz, és igyál egy pohár vizet!'];
+function restBreak() {
+  return new Promise(resolve => {
+    $('break').hidden = false; garden?.pause(true);
+    say(named(BREAK_LINES[Math.floor(Math.random() * BREAK_LINES.length)], name(), Math.random, 0), { remember: false });
+    $('break-go').onclick = () => { $('break').hidden = true; garden?.pause(false); breaks.rested(); stopSpeaking(); resolve(); };
+  });
+}
 $('start-btn').addEventListener('click', begin);
 async function begin() {
+  breaks.start();
   unlockAudio();                                             // a hangmotor felhasználói koppintásra indul (iOS)
   try { navigator.storage?.persist?.(); } catch (e) {}       // kérjük, hogy a rendszer ne ürítse a mentést (nem mindenhol érhető el)
   $('start').hidden = true; $('hud').hidden = false; $('robot').hidden = false;
@@ -245,6 +259,7 @@ const invited = new Set();                                   // ebben az ülésb
 async function runItem(item, station, via) {
   if (running) return;                                       // dupla koppintás ne indítson két feladatot
   running = true;
+  if (breaks.due()) { $('home').hidden = true; await restBreak(); }   // két feladat között: pihenő, utána indul a választott feladat
   const inGarden = item.type === 'feed';                     // az etetés a kertben zajlik: ott a kert nem áll meg
   goArea(null);                                              // minden feladat a kert közepéről indul (a tópartról / tanyáról is)
   const before = new Set(friendsFor(progress.get().total, progress.get().friends));
