@@ -7,13 +7,15 @@
 // van a következő; amit a gyerek megtalált, azt a profilja megjegyzi (a világ magjával együtt, így a világa ugyanaz marad).
 // Kalandok (M7/2): csillogó dolgok a fűben; a sarokban a képük és a megtelő pöttyök mutatják, mennyi kell még. Ha megvan
 // mind, ajándék jár (opts.world.onAdventure), és jön a következő. A felszedés csak hang, Rozi a kaland elején és végén szól.
+// Élőhelyek (M7/3): virágrét, tündérerdő, őszi erdő, kristálydombok, havas domb. Csak a színek, az ég, a levegőben szálló
+// apróságok (pillangó, fény, levél, szikra, hó) és a táj hangjai változnak; a fák helye nem. A fa alá ugorva megrázódik a fa.
 import { icon } from '../icons.js';
 import * as THREE from '../../vendor/three.module.js';
 import { mat as lookMat, addLights, createQuality } from '../three/look.js';
 import { makeCharacter, animateCharacter, animateRunner, createCharacterBatch, CHARACTER_KINDS } from '../three/characters.js';
 import { say } from '../voice.js';
 import { play, animalVoice } from '../sounds.js';
-import { makeTerrain, guideGoal, LANDMARKS, landmarkById, WORLD_LINES, SITE_CLEAR, FIND_R, itemSpots, adventureAt, cleanAdventure, PICK_R } from '../world-map.js';
+import { makeTerrain, guideGoal, LANDMARKS, landmarkById, WORLD_LINES, SITE_CLEAR, FIND_R, itemSpots, adventureAt, cleanAdventure, PICK_R, makeBiomes, mixHex, BIOMES } from '../world-map.js';
 import { buildLandmark } from './landmarks3d.js';
 export { makeTerrain };
 
@@ -49,9 +51,6 @@ function heartGeometry() {
   g.center(); return g;
 }
 
-const GREENS = [0x8fd98a, 0x9be08f, 0x86d082, 0xa6e59a];
-const PASTEL = [0xff8fc8, 0xffcf3f, 0xffffff, 0x9bb8ff, 0xc9a0ff, 0xff9f43];
-const CROWNS = [0x6fcf7f, 0x57c46f, 0xffa8d4, 0x8fe08f];
 
 // opts.seed: a világ magja (teszt); opts.manual: nincs saját képkocka-ciklus, a teszt lépteti (update/render)
 // opts.world: { seed, found, onFind(fajta), adv: { i, n }, onPick(), onAdventure() } – a gyerek saját világa, a már megtalált
@@ -60,6 +59,7 @@ export function run(container, opts = {}) {
   const seed = Number.isFinite(opts.seed) ? opts.seed | 0 : Number.isFinite(opts.world?.seed) ? opts.world.seed | 0 : (Math.random() * 1e9) | 0, manual = !!opts.manual;
   const terrain = makeTerrain(seed), { hash2, noise, heightAt, siteAt } = terrain;
   const found = new Set((opts.world?.found || []).filter(id => landmarkById(id)));
+  const biomes = makeBiomes(seed), BW = new Array(BIOMES.length), mixAt = (x, z, pick) => mixHex(biomes.weights(x, z, BW), pick);
   let adv = cleanAdventure(opts.world?.adv), cur = adventureAt(adv.i);
   container.innerHTML = `<div class="ow"><canvas class="ow-gl"></canvas><div class="ow-load">🌍 Világ építése…</div>
     <div class="ow-hint">Koppints oda, ahová fusson az unikornis! ${icon('ui-point')}</div><button class="ow-jump round" aria-label="Ugrás">${icon('ui-jump')}</button>
@@ -86,15 +86,17 @@ export function run(container, opts = {}) {
     szilank: new THREE.OctahedronGeometry(0.42, 0), mag: new THREE.SphereGeometry(0.3, 10, 8).scale(0.8, 1.15, 0.8),
     toll: new THREE.ConeGeometry(0.22, 1.0, 6).scale(1, 1, 0.35), kristaly: new THREE.OctahedronGeometry(0.34, 0).scale(0.8, 1.6, 0.8),
     glow: new THREE.SphereGeometry(0.75, 10, 8),
+    mote: new THREE.PlaneGeometry(0.26, 0.2),
   };
   const M = {
     ground: lookMat({ vertexColors: true }),
     trunk: lookMat({ color: 0x8a5a3c }), crown: lookMat({ color: 0xffffff }),
-    flower: lookMat({ color: 0xffffff }), rock: lookMat({ color: 0xb8b0c8, flatShading: true }),
-    log: lookMat({ color: 0x9b6b43 }), puddle: lookMat({ color: 0x8fd0ff, transparent: true, opacity: 0.7 }),
+    flower: lookMat({ color: 0xffffff }), rock: lookMat({ color: 0xffffff, flatShading: true }),
+    log: lookMat({ color: 0x9b6b43 }), puddle: lookMat({ color: 0xffffff, transparent: true, opacity: 0.7 }),
     heart: lookMat({ color: 0xff4f8f, emissive: 0x661030 }),
     landmark: lookMat({ vertexColors: true }),
     item: lookMat({ color: 0xffffff, emissive: 0x333333 }), glow: new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3, depthWrite: false }),
+    mote: new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }),
     fly: new THREE.MeshBasicMaterial({ color: 0xfff7b0, fog: false }), halo: new THREE.MeshBasicMaterial({ color: 0xfff08a, transparent: true, opacity: 0.35, depthWrite: false, fog: false }),
   };
   const S = { dx: 0, dz: 0, d: 0 };
@@ -133,7 +135,7 @@ export function run(container, opts = {}) {
     const pos = geo.attributes.position, colors = new Float32Array(pos.count * 3);
     for (let i = 0; i < pos.count; i++) {
       const wx = ox + pos.getX(i), wz = oz + pos.getZ(i); pos.setY(i, heightAt(wx, wz));
-      col.setHex(GREENS[(noise(wx * 0.2, wz * 0.2) * 4) | 0]).offsetHSL(0, 0, (noise(wx * 0.5, wz * 0.5) - 0.5) * 0.06); colors.set([col.r, col.g, col.b], i * 3);
+      const gi = (noise(wx * 0.2, wz * 0.2) * 4) | 0; col.setHex(mixAt(wx, wz, b => b.ground[gi])).offsetHSL(0, 0, (noise(wx * 0.5, wz * 0.5) - 0.5) * 0.06); colors.set([col.r, col.g, col.b], i * 3);
     }
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3)); geo.computeVertexNormals();
     const ground = new THREE.Mesh(geo, M.ground); ground.position.set(ox, 0, oz); group.add(ground);
@@ -155,7 +157,8 @@ export function run(container, opts = {}) {
     const trees = [], nTrees = 6 + ((rnd() * 7) | 0);
     for (let i = 0; i < nTrees; i++) {
       const s = 0.8 + rnd() * 0.9, r = 0.5 * s + 0.25, p = place(r); if (!p) continue;
-      const t = { x: p[0], z: p[1], s, r, gy: heightAt(p[0], p[1]), round: rnd() < 0.4, k: 1, idx: 0, color: CROWNS[(rnd() * 4) | 0] };
+      const t = { x: p[0], z: p[1], s, r, gy: heightAt(p[0], p[1]), round: rnd() < 0.4, k: 1, idx: 0, ci: (rnd() * 4) | 0, shakeT: null };
+      t.color = mixAt(t.x, t.z, b => b.crowns[t.ci]);
       if (p[2]) continue;
       trees.push(t); colliders.push({ x: t.x, z: t.z, r, h: 99, solid: true });
     }
@@ -171,7 +174,7 @@ export function run(container, opts = {}) {
       const a = rnd() * 6.28; if (p[2]) continue;
       rocks.push({ x: p[0], z: p[1], s, a }); colliders.push({ x: p[0], z: p[1], r, h: s * 1.2, solid: false, rock: true });
     }
-    group.add(instanced(G.rock, M.rock, rocks, (o, r) => { o.position.set(r.x, heightAt(r.x, r.z) + r.s * 0.4, r.z); o.scale.set(r.s, r.s * 0.8, r.s); o.rotation.set(0, r.a, 0); }));
+    group.add(instanced(G.rock, M.rock, rocks, (o, r) => { o.position.set(r.x, heightAt(r.x, r.z) + r.s * 0.4, r.z); o.scale.set(r.s, r.s * 0.8, r.s); o.rotation.set(0, r.a, 0); }, r => mixAt(r.x, r.z, b => b.rock)));
     // rönkök: csak ott, ahol a talaj nagyjából sík; a lejtőhöz igazodnak, az ütközőjük kapszula a rönk mentén
     const logs = [], nL = 1 + ((rnd() * 2) | 0), LEN = 1.0, LR = 0.32;
     for (let i = 0; i < nL; i++) {
@@ -195,7 +198,7 @@ export function run(container, opts = {}) {
       const s = i % 2 ? 1.6 : 0.9, p = place(s, (x, z) => { const f = flatness(x, z, s); return f.hi - f.lo < 0.12; }); if (!p || p[2]) continue;
       puddles.push({ x: p[0], z: p[1], s, y: flatness(p[0], p[1], s).hi + 0.03 });
     }
-    group.add(instanced(G.puddle, M.puddle, puddles, (o, p) => { o.position.set(p.x, p.y, p.z); o.rotation.set(-Math.PI / 2, 0, 0); o.scale.setScalar(p.s); }));
+    group.add(instanced(G.puddle, M.puddle, puddles, (o, p) => { o.position.set(p.x, p.y, p.z); o.rotation.set(-Math.PI / 2, 0, 0); o.scale.setScalar(p.s); }, p => mixAt(p.x, p.z, b => b.puddle)));
     // virágok (dísz): nem nőnek bele a fákba és a kövekbe
     const flowers = [], nFl = 50 + ((rnd() * 40) | 0);
     for (let i = 0; i < nFl; i++) {
@@ -203,7 +206,7 @@ export function run(container, opts = {}) {
       if (occ.some(o => Math.hypot(o.x - x, o.z - z) < o.r) || inSite(x, z, -3)) continue;
       flowers.push([x, z]);
     }
-    group.add(instanced(G.flower, M.flower, flowers, (o, f, i) => { o.position.set(f[0], heightAt(f[0], f[1]) + 0.14, f[1]); o.scale.setScalar(0.8 + (i % 3) * 0.3); }, (f, i) => PASTEL[i % PASTEL.length]));
+    group.add(instanced(G.flower, M.flower, flowers, (o, f, i) => { o.position.set(f[0], heightAt(f[0], f[1]) + 0.14, f[1]); o.scale.setScalar(0.8 + (i % 3) * 0.3); }, (f, i) => mixAt(f[0], f[1], b => b.flowers[i % 6])));
     // nevezetesség: abban a chunkban készül el, amelyikben a közepe áll (egy összeolvasztott test, egy rajzolási hívás)
     for (const s of sites) {
       if (s.x < ox - CHUNK / 2 || s.x >= ox + CHUNK / 2 || s.z < oz - CHUNK / 2 || s.z >= oz + CHUNK / 2) continue;
@@ -224,11 +227,12 @@ export function run(container, opts = {}) {
         spawns.push({ id: k + ':' + i, kind, x: p[0], z: p[1], mode, ang, pal: null });
       }
     }
-    return { group, colliders, trees, crownMesh, spawns, items, cx, cz, key: k };
+    return { group, colliders, trees, crownMesh, spawns, items, puddles, cx, cz, key: k };
   }
-  function crownPose(o, t) {
-    if (t.round) { o.position.set(t.x, t.gy + 2.0 * t.s, t.z); o.scale.set(t.s * t.k, 0.9 * t.s * t.k, t.s * t.k); }
-    else { o.position.set(t.x, t.gy + 2.3 * t.s, t.z); o.scale.setScalar(t.s * t.k); }
+  function crownPose(o, tr) {
+    const sh = tr.shakeT == null ? 9 : t - tr.shakeT, w = sh < 1 ? 1 + 0.14 * Math.sin(sh * 24) * (1 - sh) : 1;   // megrázva kileng
+    if (tr.round) { o.position.set(tr.x, tr.gy + 2.0 * tr.s, tr.z); o.scale.set(tr.s * tr.k * w, 0.9 * tr.s * tr.k / w, tr.s * tr.k * w); }
+    else { o.position.set(tr.x, tr.gy + 2.3 * tr.s, tr.z); o.scale.set(tr.s * tr.k * w, tr.s * tr.k / w, tr.s * tr.k * w); }
   }
   function disposeChunk(c) {
     scene.remove(c.group);
@@ -262,6 +266,7 @@ export function run(container, opts = {}) {
     for (const [k, c] of chunks) if (Math.abs(c.cx - cx) > KEEP_R || Math.abs(c.cz - cz) > KEEP_R) { disposeChunk(c); chunks.delete(k); }
     return need.length - made;
   }
+  const eachPuddle = fn => { const cx = Math.floor((P.x + CHUNK / 2) / CHUNK), cz = Math.floor((P.z + CHUNK / 2) / CHUNK); for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (const p of chunks.get(key(cx + a, cz + b))?.puddles || []) fn(p); };
   // a környező 3×3 chunk ütközői
   function eachCollider(x, z, fn) {
     const cx = Math.floor((x + CHUNK / 2) / CHUNK), cz = Math.floor((z + CHUNK / 2) / CHUNK);
@@ -326,6 +331,7 @@ export function run(container, opts = {}) {
     t += dt;
     updateWorld(dt);
     updateItems(dt);
+    updateBiome(dt);
     if (steer) aim(steer.x, steer.y);                 // tartott ujj: minden képkockában újra célzunk (a kamera is mozog)
     // irány: a cél felé vagy nyilakkal
     let dx = 0, dz = 0;
@@ -391,7 +397,7 @@ export function run(container, opts = {}) {
     if (P.grounded && P.y > floor + 0.02) { P.grounded = false; P.vy = 0; }       // lelépett a kő tetejéről
     if (!P.grounded) {
       P.vy += GRAV * dt; P.y += P.vy * dt;
-      if (P.y <= floor) { if (P.vy < -5) play('thud'); P.y = floor; P.vy = 0; P.grounded = true; }
+      if (P.y <= floor) { if (P.vy < -5) play('thud'); P.y = floor; P.vy = 0; P.grounded = true; shakeNear(); }
     }
     P.bump = Math.max(0, P.bump - dt);
     const gy = heightAt(P.x, P.z);
@@ -503,6 +509,70 @@ export function run(container, opts = {}) {
     }
     itemMesh.count = glowMesh.count = n; itemMesh.instanceMatrix.needsUpdate = glowMesh.instanceMatrix.needsUpdate = true;
   }
+  // --- élőhelyek: ég, levegőben szálló apróságok, megrázható fák, a táj hangjai ---
+  const MOTE_MAX = 80, DENS = { lepke: 14, feny: 34, level: 30, szikra: 26, ho: 70 };
+  const moteMesh = new THREE.InstancedMesh(G.mote, M.mote, MOTE_MAX); moteMesh.count = 0; moteMesh.frustumCulled = false; scene.add(moteMesh);
+  const motes = [], skyCol = new THREE.Color(), told = new Set();
+  let biome = BIOMES[0], bioT = -9, ambT = 4;
+  const rand = (a, b) => a + Math.random() * (b - a);
+  function addMote(type, x, y, z, color, extra = {}) { if (motes.length >= MOTE_MAX) return; motes.push({ type, x, y, z, x0: x, y0: y, z0: z, vx: 0, vy: 0, vz: 0, life: 0, max: 6, ph: Math.random() * 6.28, color, ...extra }); }
+  function spawnMote(type) {
+    const x = P.x + rand(-16, 16), z = P.z + rand(-22, 8), g = heightAt(x, z);
+    if (type === 'ho') addMote(type, x, g + rand(3, 9), z, 0xffffff, { vy: -rand(0.9, 1.4), max: 12 });
+    else if (type === 'level') addMote(type, x, g + rand(3, 7), z, mixAt(x, z, b => b.crowns[(Math.random() * 4) | 0]), { vy: -rand(0.6, 1.0), max: 12 });
+    else if (type === 'lepke') addMote(type, x, g + rand(0.8, 1.8), z, mixAt(x, z, b => b.flowers[(Math.random() * 6) | 0]), { max: rand(8, 14) });
+    else if (type === 'feny') addMote(type, x, g + rand(0.4, 2.4), z, mixAt(x, z, b => b.flowers[(Math.random() * 6) | 0]), { max: rand(5, 9) });
+    else addMote(type, x, g + rand(0.3, 2.0), z, mixAt(x, z, b => b.crowns[(Math.random() * 4) | 0]), { max: rand(1.5, 3) });
+  }
+  // a fa alá ugorva a fa megrázódik: levél, szirom vagy hó pottyan le róla
+  function shakeNear() {
+    let best = null, bd = 9;
+    const cx = Math.floor((P.x + CHUNK / 2) / CHUNK), cz = Math.floor((P.z + CHUNK / 2) / CHUNK);
+    for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (const tr of chunks.get(key(cx + a, cz + b))?.trees || []) {
+      const d = Math.hypot(tr.x - P.x, tr.z - P.z) - tr.r; if (d < 1.9 && d < bd && (tr.shakeT == null || t - tr.shakeT > 1.5)) { bd = d; best = tr; }
+    }
+    if (!best) return null;
+    best.shakeT = t; play('plop');
+    const snow = biomes.biomeAt(best.x, best.z).id === 'ho', top = best.gy + (best.round ? 2.0 : 2.3) * best.s;
+    for (let i = 0; i < 7; i++) addMote('drop', best.x + rand(-0.9, 0.9), top + rand(-0.3, 0.5), best.z + rand(-0.9, 0.9), snow ? 0xffffff : best.color, { vy: rand(0.5, 1.5), vx: rand(-0.8, 0.8), vz: rand(-0.8, 0.8), max: 3 });
+    return best;
+  }
+  function updateBiome(dt) {
+    if (t - bioT > 0.3) {
+      bioT = t; biome = biomes.biomeAt(P.x, P.z); skyCol.setHex(mixAt(P.x, P.z, b => b.sky));
+      // az új táj neve: egyszer játékonként, ritkán (legalább negyed percenként egy mondat), az otthoni réten nem
+      if (biome.id !== 'ret' && !told.has(biome.id) && BW[BIOMES.indexOf(biome)] > 0.6 && t - sayT > 15) { told.add(biome.id); sayT = t; say(biome.line, { remember: false }); }
+    }
+    scene.background.lerp(skyCol, Math.min(1, dt * 1.5)); scene.fog.color.copy(scene.background);
+    // a táj hangjai: néhány másodpercenként egy halk madárhang, csilingelés; tócsa mellett béka
+    if ((ambT -= dt) <= 0) {
+      ambT = rand(5, 10);
+      let pond = false; eachPuddle(p => { if (Math.hypot(p.x - P.x, p.z - P.z) < 7) pond = true; });
+      play(pond && biome.id !== 'ho' ? 'ribbit' : biome.sounds[(Math.random() * biome.sounds.length) | 0]);
+    }
+    // levegőben szálló apróságok
+    const want = DENS[biome.mote], have = motes.reduce((s, m) => s + (m.type === biome.mote), 0);
+    for (let k = 0; k < 3 && have + k < want; k++) spawnMote(biome.mote);
+    let n = 0;
+    for (let i = motes.length - 1; i >= 0; i--) {
+      const m = motes[i]; m.life += dt;
+      if (m.type === 'drop') { m.vy -= 6 * dt; m.x += m.vx * dt; m.z += m.vz * dt; m.y += m.vy * dt; }
+      else if (m.type === 'ho' || m.type === 'level') { m.y += m.vy * dt; m.x = m.x0 + Math.sin(m.life * 1.3 + m.ph) * (m.type === 'level' ? 0.9 : 0.4); }
+      else if (m.type === 'lepke') { m.x = m.x0 + Math.sin(m.life * 0.9 + m.ph) * 1.6; m.z = m.z0 + Math.sin(m.life * 1.3 + m.ph * 2) * 1.2; m.y = m.y0 + Math.sin(m.life * 2.1 + m.ph) * 0.3; }
+      else if (m.type === 'feny') { m.y = m.y0 + Math.sin(m.life * 0.8 + m.ph) * 0.4; m.x = m.x0 + Math.sin(m.life * 0.5 + m.ph) * 0.6; }
+      const far = Math.abs(m.x - P.x) > 22 || m.z < P.z - 30 || m.z > P.z + 14, low = m.y < heightAt(m.x, m.z) + 0.05;
+      if (m.life > m.max || far || (low && m.type !== 'lepke' && m.type !== 'feny' && m.type !== 'szikra')) { motes.splice(i, 1); continue; }
+      if (n >= MOTE_MAX) continue;
+      const fade = Math.min(1, m.life * 3, (m.max - m.life) * 2);
+      let sx = 1, sy = 1;
+      if (m.type === 'lepke') sx = 0.25 + Math.abs(Math.sin(m.life * 14 + m.ph)) * 0.9;                 // szárnycsapás
+      else if (m.type === 'feny' || m.type === 'szikra') { sx = sy = 0.5 + 0.5 * Math.abs(Math.sin(m.life * 3 + m.ph)); }
+      else if (m.type === 'ho') sx = sy = 0.6;
+      tmp.position.set(m.x, m.y, m.z); tmp.rotation.set(m.type === 'lepke' ? -0.4 : m.life * 2 + m.ph, m.type === 'lepke' ? m.ph : camera.rotation.y + m.life, 0);
+      tmp.scale.set(sx * fade, sy * fade, 1); tmp.updateMatrix(); moteMesh.setMatrixAt(n, tmp.matrix); moteMesh.setColorAt(n, col.setHex(m.color)); n++;
+    }
+    moteMesh.count = n; moteMesh.instanceMatrix.needsUpdate = true; if (moteMesh.instanceColor) moteMesh.instanceColor.needsUpdate = true;
+  }
   container.__busy = () => t - finaleT < 2.5;           // a megtalálás pillanatában a jutalomidő nem ér véget
 
   function updatePals(dt) {
@@ -564,7 +634,9 @@ export function run(container, opts = {}) {
           const d = Math.hypot(ux - sx * u, uy - sy * u, uz - sz * u);
           if (d < 1.15 * tr.s) goal = 0.25;
         }
-        if (Math.abs(tr.k - goal) < 0.002) continue;
+        const shaking = tr.shakeT != null;
+        if (shaking && t - tr.shakeT >= 1) tr.shakeT = null;            // a kilengés vége: még egyszer a helyére áll
+        if (!shaking && Math.abs(tr.k - goal) < 0.002) continue;
         tr.k += (goal - tr.k) * Math.min(1, dt * 6); if (Math.abs(tr.k - goal) < 0.002) tr.k = goal;
         const mesh = tr.round ? c.crownMesh.round : c.crownMesh.cone;
         tmp.rotation.set(0, 0, 0); tmp.quaternion.identity(); crownPose(tmp, tr); tmp.updateMatrix(); mesh.setMatrixAt(tr.idx, tmp.matrix); mesh.instanceMatrix.needsUpdate = true;
@@ -602,7 +674,8 @@ export function run(container, opts = {}) {
     colliders: () => [...chunks.values()].flatMap(c => c.colliders),
     trees: () => [...chunks.values()].flatMap(c => c.trees),
     siteAt, landmarks: () => [...landmarks.values()], found: () => [...found], goal: () => goal, guide: guideBtn, album,
-    items: () => [...chunks.values()].flatMap(c => c.items), adventure: () => ({ ...adv, item: cur.item, need: cur.need, pending }), advBtn,
+    items: () => [...chunks.values()].flatMap(c => c.items),
+    biome: () => biome.id, biomes, motes: () => motes.map(m => m.type), sky: () => scene.background.getHex(), shakeNear, adventure: () => ({ ...adv, item: cur.item, need: cur.need, pending }), advBtn,
     setTarget: (x, z) => { TGT.x = x; TGT.z = z; P.target = TGT; P.tap = true; P.best = Infinity; P.stall = 0; },
     stats: () => ({ chunks: chunks.size, pals: pals.length, batch: batch.size - 1 /* a játékos unikornisa nélkül */, instances: batch.meshes.reduce((s, m) => s + m.count, 0), calls: renderer.info.render.calls, triangles: renderer.info.render.triangles }),
   };
@@ -611,7 +684,7 @@ export function run(container, opts = {}) {
     alive = false; cancelAnimationFrame(raf); ro?.disconnect();
     window.removeEventListener('resize', size); window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku);
     for (const c of chunks.values()) disposeChunk(c);
-    chunks.clear(); landmarks.clear(); pals.length = 0; batch.dispose(); hearts.dispose(); itemMesh.dispose(); glowMesh.dispose(); delete container.__busy;
+    chunks.clear(); landmarks.clear(); pals.length = 0; batch.dispose(); hearts.dispose(); itemMesh.dispose(); glowMesh.dispose(); moteMesh.dispose(); delete container.__busy;
     Object.values(G).forEach(g => g.dispose()); Object.values(M).forEach(m => m.dispose());
     renderer.dispose(); renderer.forceContextLoss?.();
   };

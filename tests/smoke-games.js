@@ -249,6 +249,28 @@ export async function testOpenWorld(ok) {
     const stop7 = runWorld(h7, { manual: true, world: { seed: 555, found: [], adv: { i: 0, n: 12 }, onAdventure: () => { gifts.push(1); return { id: 'teszt' }; } } });
     try { await wait(2900); ok('a következő belépéskor megjön a várakozó ajándék', gifts.length === 1, `ajándék: ${gifts.length}`); } finally { stop7(); h7.remove(); }
   }
+  // 5) élőhelyek: otthon rét; messzebb más táj (szín, ég, apróságok, hang, egy mondat); a fa alá ugorva megrázódik
+  {
+    const h8 = box(), stop = runWorld(h8, { manual: true, world: { seed: 555, found: [] } }), w = h8.__ow, P = w.P;
+    try {
+      const s0 = spoken(); steps(w, 8);
+      ok('élőhely: a kezdőhely körül virágrét van, pillangókkal; nincs külön mondat', w.biome() === 'ret' && spoken() === s0 && w.motes().includes('lepke'), `${w.biome()}, mondat: ${spoken() - s0}, apróság: ${w.motes().length}`);
+      const sky0 = w.sky(), m0 = soundMark(), s1 = spoken();
+      Object.assign(P, { x: -132, z: 200, target: null }); steps(w, 12); await wait(400);
+      const said = window.__spoken.slice(s1), types = w.motes();
+      ok('élőhely: a Tündérerdőben más az ég, fények szállnak, egy mondat szól a nevével, és szólnak a táj hangjai', w.biome() === 'erdo' && w.sky() !== sky0 && types.filter(x => x === 'feny').length >= 10 && said.length === 1 && /Tündérerdő/.test(said[0]) && kinds(m0).some(k => ['cincin', 'hoot', 'ribbit'].includes(k)),
+        `${w.biome()}, ég ${w.sky().toString(16)}, fény: ${types.filter(x => x === 'feny').length}; ${said.join(' | ')}; hangok: ${kinds(m0).join(',')}`);
+      const s2 = spoken(); w.setTarget(P.x + 30, P.z); steps(w, 6); Object.assign(P, { x: -132, z: 200, target: null }); steps(w, 12); await wait(400);
+      ok('élőhely: visszatéréskor nem mondja el újra', spoken() === s2, `új mondat: ${spoken() - s2}`);
+      w.render(); const st = w.stats();
+      ok('élőhely: az apróságokkal együtt is a kereten belül', st.calls <= 150 && st.triangles <= 150000, `${st.calls} hívás, ${Math.round(st.triangles / 1000)}k háromszög`);
+      // fa megrázása: a fa mellé áll, ugrik, földet ér
+      const tr = w.trees().filter(x => Math.hypot(x.x - P.x, x.z - P.z) < 25).sort((a, b) => Math.hypot(a.x - P.x, a.z - P.z) - Math.hypot(b.x - P.x, b.z - P.z))[0];
+      Object.assign(P, { x: tr.x + tr.r + 0.9, z: tr.z, target: null }); steps(w, 0.5);
+      const m1 = soundMark(), d0 = w.motes().filter(x => x === 'drop').length; w.jump(); let secs = 0, drops = 0; while (secs < 2) { steps(w, 0.1); secs += 0.1; drops = Math.max(drops, w.motes().filter(x => x === 'drop').length); }
+      ok('élőhely: a fa alá ugorva a fa megrázódik, levél pottyan, puffan', kinds(m1).includes('plop') && drops >= d0 + 5, `cseppek: ${drops}, hangok: ${kinds(m1).join(',')}`);
+    } finally { stop(); h8.remove(); }
+  }
 }
 
 // --- minijátékok: a 6.2-es lista géppel ellenőrizhető része ---

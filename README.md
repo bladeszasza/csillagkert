@@ -121,7 +121,7 @@ Az M4 mérföldkő kész: **mind a 8 generálható állomás** sablonokból kés
     világa is ugyanaz marad** (minden gyereknek saját világa van), így legközelebb folytathatja a keresést. A már
     megtalált nevezetességnél csak egy halk csengés szól.
   - **Eltérés a tervtől:** a terv messziről látszó fényoszlopot írt, de a köd és a kamera miatt a távoli tárgy nem
-    látszik, ezért a fény és a képes jelző vezet. A térkép, az élőhelyek, a varázslények és az album a következő
+    látszik, ezért a fény és a képes jelző vezet. A térkép, a varázslények és az album a következő
     szeletekben jönnek.
 - **Varázsvilág (M7, 2. szelet): kalandok.** Egyszerre egy kaland fut: egyféle csillogó dolgot kell összeszedni
   (csillagszilánk, virágmag, madártoll, kristály; 12, 14, 16, 18 darab, utána elölről). A jobb felső sarokban a dolog
@@ -134,6 +134,20 @@ Az M4 mérföldkő kész: **mind a 8 generálható állomás** sablonokból kés
     legfeljebb egy; ha egy körben két kaland is elkészülne, a második ajándéka a következő belépéskor jön.
   - **Mentés:** minden felszedett darab azonnal a profilba kerül (melyik kaland, hány darab van már), így a kör közepén
     véget érő játék sem veszít semmit. Egy gyerek célzottan kb. egy-másfél perc futással gyűjti össze az első kalandot.
+- **Varázsvilág (M7, 3. szelet): élőhelyek.** A világ nagy, kb. fél perc futásnyi foltokban öt tájat mutat: virágrét,
+  tündérerdő, őszi erdő, kristálydombok, havas domb (`BIOMES`, `makeBiomes` a `js/world-map.js`-ben). A kezdőhely körül
+  mindig virágrét van; az első másik táj kb. száz egységre kezdődik.
+  - **Mi változik:** a talaj, a lombok, a virágok, a kövek és a tócsák színe, az ég és a köd, a levegőben szálló apróságok
+    (pillangó, lebegő fény, hulló levél, csillogó szikra, hó), és a táj hangjai (madárcsicsergés, csilingelés, huhogás;
+    tócsa mellett béka). A határon a színek simán olvadnak egymásba.
+  - **Mi nem változik:** a fák, kövek, rönkök és barátok helye és száma ugyanaz, mint eddig, így a mentett világok (és a
+    megtalált nevezetességek helye) nem változnak. Ezért a tündérerdőben sincs több fa, csak más színű.
+  - **Új táj:** ha a gyerek először ér egy új tájra, Rozi egyetlen mondatban megnevezi (pl. „Őszi erdő! Színes levelek
+    hullanak."), játékonként egyszer, legfeljebb negyed percenként egy mondat. Az otthoni rétnél nem szól.
+  - **Fa megrázása:** ha az unikornis egy fa mellett ér földet egy ugrás után, a fa megrázódik, és levél, szirom vagy
+    (a havas dombon) hó pottyan le róla, egy puffanással.
+  - **Teljesítmény:** az apróságok egyetlen közös rajzolás (legfeljebb nyolcvan darab); a jelenet így is bőven a
+    150 rajzolási hívásos kereten belül marad.
 - **Barátok:** akinek köszönsz (odafutsz hozzá), veled jön; egyszerre legfeljebb négyen, sorban, egymást kikerülve.
   A követő barát nem tűnik el, akármilyen messzire futsz.
 - **Hangok:** patadobogás, ugrás, érkezés, koccanás; a versenyben visszaszámlálás, rajt és ujjongás. A verseny végén a két

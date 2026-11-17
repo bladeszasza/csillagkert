@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LANDMARKS, WORLD_LINES, landmarkById, siteOfCell, makeTerrain, guideGoal, CELL, SITE_FLAT, SITE_BLEND, FIND_R,
-  ITEMS, ADVENTURES, adventureAt, cleanAdventure, itemSpots, TRAIL, PICK_R } from '../js/world-map.js';
+  ITEMS, ADVENTURES, adventureAt, cleanAdventure, itemSpots, TRAIL, PICK_R, BIOMES, makeBiomes, mixHex, HOME_R } from '../js/world-map.js';
 import { newRewardSession, adventureReward } from '../js/economy.js';
 import { ICONS } from '../js/icons.js';
 import { openProfiles } from '../js/progress.js';
@@ -194,4 +194,52 @@ test('kész kaland: egy ajándék a közös létráról, körönként legfeljebb
   assert.deepEqual(p.get().world.adv, { i: 2, n: 0 });
   const bad = p.exportData(); bad.profile.world.adv = { i: 'x', n: 77 };
   assert.ok(p.use(p.importData(bad))); assert.deepEqual(p.get().world.adv, { i: 0, n: adventureAt(0).need });
+});
+
+// --- élőhelyek (M7, 3. szelet) ---
+test('élőhelyek: teljes színpaletták, rövid, kimondható mondatok', () => {
+  assert.equal(new Set(BIOMES.map(b => b.id)).size, BIOMES.length);
+  assert.equal(BIOMES[0].id, 'ret', 'az első az otthoni rét');
+  const hex = v => Number.isInteger(v) && v >= 0 && v <= 0xffffff;
+  for (const b of BIOMES) {
+    assert.ok(b.ground.length === 4 && b.crowns.length === 4 && b.flowers.length === 6, b.id);
+    for (const v of [...b.ground, ...b.crowns, ...b.flowers, b.rock, b.puddle, b.sky]) assert.ok(hex(v), b.id);
+    assert.ok(['lepke', 'feny', 'level', 'szikra', 'ho'].includes(b.mote) && b.sounds.length >= 1, b.id);
+    assert.doesNotMatch(b.line, /[0-9]/); assert.ok(b.line.startsWith(b.name + '!'), b.line);
+    for (const s of sentences(b.line)) assert.ok(words(s) <= 12, `túl hosszú: ${s}`);
+  }
+});
+
+test('élőhelyek: a magból jönnek, otthon mindig rét van, és mindegyik elég nagy részt kap', () => {
+  const tot = Object.fromEntries(BIOMES.map(b => [b.id, 0])); let n = 0;
+  for (const seed of SEEDS) {
+    const A = makeBiomes(seed), B = makeBiomes(seed), W = [];
+    for (const [x, z] of [[300, -120], [-640, 410], [55, 900]]) assert.deepEqual(A.weights(x, z), B.weights(x, z));
+    for (let a = 0; a < 6.28; a += 0.2) for (const r of [0, 20, 45, HOME_R - 1]) assert.equal(A.biomeAt(Math.sin(a) * r, Math.cos(a) * r).id, 'ret', `mag ${seed}: otthon nem rét (${r})`);
+    A.weights(123, 456, W); assert.ok(Math.abs(W.reduce((s, v) => s + v, 0) - 1) < 1e-9, 'a súlyok összege egy');
+    let near = Infinity;
+    for (let x = -1200; x <= 1200; x += 24) for (let z = -1200; z <= 1200; z += 24) {
+      const r = Math.hypot(x, z); if (r < 100) continue;
+      const id = A.biomeAt(x, z).id; tot[id]++; n++; if (id !== 'ret') near = Math.min(near, r);
+    }
+    assert.ok(near < 200, `mag ${seed}: az első más táj ${near.toFixed(0)} egységre`);
+  }
+  for (const b of BIOMES) assert.ok(tot[b.id] / n > 0.1, `${b.id}: csak ${(100 * tot[b.id] / n).toFixed(0)}%`);
+});
+
+test('élőhelyek: a határon a színek simán olvadnak (nincs éles vonal a talajon)', () => {
+  const ch = h => [(h >> 16) & 255, (h >> 8) & 255, h & 255];
+  for (const seed of [0, 101, 555]) {
+    const A = makeBiomes(seed), W = [];
+    let worst = 0;
+    for (let a = 0; a < 6.28; a += 0.9) {
+      let prev = null;
+      for (let r = 80; r < 700; r += 0.5) {   // fél egység: kb. egy talaj-rácspont távolsága
+        const c = ch(mixHex(A.weights(Math.sin(a) * r, Math.cos(a) * r, W), b => b.ground[0]));
+        if (prev) worst = Math.max(worst, ...c.map((v, i) => Math.abs(v - prev[i])));
+        prev = c;
+      }
+    }
+    assert.ok(worst < 24, `mag ${seed}: a legnagyobb ugrás ${worst} (0–255)`);
+  }
 });

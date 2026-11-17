@@ -129,3 +129,66 @@ export function itemSpots(seed, cx, cz, size) {
   });
   return out;
 }
+
+// --- Élőhelyek (M7, 3. szelet) ---
+// A világ nagy foltokban más-más tájat mutat. Az élőhely csak a színeket, az égboltot, a levegőben szálló apróságokat és a
+// hangokat változtatja: a fák, kövek és barátok helye és száma ugyanaz marad (a mentett világok nem változnak).
+// Két lassú zajmező (a magból, saját sóval) egy pontot ad egy kis "térképen"; az élőhely a legközelebbi középpont, a
+// határon a színek simán olvadnak egymásba. A kezdőhely körül mindig virágrét van (ott kezdődik a játék, ott a kert kapuja).
+export const HOME_R = 70, HOME_BLEND = 30;
+export const BIOMES = [
+  { id: 'ret', name: 'Virágrét', line: 'Virágrét! Pillangók repkednek.', c: [0.5, 0.5],
+    ground: [0x8fd98a, 0x9be08f, 0x86d082, 0xa6e59a], crowns: [0x6fcf7f, 0x57c46f, 0xffa8d4, 0x8fe08f],
+    flowers: [0xff8fc8, 0xffcf3f, 0xffffff, 0x9bb8ff, 0xc9a0ff, 0xff9f43], rock: 0xb8b0c8, puddle: 0x8fd0ff, sky: 0xbfe9ff,
+    mote: 'lepke', sounds: ['chirp', 'trill'] },
+  { id: 'erdo', name: 'Tündérerdő', line: 'Tündérerdő! Világító virágok nőnek itt.', c: [0.32, 0.36],
+    ground: [0x4f9a86, 0x58a48f, 0x47917e, 0x5fae96], crowns: [0x2f8a6a, 0x3f9a78, 0x7fd0c0, 0x9b7fe0],
+    flowers: [0x9bf0ff, 0xc9a0ff, 0xfff08a, 0x7fffd0, 0xff9fe0, 0xffffff], rock: 0x9fa8c0, puddle: 0x7fc8e0, sky: 0x9fd4cc,
+    mote: 'feny', sounds: ['cincin', 'hoot'] },
+  { id: 'osz', name: 'Őszi erdő', line: 'Őszi erdő! Színes levelek hullanak.', c: [0.68, 0.36],
+    ground: [0xd9c46a, 0xcdb85e, 0xe0cc78, 0xc8b058], crowns: [0xff9f43, 0xf2545b, 0xffcf3f, 0xe07a3a],
+    flowers: [0xff9f43, 0xffcf3f, 0xf2545b, 0xffffff, 0xc98a5a, 0xffe0a0], rock: 0xc0a890, puddle: 0x9fc8e0, sky: 0xffe2c4,
+    mote: 'level', sounds: ['peep', 'chirp'] },
+  { id: 'kristaly', name: 'Kristálydombok', line: 'Kristálydombok! Csillognak a kövek.', c: [0.32, 0.66],
+    ground: [0xc8b8f0, 0xd0c2f4, 0xbfaee8, 0xd8ccf8], crowns: [0xb0e8ff, 0xffc0e8, 0xd0b0ff, 0x9bf0ff],
+    flowers: [0xffffff, 0x9bf0ff, 0xffc0e8, 0xd0b0ff, 0xfff08a, 0xb0ffd0], rock: 0x9bf0ff, puddle: 0xc0e8ff, sky: 0xe0d4ff,
+    mote: 'szikra', sounds: ['cincin'] },
+  { id: 'ho', name: 'Havas domb', line: 'Havas domb! Hull a hó.', c: [0.68, 0.66],
+    ground: [0xf4f8ff, 0xeaf2fc, 0xffffff, 0xe2ecf8], crowns: [0x5fa880, 0x6ab48a, 0xe8f4ff, 0x58a078],
+    flowers: [0xffffff, 0xd8ecff, 0xff8fc8, 0xffffff, 0xbfe0ff, 0xffd0e8], rock: 0xd0d8e8, puddle: 0xd8f0ff, sky: 0xe8f4ff,
+    mote: 'ho', sounds: ['peep'] },
+];
+export const biomeById = id => BIOMES.find(b => b.id === id) || null;
+const TAU = 0.018;                 // a határ élessége (kisebb = élesebb, de mindig folytonos)
+// Az élőhelyek súlya egy pontban (összegük 1). out: újrahasznosítható tömb.
+export function makeBiomes(seed) {
+  const n = salt => (x, z) => {
+    const x0 = Math.floor(x), z0 = Math.floor(z), fx = smooth(x - x0), fz = smooth(z - z0);
+    const a = hash2(x0, z0, seed + salt), b = hash2(x0 + 1, z0, seed + salt), c = hash2(x0, z0 + 1, seed + salt), d = hash2(x0 + 1, z0 + 1, seed + salt);
+    return a + (b - a) * fx + (c - a) * fz + (a - b - c + d) * fx * fz;
+  };
+  const na = n(401), nb = n(433), F = 0.005;      // egy folt kb. kétszáz egység (fél perc futás)
+  function weights(x, z, out = new Array(BIOMES.length)) {
+    const u = na(x * F, z * F), v = nb(z * F + 31.7, -x * F + 57.3), r = Math.hypot(x, z);   // a második mező elforgatva és eltolva: a kettő független
+    const away = smooth(Math.max(0, Math.min(1, (r - HOME_R) / HOME_BLEND)));   // 0 a kezdőhely körül, 1 messze
+    let sum = 0;
+    for (let i = 0; i < BIOMES.length; i++) {
+      const [cu, cv] = BIOMES[i].c; let d2 = (u - cu) ** 2 + (v - cv) ** 2;
+      if (i > 0) d2 += (1 - away) * 0.5;                 // otthon közelében a többi élőhely "messze van"
+      out[i] = Math.exp(-d2 / TAU); sum += out[i];
+    }
+    if (!(sum > 0)) { out.fill(0); out[0] = 1; return out; }
+    for (let i = 0; i < out.length; i++) out[i] /= sum;
+    return out;
+  }
+  const W = new Array(BIOMES.length);
+  // a pont fő élőhelye
+  function biomeAt(x, z) { weights(x, z, W); let k = 0; for (let i = 1; i < W.length; i++) if (W[i] > W[k]) k = i; return BIOMES[k]; }
+  return { weights, biomeAt };
+}
+// egy színpaletta adott fokának keverése a súlyok szerint (hex szín)
+export function mixHex(w, pick) {
+  let r = 0, g = 0, b = 0;
+  for (let i = 0; i < w.length; i++) { if (w[i] < 1e-4) continue; const h = pick(BIOMES[i]); r += ((h >> 16) & 255) * w[i]; g += ((h >> 8) & 255) * w[i]; b += (h & 255) * w[i]; }
+  return (Math.round(r) << 16) | (Math.round(g) << 8) | Math.round(b);
+}
