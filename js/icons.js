@@ -121,6 +121,11 @@ export const ICONS = {
   'ui-heart': `<path d="${heartPath(32, 46, 1.9)}" fill="#ff3d7f" ${L()}/>${shine(21, 22, 3, 5.5, 35)}`,
   'ui-retry': `<path d="M50 30a19 19 0 1 1-6-13" fill="none" ${L(K, 6)}/><path d="M48 6l-2 15-14-4z" fill="${K}" ${L(K, 3)}/>`,
   'ui-jump': `<path d="M32 8L12 30h12v24h16V30h12z" fill="#ffcf3f" ${L()}/>`,
+  // a Varázsvilág gyűjthető dolgai (js/world-map.js, ITEMS)
+  'it-szilank': `<path d="M32 4l7 19 20 2-15 13 5 20-17-11-17 11 5-20L5 25l20-2z" fill="#ffd84a" ${L()}/><path d="M32 4l0 36M5 25l27 15M59 25L32 40" ${L(K, 1.5)} opacity=".35"/>`,
+  'it-mag': `<path d="M32 58c-12 0-18-10-16-22 2-10 10-18 16-22 6 4 14 12 16 22 2 12-4 22-16 22z" fill="#c98a5a" ${L()}/><path d="M32 14c0-6 4-10 10-10-1 6-4 9-10 10zM32 14c0-5-3-8-8-8 0 5 3 8 8 8z" fill="#58b85c" ${L(K, 2)}/><ellipse cx="26" cy="34" rx="3" ry="6" fill="#fff" opacity=".45"/>`,
+  'it-toll': `<path d="M50 6C30 8 16 24 14 46l-4 12 8-8c22-2 34-20 32-44z" fill="#ff9fd0" ${L()}/><path d="M46 12L14 52" ${L(K, 2.5)}/>`,
+  'it-kristaly': `<path d="M32 4l14 18-14 38-14-38z" fill="#9bf0ff" ${L()}/><path d="M18 22h28M32 4v56" ${L(K, 2)} opacity=".5"/><path d="M12 34l8 4-4 14-8-10zM52 34l-8 4 4 14 8-10z" fill="#c9a0ff" ${L(K, 2.5)}/>`,
   // a Varázsvilág nevezetességei (js/world-map.js)
   'lm-kut': `<path d="M12 30L32 10l20 20z" fill="#ff8fc8" ${L()}/><path d="M18 30v14M46 30v14" ${L(K, 4)}/><rect x="12" y="42" width="40" height="14" rx="5" fill="#cfc6e0" ${L()}/><path d="M32 3l2 4 4 .5-3 3 1 4.5-4-2-4 2 1-4.5-3-3 4-.5z" fill="#ffd84a" ${L(K, 2)}/>`,
   'lm-kokor': `<rect x="6" y="20" width="12" height="32" rx="4" fill="#c6bed6" ${L()}/><rect x="46" y="22" width="12" height="30" rx="4" fill="#b8b0c8" ${L()}/><rect x="26" y="12" width="12" height="26" rx="4" fill="#cfc6e0" ${L()}/><ellipse cx="32" cy="51" rx="12" ry="5" fill="#cfc6e0" ${L()}/><path d="M32 38l4 5-4 5-4-5z" fill="#9bf0ff" ${L(K, 2)}/>`,

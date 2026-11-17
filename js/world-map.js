@@ -83,3 +83,49 @@ export function guideGoal(terrain, x, z, found) {
   const all = terrain.sitesNear(x, z, 2).sort((a, b) => dist(a) - dist(b));
   return all.find(s => !found.has(s.type)) || all.find(s => dist(s) > 25) || all[0];
 }
+
+// --- Gyűjtögetés és kalandok (M7, 2. szelet) ---
+// Egyszerre egy kaland fut: egyféle csillogó dolgot kell összegyűjteni (a képernyő sarkában a képe és a megtelő pöttyök
+// mutatják, olvasni nem kell). Ha megvan mind, ajándék jár (ugyanabból az ajándéklétrából, mint mindenhol: js/economy.js),
+// és jön a következő kaland. Az állás (melyik kaland, hány darab van már) a profilban marad.
+// A dolgok helye a világ magjából számolódik, saját véletlen-sorral: a fák, kövek és barátok helyét nem változtatja meg.
+export const ITEM_P = 0.2;          // ekkora eséllyel van egy chunkban gyűjthető dolog (egy chunk kb. négy másodperc futás)
+export const PICK_R = 1.5;          // ennyire kell odaérni (ugrás közben is jó)
+export const TRAIL = [12, 18, 24];  // a kezdőhelytől az első nevezetesség felé vezető nyom: innen tanulja meg, mit kell szedni
+export const ITEMS = [
+  { id: 'szilank', name: 'csillagszilánk' },
+  { id: 'mag', name: 'virágmag' },
+  { id: 'toll', name: 'madártoll' },
+  { id: 'kristaly', name: 'kristály' },
+];
+export const ADVENTURES = [
+  { item: 'szilank', need: 12, intro: 'Gyűjtsünk csillagszilánkot! Csillognak a fűben.', done: 'Megvan az összes csillagszilánk! Ügyes voltál!' },
+  { item: 'mag', need: 14, intro: 'Gyűjtsünk virágmagot a kertbe!', done: 'Megvan az összes virágmag! Köszönöm a segítséget!' },
+  { item: 'toll', need: 16, intro: 'A madarak elhagyták a tollukat. Szedjük össze!', done: 'Megvan az összes toll! A madarak nagyon örülnek.' },
+  { item: 'kristaly', need: 18, intro: 'Gyűjtsünk csillogó kristályt!', done: 'Megvan az összes kristály! Ragyog a kosarunk.' },
+];
+export const ADV_MAX = 9999;
+// az i-edik kaland (körbe jár: az ötödik újra csillagszilánk)
+export const adventureAt = i => ({ ...ADVENTURES[mod(Math.floor(+i || 0), ADVENTURES.length)], i: Math.max(0, Math.floor(+i || 0)) });
+// a mentett kalandállás rendbetétele (megbízhatatlan adatból is): { i, n }, ahol 0 <= n <= a kaland darabszáma
+export function cleanAdventure(a) {
+  const ok = v => v !== null && v !== '' && Number.isFinite(+v);
+  const i = a && ok(a.i) ? Math.max(0, Math.min(ADV_MAX, Math.floor(+a.i))) : 0;
+  const n = a && ok(a.n) ? Math.max(0, Math.min(adventureAt(i).need, Math.floor(+a.n))) : 0;
+  return { i, n };
+}
+// Egy chunk gyűjthető dolgai: { key, x, z }. size: a chunk oldala (js/rewards/openworld.js). A kulcs a világban egyedi,
+// így amit a gyerek felszedett, az a chunk újragyártásakor sem bukkan fel újra (a játékon belül).
+export function itemSpots(seed, cx, cz, size) {
+  const out = [], ox = cx * size, oz = cz * size, m = 3;
+  if (hash2(cx, cz, seed + 211) < ITEM_P) {
+    const x = ox + (hash2(cx, cz, seed + 223) - 0.5) * (size - 2 * m), z = oz + (hash2(cx, cz, seed + 227) - 0.5) * (size - 2 * m);
+    if (Math.hypot(x, z) > 8) out.push({ key: cx + ',' + cz, x, z });
+  }
+  const s0 = siteOfCell(seed, 0, 0), d0 = Math.hypot(s0.x, s0.z);
+  TRAIL.forEach((r, k) => {
+    const x = s0.x / d0 * r, z = s0.z / d0 * r;
+    if (Math.floor((x + size / 2) / size) === cx && Math.floor((z + size / 2) / size) === cz) out.push({ key: 'nyom' + k, x, z });
+  });
+  return out;
+}

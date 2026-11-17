@@ -81,7 +81,14 @@ export function giftLine(g, name = '', rand = Math.random) {
 }
 
 // Egy jutalomkör: legfeljebb egy ajándék (amelyik játék előbb adja), és játékonként korlátos számú szív
-export const newRewardSession = () => ({ gift: null, hearts: {} });
+export const newRewardSession = () => ({ gift: null, hearts: {}, adventure: false });
+// A Varázsvilág egy befejezett kalandja: saját ajándék (a kör ajándékán felül, mert több kör munkája), de körönként
+// legfeljebb egy, hogy a létra ne fogyjon el túl gyorsan.
+export function adventureReward(s, sess) {
+  if (!sess || sess.adventure) return null;
+  sess.adventure = true;
+  return grantGift(s);
+}
 export function sessionGift(s, sess, source) {
   if (sess.gift || !GIFT_SOURCES.includes(source)) return null;
   sess.gift = source;

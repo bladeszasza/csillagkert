@@ -348,7 +348,11 @@ document.querySelectorAll('.choice').forEach(btn => btn.addEventListener('click'
     const sess = rewardSess;
     const w = progress.world();
     const ctx = {
-      world: { seed: w.seed, found: w.found.slice(), onFind: lm => progress.foundLandmark(lm) },   // a Varázsvilág saját világa
+      // a Varázsvilág saját világa: a megtalált nevezetességek és a kaland állása azonnal mentődik
+      world: {
+        seed: w.seed, found: w.found.slice(), adv: { ...w.adv }, onFind: lm => progress.foundLandmark(lm), onPick: () => progress.pickItem(),
+        onAdventure() { if (sess !== rewardSess) return null; const g = progress.adventureDone(sess); if (g) { renderTreasure(); showGift(g, { name: name() }); } return g; },
+      },
       avatar: progress.avatar(),                             // a saját unikornis ruhája (futás, verseny, Barátom)
       gift() { if (sess !== rewardSess) return null; const g = progress.rewardGift(sess, src); if (g) { renderTreasure(); showGift(g, { name: name() }); } return g; },
       heart(at) { if (sess !== rewardSess) return false; const ok = progress.rewardHeart(sess, src); if (ok) { renderTreasure(); floatHeart(at); } return ok; },

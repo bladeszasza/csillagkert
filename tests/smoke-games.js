@@ -202,6 +202,53 @@ export async function testOpenWorld(ok) {
         `megtalálások: ${finds.length}, mondat: ${spoken() - s0}, megvan: ${w.found().join(',')}`);
     } finally { stop(); h3.remove(); }
   }
+  // 4) kaland: gyűjthető dolgok, képes számláló, ajándék
+  const nearestItem = w => w.items().sort((a, b) => Math.hypot(a.x - w.P.x, a.z - w.P.z) - Math.hypot(b.x - w.P.x, b.z - w.P.z))[0];
+  const fetchItem = (w, it) => { w.setTarget(it.x, it.z); let secs = 0; while (w.items().some(x => x.key === it.key) && secs < 20) { steps(w, 0.25); secs += 0.25; } return secs; };
+  {
+    const h4 = box(), picks = [], hearts = [];
+    const stop = runWorld(h4, { manual: true, world: { seed: 101, found: [], adv: { i: 0, n: 0 }, onPick: () => picks.push(1) }, heart: () => hearts.push(1) }), w = h4.__ow;
+    try {
+      steps(w, 0.6); w.render();
+      const r = w.advBtn.getBoundingClientRect(), pips = w.advBtn.querySelectorAll('.ow-pips i');
+      ok('kaland: a sarokban a csillagszilánk képe és tizenkét üres pötty látszik (számok nélkül)', w.advBtn.dataset.item === 'szilank' && pips.length === 12 && !w.advBtn.querySelector('.on') && r.right <= 1024 && r.top >= 0 && r.height >= 56 && !/[0-9]/.test(w.advBtn.textContent) && w.items().some(i => i.key.startsWith('nyom')),
+        `${w.advBtn.dataset.item}, ${pips.length} pötty, ${Math.round(r.left)}-${Math.round(r.right)}×${Math.round(r.height)}; dolgok: ${w.items().map(i => i.key).join(' ')}; szöveg: ${w.advBtn.textContent.trim()}`);
+      const it = nearestItem(w), s0 = spoken(), m0 = soundMark(), secs = fetchItem(w, it);
+      ok('kaland: odafut, felveszi; csak csengés szól, mondat és szív nincs, egy pötty megtelik, a profil megkapja', picks.length === 1 && w.adventure().n === 1 && spoken() === s0 && hearts.length === 0 && kinds(m0).includes('cincin') && w.advBtn.querySelectorAll('.on').length === 1,
+        `${it.key} ${secs} mp alatt; felvéve: ${picks.length}; mondat: ${spoken() - s0}`);
+      steps(w, 1); w.setTarget(it.x, it.z); steps(w, 3);
+      ok('kaland: a felvett dolog nem jön vissza', picks.length === 1 && !w.items().some(x => x.key === it.key), `felvéve: ${picks.length}`);
+      w.render(); const st = w.stats();
+      ok('kaland: a gyűjthető dolgokkal együtt is a kereten belül', st.calls <= 150 && st.triangles <= 150000, `${st.calls} hívás, ${Math.round(st.triangles / 1000)}k háromszög`);
+    } finally { stop(); h4.remove(); }
+  }
+  // az utolsó darab: Rozi egy mondata, ajándék, utána a következő kaland
+  {
+    const h5 = box(), gifts = [];
+    const stop = runWorld(h5, { manual: true, world: { seed: 555, found: [], adv: { i: 0, n: 11 }, onPick() {}, onAdventure: () => { gifts.push(1); return { id: 'teszt' }; } } }), w = h5.__ow;
+    try {
+      steps(w, 0.6);
+      const s0 = spoken(), m0 = soundMark(); fetchItem(w, nearestItem(w)); await wait(400);
+      const said = window.__spoken.slice(s0), busy = h5.__busy();
+      ok('kaland kész: ujjongás, egy mondat, egy ajándék, a jutalomidő kivár', gifts.length === 1 && said.length === 1 && /Megvan/.test(said[0]) && kinds(m0).includes('cheer') && busy, `ajándék: ${gifts.length}; ${said.join(' | ')}`);
+      steps(w, 3);
+      const a = w.adventure();
+      ok('kaland kész: utána a következő kaland jön (virágmag, üres pöttyök)', a.i === 1 && a.n === 0 && a.item === 'mag' && w.advBtn.dataset.item === 'mag' && w.advBtn.querySelectorAll('.ow-pips i').length === a.need && !w.advBtn.querySelector('.on') && gifts.length === 1, `${a.item} ${a.n}/${a.need}`);
+    } finally { stop(); h5.remove(); }
+  }
+  // ha ebben a körben már volt kaland-ajándék: a kaland kész marad, és a következő belépéskor jön az ajándék
+  {
+    const h6 = box(), picks = [];
+    const stop = runWorld(h6, { manual: true, world: { seed: 555, found: [], adv: { i: 0, n: 11 }, onPick: () => picks.push(1), onAdventure: () => null } }), w = h6.__ow;
+    try {
+      steps(w, 0.6); fetchItem(w, nearestItem(w)); steps(w, 3);
+      const a = w.adventure(), next = nearestItem(w); if (next) fetchItem(w, next);
+      ok('kaland kész, de az ajándék vár: a pöttyök telve maradnak, több darab nem számít', a.pending && a.n === 12 && w.adventure().n === 12 && picks.length === 1 && w.advBtn.classList.contains('full'), `${w.adventure().n}/12, felvéve: ${picks.length}`);
+    } finally { stop(); h6.remove(); }
+    const h7 = box(), gifts = [];
+    const stop7 = runWorld(h7, { manual: true, world: { seed: 555, found: [], adv: { i: 0, n: 12 }, onAdventure: () => { gifts.push(1); return { id: 'teszt' }; } } });
+    try { await wait(2900); ok('a következő belépéskor megjön a várakozó ajándék', gifts.length === 1, `ajándék: ${gifts.length}`); } finally { stop7(); h7.remove(); }
+  }
 }
 
 // --- minijátékok: a 6.2-es lista géppel ellenőrizhető része ---

@@ -121,8 +121,19 @@ Az M4 mérföldkő kész: **mind a 8 generálható állomás** sablonokból kés
     világa is ugyanaz marad** (minden gyereknek saját világa van), így legközelebb folytathatja a keresést. A már
     megtalált nevezetességnél csak egy halk csengés szól.
   - **Eltérés a tervtől:** a terv messziről látszó fényoszlopot írt, de a köd és a kamera miatt a távoli tárgy nem
-    látszik, ezért a fény és a képes jelző vezet. A térkép, a kalandok, az élőhelyek, a varázslények és az album a
-    következő szeletekben jönnek.
+    látszik, ezért a fény és a képes jelző vezet. A térkép, az élőhelyek, a varázslények és az album a következő
+    szeletekben jönnek.
+- **Varázsvilág (M7, 2. szelet): kalandok.** Egyszerre egy kaland fut: egyféle csillogó dolgot kell összeszedni
+  (csillagszilánk, virágmag, madártoll, kristály; 12, 14, 16, 18 darab, utána elölről). A jobb felső sarokban a dolog
+  képe és a megtelő pöttyök mutatják, mennyi kell még, számok nélkül. A kezdőhelytől három darab vezet az első
+  nevezetesség felé, így a gyerek rögtön látja, mit kell szedni; a többi elszórva csillog a fűben.
+  - **Felszedés:** elég odafutni (ugrás közben is). Csak egy kis csengés szól, Rozi nem beszél, szív sem jár érte (a szív
+    a jó tettekért van). Rozi a kaland elején mond egy mondatot, és a végén egyet.
+  - **Jutalom:** ha megvan mind, ajándék jár ugyanarról az ajándéklétráról, ahonnan a többi (ruha vagy kerti dísz,
+    végül aranyvirág), és a jutalomkör végén megjelenik a kertben. Ez a kör saját ajándékán felül jár, de körönként
+    legfeljebb egy; ha egy körben két kaland is elkészülne, a második ajándéka a következő belépéskor jön.
+  - **Mentés:** minden felszedett darab azonnal a profilba kerül (melyik kaland, hány darab van már), így a kör közepén
+    véget érő játék sem veszít semmit. Egy gyerek célzottan kb. egy-másfél perc futással gyűjti össze az első kalandot.
 - **Barátok:** akinek köszönsz (odafutsz hozzá), veled jön; egyszerre legfeljebb négyen, sorban, egymást kikerülve.
   A követő barát nem tűnik el, akármilyen messzire futsz.
 - **Hangok:** patadobogás, ugrás, érkezés, koccanás; a versenyben visszaszámlálás, rajt és ujjongás. A verseny végén a két

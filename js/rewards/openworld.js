@@ -5,13 +5,15 @@
 // Barátok: némelyik csatlakozik és veled fut (legfeljebb négy, V alakban), némelyik csak integet.
 // Varázsvilág (M7): a világban nevezetességek állnak (js/world-map.js). Egy kis fény és egy képes jelző mutatja, merre
 // van a következő; amit a gyerek megtalált, azt a profilja megjegyzi (a világ magjával együtt, így a világa ugyanaz marad).
+// Kalandok (M7/2): csillogó dolgok a fűben; a sarokban a képük és a megtelő pöttyök mutatják, mennyi kell még. Ha megvan
+// mind, ajándék jár (opts.world.onAdventure), és jön a következő. A felszedés csak hang, Rozi a kaland elején és végén szól.
 import { icon } from '../icons.js';
 import * as THREE from '../../vendor/three.module.js';
 import { mat as lookMat, addLights, createQuality } from '../three/look.js';
 import { makeCharacter, animateCharacter, animateRunner, createCharacterBatch, CHARACTER_KINDS } from '../three/characters.js';
 import { say } from '../voice.js';
 import { play, animalVoice } from '../sounds.js';
-import { makeTerrain, guideGoal, LANDMARKS, landmarkById, WORLD_LINES, SITE_CLEAR, FIND_R } from '../world-map.js';
+import { makeTerrain, guideGoal, LANDMARKS, landmarkById, WORLD_LINES, SITE_CLEAR, FIND_R, itemSpots, adventureAt, cleanAdventure, PICK_R } from '../world-map.js';
 import { buildLandmark } from './landmarks3d.js';
 export { makeTerrain };
 
@@ -52,14 +54,17 @@ const PASTEL = [0xff8fc8, 0xffcf3f, 0xffffff, 0x9bb8ff, 0xc9a0ff, 0xff9f43];
 const CROWNS = [0x6fcf7f, 0x57c46f, 0xffa8d4, 0x8fe08f];
 
 // opts.seed: a világ magja (teszt); opts.manual: nincs saját képkocka-ciklus, a teszt lépteti (update/render)
-// opts.world: { seed, found, onFind(fajta) } – a gyerek saját világa és a már megtalált nevezetességek (js/progress.js)
+// opts.world: { seed, found, onFind(fajta), adv: { i, n }, onPick(), onAdventure() } – a gyerek saját világa, a már megtalált
+// nevezetességek és a kaland állása (js/progress.js); onAdventure az ajándékot adja vissza (vagy null, ha ebben a körben már volt)
 export function run(container, opts = {}) {
   const seed = Number.isFinite(opts.seed) ? opts.seed | 0 : Number.isFinite(opts.world?.seed) ? opts.world.seed | 0 : (Math.random() * 1e9) | 0, manual = !!opts.manual;
   const terrain = makeTerrain(seed), { hash2, noise, heightAt, siteAt } = terrain;
   const found = new Set((opts.world?.found || []).filter(id => landmarkById(id)));
+  let adv = cleanAdventure(opts.world?.adv), cur = adventureAt(adv.i);
   container.innerHTML = `<div class="ow"><canvas class="ow-gl"></canvas><div class="ow-load">🌍 Világ építése…</div>
     <div class="ow-hint">Koppints oda, ahová fusson az unikornis! ${icon('ui-point')}</div><button class="ow-jump round" aria-label="Ugrás">${icon('ui-jump')}</button>
     <div class="ow-album">${LANDMARKS.map(l => `<button class="ow-lm round" data-lm="${l.id}" aria-label="${l.name}">${icon('lm-' + l.id)}</button>`).join('')}</div>
+    <button class="ow-adv" aria-label="Kaland"><span class="ow-adv-ic"></span><span class="ow-pips"></span></button>
     <button class="ow-guide round" aria-label="Merre van?" hidden><span class="ow-guide-ic"></span><span class="ow-guide-arrow">${icon('ui-jump')}</span></button></div>`;
   const root = container.querySelector('.ow'), canvas = root.querySelector('.ow-gl');
   const loadEl = root.querySelector('.ow-load'), hint = root.querySelector('.ow-hint'), jumpBtn = root.querySelector('.ow-jump');
@@ -77,6 +82,10 @@ export function run(container, opts = {}) {
     flower: new THREE.SphereGeometry(0.13, 5, 4), rock: new THREE.DodecahedronGeometry(1, 0), log: new THREE.CylinderGeometry(0.32, 0.32, 2.0, 8),
     puddle: new THREE.CircleGeometry(1, 16), heart: heartGeometry(),
     fly: new THREE.SphereGeometry(0.16, 8, 6), halo: new THREE.SphereGeometry(0.42, 10, 8),
+    // a gyűjthető dolgok (egyszerre egyféle látszik: a mostani kaland dolga)
+    szilank: new THREE.OctahedronGeometry(0.42, 0), mag: new THREE.SphereGeometry(0.3, 10, 8).scale(0.8, 1.15, 0.8),
+    toll: new THREE.ConeGeometry(0.22, 1.0, 6).scale(1, 1, 0.35), kristaly: new THREE.OctahedronGeometry(0.34, 0).scale(0.8, 1.6, 0.8),
+    glow: new THREE.SphereGeometry(0.75, 10, 8),
   };
   const M = {
     ground: lookMat({ vertexColors: true }),
@@ -85,8 +94,10 @@ export function run(container, opts = {}) {
     log: lookMat({ color: 0x9b6b43 }), puddle: lookMat({ color: 0x8fd0ff, transparent: true, opacity: 0.7 }),
     heart: lookMat({ color: 0xff4f8f, emissive: 0x661030 }),
     landmark: lookMat({ vertexColors: true }),
+    item: lookMat({ color: 0xffffff, emissive: 0x333333 }), glow: new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3, depthWrite: false }),
     fly: new THREE.MeshBasicMaterial({ color: 0xfff7b0, fog: false }), halo: new THREE.MeshBasicMaterial({ color: 0xfff08a, transparent: true, opacity: 0.35, depthWrite: false, fog: false }),
   };
+  const S = { dx: 0, dz: 0, d: 0 };
   const tmp = new THREE.Object3D(), col = new THREE.Color(), UP = new THREE.Vector3(0, 1, 0), dirV = new THREE.Vector3();
   function instanced(geo, mat, list, place, colors) {
     const m = new THREE.InstancedMesh(geo, mat, Math.max(1, list.length)); m.count = list.length;
@@ -98,9 +109,16 @@ export function run(container, opts = {}) {
   const batch = createCharacterBatch(scene);
   const pals = [];                                    // világ-szintű lista: a csatlakozott barát nem a chunkhoz tartozik, így nem tűnik el
   const hearts = new THREE.InstancedMesh(G.heart, M.heart, 8); hearts.count = 0; hearts.frustumCulled = false; scene.add(hearts);
+  const ITEM_MAX = 24;                                // a közeli gyűjthető dolgok: két közös rajzolás (a dolog és a fénye)
+  const itemMesh = new THREE.InstancedMesh(G[cur.item], M.item, ITEM_MAX), glowMesh = new THREE.InstancedMesh(G.glow, M.glow, ITEM_MAX);
+  for (const m of [itemMesh, glowMesh]) { m.count = 0; m.frustumCulled = false; scene.add(m); }
+  const ITEM_COL = { szilank: [0xffd84a, 0x806000], mag: [0xc98a5a, 0x40220a], toll: [0xff9fd0, 0x702050], kristaly: [0x9bf0ff, 0x206070] };
+  const itemLook = () => { itemMesh.geometry = G[cur.item]; M.item.color.setHex(ITEM_COL[cur.item][0]); M.item.emissive.setHex(ITEM_COL[cur.item][1]); M.glow.color.setHex(ITEM_COL[cur.item][0]); };
+  itemLook();
 
   // --- világ: chunkok ---
   const chunks = new Map(), key = (cx, cz) => cx + ',' + cz;
+  const picked = new Set();                           // ebben a játékban már felszedett dolgok (a chunk újragyártásakor sem jönnek vissza)
   const landmarks = new Map();                        // a most legyártott nevezetességek: hely kulcsa → { site, mesh, sy }
   function makeChunk(cx, cz) {
     const rnd = mulberry(hash2(cx, cz, seed + 7) * 4294967296 | 0);
@@ -194,6 +212,8 @@ export function run(container, opts = {}) {
       for (const c of b.colliders) colliders.push({ ...c, x: s.x + c.x, z: s.z + c.z });
       landmarks.set(s.key, { site: s, mesh, sy: 1, chunk: k });
     }
+    const items = itemSpots(seed, cx, cz, CHUNK).filter(it => !picked.has(it.key) && !colliders.some(o => separation(o, it.x, it.z, S).d < o.r + 0.8))
+      .map(it => ({ ...it, y: heightAt(it.x, it.z) }));
     scene.add(group);
     // barátságos állatok helye: együtt futnak, vagy csak mosolyognak és integetnek (a figura csak közelről készül el)
     const spawns = [];
@@ -204,7 +224,7 @@ export function run(container, opts = {}) {
         spawns.push({ id: k + ':' + i, kind, x: p[0], z: p[1], mode, ang, pal: null });
       }
     }
-    return { group, colliders, trees, crownMesh, spawns, cx, cz, key: k };
+    return { group, colliders, trees, crownMesh, spawns, items, cx, cz, key: k };
   }
   function crownPose(o, t) {
     if (t.round) { o.position.set(t.x, t.gy + 2.0 * t.s, t.z); o.scale.set(t.s * t.k, 0.9 * t.s * t.k, t.s * t.k); }
@@ -298,13 +318,14 @@ export function run(container, opts = {}) {
   const kd = e => { keys.add(e.code); if (e.code === 'Space') { e.preventDefault(); jump(); } }, ku = e => keys.delete(e.code);
   window.addEventListener('keydown', kd); window.addEventListener('keyup', ku);
 
-  const S = { dx: 0, dz: 0, d: 0 }, camGoal = new THREE.Vector3(), head = new THREE.Vector3();
+  const camGoal = new THREE.Vector3(), head = new THREE.Vector3();
   let t = 0, stepT = 0, bumpT = -9, voiceT = -9;
   function greet(p) { p.greetT = t; if (t - voiceT > 1.4) { voiceT = t; animalVoice(p.kind); } }
 
   function update(dt) {
     t += dt;
     updateWorld(dt);
+    updateItems(dt);
     if (steer) aim(steer.x, steer.y);                 // tartott ujj: minden képkockában újra célzunk (a kamera is mozog)
     // irány: a cél felé vagy nyilakkal
     let dx = 0, dz = 0;
@@ -441,6 +462,47 @@ export function run(container, opts = {}) {
       }
     }
   }
+  // --- kaland: gyűjthető dolgok ---
+  const advBtn = root.querySelector('.ow-adv'), advIc = advBtn.querySelector('.ow-adv-ic'), pipsEl = advBtn.querySelector('.ow-pips');
+  let advEndT = -9, pending = false, nextAdvT = 0;
+  function renderAdv() {
+    advIc.innerHTML = icon('it-' + cur.item); advBtn.dataset.item = cur.item;
+    pipsEl.innerHTML = Array.from({ length: cur.need }, (_, k) => `<i class="${k < adv.n ? 'on' : ''}"></i>`).join('');
+    advBtn.classList.toggle('full', adv.n >= cur.need);
+  }
+  renderAdv();
+  advBtn.addEventListener('click', () => speak(adv.n >= cur.need ? cur.done : cur.intro));
+  // kész a kaland: Rozi egy mondata, és az ajándék (ha ebben a körben már volt kaland-ajándék, a következő körben jön)
+  function finishAdventure(quiet) {
+    finaleT = t; advEndT = t;
+    if (!quiet) { play('cheer'); sayT = t; say(cur.done, { remember: false }); }
+    const g = opts.world?.onAdventure?.();
+    if (g) { pending = false; nextAdvT = t + 2.5; } else pending = true;
+  }
+  function updateItems(dt) {
+    if (nextAdvT && t >= nextAdvT) { nextAdvT = 0; adv = { i: adv.i + 1, n: 0 }; cur = adventureAt(adv.i); itemLook(); renderAdv(); }   // a következő kaland
+    const cx = Math.floor((P.x + CHUNK / 2) / CHUNK), cz = Math.floor((P.z + CHUNK / 2) / CHUNK);
+    let n = 0;
+    for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) {
+      const c = chunks.get(key(cx + a, cz + b)); if (!c) continue;
+      for (let j = c.items.length - 1; j >= 0; j--) {
+        const it = c.items[j];
+        if (!nextAdvT && !pending && Math.hypot(it.x - P.x, it.z - P.z) < PICK_R) {           // felszedés: csak hang, nincs mondat
+          picked.add(it.key); c.items.splice(j, 1); play('cincin');
+          adv.n = Math.min(cur.need, adv.n + 1); opts.world?.onPick?.();
+          renderAdv(); advBtn.classList.remove('pop'); void advBtn.offsetWidth; advBtn.classList.add('pop');
+          if (adv.n >= cur.need) finishAdventure(false);
+          continue;
+        }
+        if (n >= ITEM_MAX) continue;
+        const bob = Math.sin(t * 2.4 + it.x) * 0.15;
+        tmp.position.set(it.x, it.y + 0.9 + bob, it.z); tmp.rotation.set(cur.item === 'toll' ? 0.5 : 0, t * 1.8 + it.z, 0); tmp.scale.setScalar(1); tmp.updateMatrix(); itemMesh.setMatrixAt(n, tmp.matrix);
+        tmp.rotation.set(0, 0, 0); tmp.scale.setScalar(1 + Math.sin(t * 4 + it.x) * 0.12); tmp.updateMatrix(); glowMesh.setMatrixAt(n, tmp.matrix);
+        n++;
+      }
+    }
+    itemMesh.count = glowMesh.count = n; itemMesh.instanceMatrix.needsUpdate = glowMesh.instanceMatrix.needsUpdate = true;
+  }
   container.__busy = () => t - finaleT < 2.5;           // a megtalálás pillanatában a jutalomidő nem ér véget
 
   function updatePals(dt) {
@@ -519,7 +581,8 @@ export function run(container, opts = {}) {
   const render = () => renderer.render(scene, camera);
   function start() {
     ready = true; loadEl.style.display = 'none'; hint.style.opacity = 1; setTimeout(() => { if (alive) hint.style.opacity = 0; }, 8000);
-    say(found.size < LANDMARKS.length ? WORLD_LINES.start : WORLD_LINES.startAll);
+    say((found.size < LANDMARKS.length ? WORLD_LINES.start : WORLD_LINES.startAll) + (adv.n === 0 ? ' ' + cur.intro : ''));
+    if (adv.n >= cur.need) setTimeout(() => { if (alive) finishAdventure(true); }, 2500);   // az előző körben kész lett, az ajándék most jön
   }
   // kezdeti világ előre legenerálva (néhány darab képkockánként), csak utána indul a futás
   function preload() {
@@ -539,6 +602,7 @@ export function run(container, opts = {}) {
     colliders: () => [...chunks.values()].flatMap(c => c.colliders),
     trees: () => [...chunks.values()].flatMap(c => c.trees),
     siteAt, landmarks: () => [...landmarks.values()], found: () => [...found], goal: () => goal, guide: guideBtn, album,
+    items: () => [...chunks.values()].flatMap(c => c.items), adventure: () => ({ ...adv, item: cur.item, need: cur.need, pending }), advBtn,
     setTarget: (x, z) => { TGT.x = x; TGT.z = z; P.target = TGT; P.tap = true; P.best = Infinity; P.stall = 0; },
     stats: () => ({ chunks: chunks.size, pals: pals.length, batch: batch.size - 1 /* a játékos unikornisa nélkül */, instances: batch.meshes.reduce((s, m) => s + m.count, 0), calls: renderer.info.render.calls, triangles: renderer.info.render.triangles }),
   };
@@ -547,7 +611,7 @@ export function run(container, opts = {}) {
     alive = false; cancelAnimationFrame(raf); ro?.disconnect();
     window.removeEventListener('resize', size); window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku);
     for (const c of chunks.values()) disposeChunk(c);
-    chunks.clear(); landmarks.clear(); pals.length = 0; batch.dispose(); hearts.dispose(); delete container.__busy;
+    chunks.clear(); landmarks.clear(); pals.length = 0; batch.dispose(); hearts.dispose(); itemMesh.dispose(); glowMesh.dispose(); delete container.__busy;
     Object.values(G).forEach(g => g.dispose()); Object.values(M).forEach(m => m.dispose());
     renderer.dispose(); renderer.forceContextLoss?.();
   };

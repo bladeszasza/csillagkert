@@ -1,7 +1,9 @@
 // A Varázsvilág térképe (js/world-map.js): a nevezetességek helye, a sík talaj körülöttük, a vezető fény célja, a mentés.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LANDMARKS, WORLD_LINES, landmarkById, siteOfCell, makeTerrain, guideGoal, CELL, SITE_FLAT, SITE_BLEND, FIND_R } from '../js/world-map.js';
+import { LANDMARKS, WORLD_LINES, landmarkById, siteOfCell, makeTerrain, guideGoal, CELL, SITE_FLAT, SITE_BLEND, FIND_R,
+  ITEMS, ADVENTURES, adventureAt, cleanAdventure, itemSpots, TRAIL, PICK_R } from '../js/world-map.js';
+import { newRewardSession, adventureReward } from '../js/economy.js';
 import { ICONS } from '../js/icons.js';
 import { openProfiles } from '../js/progress.js';
 
@@ -100,10 +102,96 @@ test('a gyerek világa és a megtalált nevezetességek a profiljában maradnak 
   const again = openProfiles(st).get().world;
   assert.equal(again.seed, w.seed); assert.deepEqual(again.found, ['kut', 'fa']);
   assert.ok(p.use(p.importData(p.exportData())));
-  assert.deepEqual(p.get().world, { seed: w.seed, found: ['kut', 'fa'] });
+  assert.deepEqual(p.get().world, { seed: w.seed, found: ['kut', 'fa'], adv: { i: 0, n: 0 } });
   const bad = p.exportData(); bad.profile.world = { seed: 'x', found: ['<b>'] };
   assert.ok(p.use(p.importData(bad))); assert.equal(p.get().world, null);
   const odd = p.exportData(); odd.profile.world = { seed: -5, found: ['kut', '<x>', 'kut', 9] };
-  assert.ok(p.use(p.importData(odd))); assert.deepEqual(p.get().world, { seed: 0, found: ['kut'] });
+  assert.ok(p.use(p.importData(odd))); assert.deepEqual(p.get().world, { seed: 0, found: ['kut'], adv: { i: 0, n: 0 } });
   p.reset(); assert.equal(p.get().world, null, 'újrakezdéskor új világ jön');
+});
+
+// --- kalandok és gyűjthető dolgok (M7, 2. szelet) ---
+const CH = 30;   // a chunk oldala a játékban (js/rewards/openworld.js)
+
+test('kalandok: minden dolognak saját ikonja van, a mondatok rövidek és kimondhatók', () => {
+  assert.equal(new Set(ITEMS.map(i => i.id)).size, ITEMS.length);
+  for (const i of ITEMS) assert.ok(ICONS['it-' + i.id], 'nincs ikon: ' + i.id);
+  for (const a of ADVENTURES) {
+    assert.ok(ITEMS.some(i => i.id === a.item), a.item);
+    assert.ok(a.need >= 10 && a.need <= 18, 'a pöttyök elférnek (legfeljebb három sor)');
+    for (const t of [a.intro, a.done]) {
+      assert.doesNotMatch(t, /[0-9]/, t); assert.doesNotMatch(t, /\p{Extended_Pictographic}/u, t);
+      for (const s of sentences(t)) assert.ok(words(s) <= 12, `túl hosszú: ${s}`);
+    }
+    assert.match(a.done, /Megvan/);
+  }
+  assert.equal(adventureAt(ADVENTURES.length).item, ADVENTURES[0].item, 'körbe jár');
+});
+
+test('a kaland mentett állása megbízhatatlan adatból is rendbe jön', () => {
+  assert.deepEqual(cleanAdventure(null), { i: 0, n: 0 });
+  assert.deepEqual(cleanAdventure({ i: '2', n: 5 }), { i: 2, n: 5 });
+  assert.deepEqual(cleanAdventure({ i: -4, n: -1 }), { i: 0, n: 0 });
+  assert.deepEqual(cleanAdventure({ i: 0, n: 999 }), { i: 0, n: ADVENTURES[0].need });
+  assert.deepEqual(cleanAdventure({ i: 'x', n: null }), { i: 0, n: 0 });
+  assert.deepEqual(cleanAdventure({ i: 1e12, n: 3 }), { i: 9999, n: 3 });
+});
+
+test('a gyűjthető dolgok helye a magból jön, és a kezdőhelytől nyom vezet az első nevezetesség felé', () => {
+  for (const seed of SEEDS) {
+    assert.deepEqual(itemSpots(seed, 2, -3, CH), itemSpots(seed, 2, -3, CH));
+    const s0 = siteOfCell(seed, 0, 0), keys = new Set(), trail = [];
+    for (let cx = -6; cx <= 6; cx++) for (let cz = -6; cz <= 6; cz++) for (const it of itemSpots(seed, cx, cz, CH)) {
+      assert.ok(!keys.has(it.key), 'egyedi kulcs'); keys.add(it.key);
+      assert.equal(Math.floor((it.x + CH / 2) / CH), cx); assert.equal(Math.floor((it.z + CH / 2) / CH), cz);   // a saját chunkjában
+      assert.ok(Math.hypot(it.x, it.z) > 6, 'a kezdőhely szabad');
+      if (it.key.startsWith('nyom')) trail.push(it);
+    }
+    assert.equal(trail.length, TRAIL.length, `mag ${seed}: a nyom megvan`);
+    for (const it of trail) assert.ok(Math.abs(it.x * s0.z - it.z * s0.x) / Math.hypot(s0.x, s0.z) < 1e-6 && it.x * s0.x + it.z * s0.z > 0, 'a nyom az első nevezetesség felé mutat');
+  }
+});
+
+test('egy kaland nagyjából egy jutalomkörnyi futás (nem túl rövid, nem végtelen)', () => {
+  // mohó "gyerek": mindig a legközelebbi látható (40 egységen belüli) dolog felé fut; ha nem lát semmit, egyenesen fut tovább
+  const WALK = 7.5, need = adventureAt(0).need;
+  for (const seed of SEEDS) {
+    const got = new Set(); let x = 0, z = 0, walked = 0, steps = 0;
+    while (got.size < need && steps++ < 5000) {
+      const cx = Math.floor((x + CH / 2) / CH), cz = Math.floor((z + CH / 2) / CH);
+      let best = null, bd = 40;
+      for (let a = -2; a <= 2; a++) for (let b = -2; b <= 2; b++) for (const it of itemSpots(seed, cx + a, cz + b, CH)) {
+        const d = Math.hypot(it.x - x, it.z - z); if (!got.has(it.key) && d < bd) { bd = d; best = it; }
+      }
+      if (best) { walked += Math.max(0, bd - PICK_R); x = best.x; z = best.z; got.add(best.key); }
+      else { x += 6; z -= 8; walked += 10; }
+    }
+    const secs = walked / WALK;
+    assert.equal(got.size, need, `mag ${seed}: nem gyűlt össze`);
+    assert.ok(secs > 40 && secs < 240, `mag ${seed}: az első kaland ${secs.toFixed(0)} mp célzott futás`);
+  }
+});
+
+test('kész kaland: egy ajándék a közös létráról, körönként legfeljebb egy; az állás a profilban marad', () => {
+  const st = new FakeStorage(), p = openProfiles(st);
+  p.world();
+  const need = adventureAt(0).need, sess = newRewardSession();
+  assert.equal(p.adventureDone(sess), null, 'még nincs kész');
+  for (let k = 0; k < need + 3; k++) p.pickItem();
+  assert.equal(p.get().world.adv.n, need, 'nem szalad túl');
+  assert.deepEqual(openProfiles(st).get().world.adv, { i: 0, n: need }, 'minden darab azonnal mentve');
+  const owned0 = p.get().owned.length, gold0 = p.get().gold, g = p.adventureDone(sess);
+  assert.ok(g && g.id, 'ajándék jár');
+  assert.equal(p.get().owned.length + p.get().gold, owned0 + gold0 + 1, 'egy új dolog a ruhatárban vagy a kertben');
+  assert.deepEqual(p.get().world.adv, { i: 1, n: 0 }, 'jön a következő kaland');
+  assert.equal(p.adventureDone(sess), null, 'kétszer nem fizet');
+  for (let k = 0; k < adventureAt(1).need; k++) p.pickItem();
+  assert.equal(p.adventureDone(sess), null, 'ugyanabban a körben a második kaland ajándéka vár');
+  assert.equal(p.get().world.adv.n, adventureAt(1).need, 'a kész kaland megmarad a következő körre');
+  assert.ok(p.adventureDone(newRewardSession()), 'a következő körben megjön');
+  const s2 = newRewardSession(); assert.ok(adventureReward(p.get(), s2)); assert.equal(adventureReward(p.get(), s2), null);
+  assert.ok(p.use(p.importData(p.exportData())));
+  assert.deepEqual(p.get().world.adv, { i: 2, n: 0 });
+  const bad = p.exportData(); bad.profile.world.adv = { i: 'x', n: 77 };
+  assert.ok(p.use(p.importData(bad))); assert.deepEqual(p.get().world.adv, { i: 0, n: adventureAt(0).need });
 });

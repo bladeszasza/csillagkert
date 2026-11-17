@@ -244,6 +244,14 @@ button { touch-action: none; }
 .ow-lm { width: 60px; height: 60px; font-size: 40px; background: rgba(255,255,255,.75); padding: 0; }
 .ow-lm .ico { opacity: .28; filter: grayscale(1); transition: opacity .4s, filter .4s; }
 .ow-lm.got { background: rgba(255,255,255,.95); } .ow-lm.got .ico { opacity: 1; filter: none; }
+/* a kaland: a gyűjtendő dolog képe és a megtelő pöttyök (számok nélkül) */
+.ow-adv { position: absolute; top: calc(10px + env(safe-area-inset-top, 0px)); right: calc(12px + env(safe-area-inset-right, 0px)); z-index: 4; display: flex; align-items: center; gap: 6px; min-height: 64px; padding: 6px 12px 6px 6px; border-radius: 34px; background: rgba(255,255,255,.88); }
+.ow-adv-ic { font-size: 48px; line-height: 0; }
+.ow-adv.pop .ow-adv-ic { animation: hop .5s; }
+.ow-pips { display: grid; grid-template-columns: repeat(6, 12px); gap: 4px; }
+.ow-pips i { width: 12px; height: 12px; border-radius: 50%; background: #d9d2e8; transition: background .3s, transform .3s; }
+.ow-pips i.on { background: #ffbf1f; box-shadow: 0 0 6px #ffe680; }
+.ow-adv.full .ow-pips i { background: #ff8fc8; }
 .ow-guide { position: absolute; width: 72px; height: 72px; margin: -36px 0 0 -36px; font-size: 44px; z-index: 4; background: rgba(255,255,255,.92); padding: 0; transition: left .12s linear, top .12s linear; }
 .ow-guide[hidden] { display: none; }
 .ow-guide-arrow { position: absolute; inset: -16px; font-size: 20px; pointer-events: none; display: flex; justify-content: center; align-items: flex-start; }
