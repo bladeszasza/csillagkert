@@ -244,6 +244,18 @@ button { touch-action: none; }
 .ow-lm { width: 60px; height: 60px; font-size: 40px; background: rgba(255,255,255,.75); padding: 0; }
 .ow-lm .ico { opacity: .28; filter: grayscale(1); transition: opacity .4s, filter .4s; }
 .ow-lm.got { background: rgba(255,255,255,.95); } .ow-lm.got .ico { opacity: 1; filter: none; }
+/* Varázskönyv: a barátnak fogadott varázslények és a nevezetességek (ami még nincs meg, árnyék) */
+.ow-book { position: absolute; top: calc(88px + env(safe-area-inset-top, 0px)); right: calc(12px + env(safe-area-inset-right, 0px)); width: 64px; height: 64px; font-size: 44px; padding: 0; z-index: 4; background: rgba(255,255,255,.9); }
+.ow-book.new { animation: hop 1.2s infinite; box-shadow: 0 0 0 4px #ffd84a; }
+.ow-bookpage { position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; background: rgba(40,20,80,.45); }
+.ow-bookpage[hidden] { display: none; }
+.ow-bookcard { position: relative; display: grid; grid-template-columns: repeat(5, 96px); gap: 14px; padding: 26px 26px 22px; border-radius: 28px; background: #fff8ec; box-shadow: 0 10px 40px rgba(40,20,80,.4); max-width: calc(100vw - 32px); }
+@media (max-width: 640px) { .ow-bookcard { grid-template-columns: repeat(3, 88px); } }
+.ow-bk { width: 96px; height: 96px; font-size: 70px; padding: 0; border-radius: 22px; background: #fff; }
+.ow-bk .ico { opacity: .22; filter: grayscale(1) brightness(.4); transition: opacity .4s, filter .4s; }
+.ow-bk.lm { background: #eef6ff; }
+.ow-bk.got { background: #fff1b8; box-shadow: inset 0 0 0 4px #ffd84a; } .ow-bk.got .ico { opacity: 1; filter: none; }
+.ow-bookclose { position: absolute; right: -14px; top: -14px; width: 60px; height: 60px; font-size: 30px; padding: 0; }
 /* a kaland: a gyűjtendő dolog képe és a megtelő pöttyök (számok nélkül) */
 .ow-adv { position: absolute; top: calc(10px + env(safe-area-inset-top, 0px)); right: calc(12px + env(safe-area-inset-right, 0px)); z-index: 4; display: flex; align-items: center; gap: 6px; min-height: 64px; padding: 6px 12px 6px 6px; border-radius: 34px; background: rgba(255,255,255,.88); }
 .ow-adv-ic { font-size: 48px; line-height: 0; }

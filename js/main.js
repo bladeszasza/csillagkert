@@ -350,7 +350,8 @@ document.querySelectorAll('.choice').forEach(btn => btn.addEventListener('click'
     const ctx = {
       // a Varázsvilág saját világa: a megtalált nevezetességek és a kaland állása azonnal mentődik
       world: {
-        seed: w.seed, found: w.found.slice(), adv: { ...w.adv }, onFind: lm => progress.foundLandmark(lm), onPick: () => progress.pickItem(),
+        seed: w.seed, found: w.found.slice(), adv: { ...w.adv }, met: w.met.slice(), onFind: lm => progress.foundLandmark(lm), onPick: () => progress.pickItem(),
+        onMeet: id => progress.metCreature(id),
         onAdventure() { if (sess !== rewardSess) return null; const g = progress.adventureDone(sess); if (g) { renderTreasure(); showGift(g, { name: name() }); } return g; },
       },
       avatar: progress.avatar(),                             // a saját unikornis ruhája (futás, verseny, Barátom)

@@ -271,6 +271,56 @@ export async function testOpenWorld(ok) {
       ok('élőhely: a fa alá ugorva a fa megrázódik, levél pottyan, puffan', kinds(m1).includes('plop') && drops >= d0 + 5, `cseppek: ${drops}, hangok: ${kinds(m1).join(',')}`);
     } finally { stop(); h8.remove(); }
   }
+  // 6) varázslények: odarohanva elugrik (egy figyelmeztető mondat), megvárva odajön, barátok lesznek, a könyvbe kerül
+  {
+    const h9 = box(), meets = [], hearts = [];
+    const stop = runWorld(h9, { manual: true, world: { seed: 101, found: [], met: [], onMeet: id => meets.push(id) }, heart: () => hearts.push(1) }), w = h9.__ow, P = w.P;
+    try {
+      steps(w, 16);                                            // a kezdő mondat után legalább negyed perc csend kell
+      const c = w.critters().find(x => x.key === 'otthon');
+      ok('varázslény: a kezdőhely mögött ott vár a Felhőbárány', !!c && c.kind === 'barany' && !!c.mesh, c ? `${c.kind} ${r1(Math.hypot(c.x, c.z))} egységre` : 'nincs');
+      // odarohan
+      Object.assign(P, { x: c.x + 12, z: c.z, target: null }); steps(w, 0.5);
+      const s0 = spoken(); w.setTarget(c.x, c.z); let shy = false, secs = 0;
+      while (secs < 4 && !shy) { steps(w, 0.05); secs += 0.05; if (c.mode === 'shy') shy = true; }
+      steps(w, 0.3); await wait(400);
+      const said = window.__spoken.slice(s0);
+      ok('varázslény: ha odarohan, a lény elugrik, és Rozi egyszer szól, hogy várja meg', shy && meets.length === 0 && said.length === 1 && /várd meg/.test(said[0]), `elugrott: ${shy}; ${said.join(' | ')}`);
+      // elmegy, aztán visszajön, megáll és vár
+      Object.assign(P, { x: c.x + 30, z: c.z, target: null }); steps(w, 3);
+      Object.assign(P, { x: c.x + 7, z: c.z + 1, target: null }); steps(w, 2);
+      let ringSeen = false; secs = 0; const s1 = spoken();
+      while (!meets.length && secs < 10) { steps(w, 0.1); secs += 0.1; if (w.ring().visible) ringSeen = true; }
+      await wait(400);
+      const said2 = window.__spoken.slice(s1), busy = h9.__busy();
+      ok('varázslény: ha megáll és vár, telik a gyűrű, a lény odajön; egy mondat, egy szív, barátok lettek',
+        ringSeen && meets.join() === 'barany' && hearts.length === 1 && said2.length === 1 && /Megvárt a Felhőbárány/.test(said2[0]) && Math.hypot(c.x - P.x, c.z - P.z) < 2.5 && w.met().includes('barany') && w.bookBtn.classList.contains('new'),
+        `${r1(secs)} mp; gyűrű: ${ringSeen}; ${said2.join(' | ')}; távolság ${r1(Math.hypot(c.x - P.x, c.z - P.z))}`);
+      // Varázskönyv
+      w.bookBtn.click();
+      const cards = [...w.bookPage.querySelectorAll('.ow-bk')], got = cards.filter(b => b.classList.contains('got')).map(b => b.dataset.cr || b.dataset.lm);
+      const tiny = cards.filter(b => b.getBoundingClientRect().width < 56).length;
+      ok('Varázskönyv: kinyílik, a Felhőbárány színes, a többi még árnyék; kilenc nagy kártya', !w.bookPage.hidden && cards.length === 9 && got.join() === 'barany' && tiny === 0 && !w.bookBtn.classList.contains('new'), `megvan: ${got.join(',')}; kicsi: ${tiny}`);
+      const s2 = spoken(); w.bookPage.querySelector('[data-cr=tunder]').click(); await wait(300);
+      const s3 = spoken(); w.bookPage.querySelector('[data-cr=barany]').click(); await wait(300);
+      w.bookPage.querySelector('.ow-bookclose').click();
+      ok('Varázskönyv: koppintásra megmondja, ki az (vagy hogy még nem találkoztunk), és bezárható', /még nem találkoztunk/.test(window.__spoken[s2] || '') && /Felhőbárány/.test(window.__spoken[s3] || '') && w.bookPage.hidden, `${window.__spoken.slice(s2).join(' | ')}`);
+      w.render(); const st = w.stats();
+      ok('varázslény: a lényekkel együtt is a kereten belül', st.calls <= 150 && st.triangles <= 150000, `${st.calls} hívás, ${Math.round(st.triangles / 1000)}k háromszög`);
+    } finally { stop(); h9.remove(); }
+  }
+  // a régi barát hamar odajön, mondat és szív nélkül
+  {
+    const h10 = box(), meets = [], hearts = [];
+    const stop = runWorld(h10, { manual: true, world: { seed: 101, found: [], met: ['barany'], onMeet: id => meets.push(id) }, heart: () => hearts.push(1) }), w = h10.__ow, P = w.P;
+    try {
+      steps(w, 1); const c = w.critters().find(x => x.key === 'otthon');
+      Object.assign(P, { x: c.x + 7, z: c.z + 1, target: null }); steps(w, 0.5);
+      const s0 = spoken(), m0 = soundMark(); let secs = 0; while (c.mode !== 'stay' && secs < 6) { steps(w, 0.1); secs += 0.1; }
+      await wait(300);
+      ok('varázslény: a régi barát hamar odajön; csak a hangja szól, nincs új mondat és szív', c.mode === 'stay' && secs < 3.5 && meets.length === 0 && hearts.length === 0 && spoken() === s0 && kinds(m0).includes('baa'), `${r1(secs)} mp; mondat: ${spoken() - s0}`);
+    } finally { stop(); h10.remove(); }
+  }
 }
 
 // --- minijátékok: a 6.2-es lista géppel ellenőrizhető része ---

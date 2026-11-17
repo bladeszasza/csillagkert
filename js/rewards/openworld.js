@@ -9,13 +9,17 @@
 // mind, ajándék jár (opts.world.onAdventure), és jön a következő. A felszedés csak hang, Rozi a kaland elején és végén szól.
 // Élőhelyek (M7/3): virágrét, tündérerdő, őszi erdő, kristálydombok, havas domb. Csak a színek, az ég, a levegőben szálló
 // apróságok (pillangó, fény, levél, szikra, hó) és a táj hangjai változnak; a fák helye nem. A fa alá ugorva megrázódik a fa.
+// Varázslények (M7/4): minden tájnak saját, félénk lénye van. Ha odarohan, elugrik; ha megáll és vár, a lény odajön, és
+// barátok lesznek (opts.world.onMeet). A Varázskönyvben (jobb felső könyv) látszanak a barátok és a helyek.
 import { icon } from '../icons.js';
 import * as THREE from '../../vendor/three.module.js';
 import { mat as lookMat, addLights, createQuality } from '../three/look.js';
 import { makeCharacter, animateCharacter, animateRunner, createCharacterBatch, CHARACTER_KINDS } from '../three/characters.js';
 import { say } from '../voice.js';
 import { play, animalVoice } from '../sounds.js';
-import { makeTerrain, guideGoal, LANDMARKS, landmarkById, WORLD_LINES, SITE_CLEAR, FIND_R, itemSpots, adventureAt, cleanAdventure, PICK_R, makeBiomes, mixHex, BIOMES } from '../world-map.js';
+import { makeTerrain, guideGoal, LANDMARKS, landmarkById, WORLD_LINES, SITE_CLEAR, FIND_R, itemSpots, adventureAt, cleanAdventure, PICK_R, makeBiomes, mixHex, BIOMES,
+  CREATURES, CREATURE_LINES, creatureById, creatureSpots, MEET_NEAR, SHY_R, WAIT_S } from '../world-map.js';
+import { creatureGeo, disposeCreatureGeos } from './creatures3d.js';
 import { buildLandmark } from './landmarks3d.js';
 export { makeTerrain };
 
@@ -61,9 +65,12 @@ export function run(container, opts = {}) {
   const found = new Set((opts.world?.found || []).filter(id => landmarkById(id)));
   const biomes = makeBiomes(seed), BW = new Array(BIOMES.length), mixAt = (x, z, pick) => mixHex(biomes.weights(x, z, BW), pick);
   let adv = cleanAdventure(opts.world?.adv), cur = adventureAt(adv.i);
+  const met = new Set((opts.world?.met || []).filter(id => creatureById(id)));
   container.innerHTML = `<div class="ow"><canvas class="ow-gl"></canvas><div class="ow-load">🌍 Világ építése…</div>
     <div class="ow-hint">Koppints oda, ahová fusson az unikornis! ${icon('ui-point')}</div><button class="ow-jump round" aria-label="Ugrás">${icon('ui-jump')}</button>
     <div class="ow-album">${LANDMARKS.map(l => `<button class="ow-lm round" data-lm="${l.id}" aria-label="${l.name}">${icon('lm-' + l.id)}</button>`).join('')}</div>
+    <button class="ow-book round" aria-label="Varázskönyv">${icon('ui-book')}</button>
+    <div class="ow-bookpage" hidden><div class="ow-bookcard">${CREATURES.map(c => `<button class="ow-bk round" data-cr="${c.id}" aria-label="${c.name}">${icon('cr-' + c.id)}</button>`).join('')}${LANDMARKS.map(l => `<button class="ow-bk lm round" data-lm="${l.id}" aria-label="${l.name}">${icon('lm-' + l.id)}</button>`).join('')}<button class="ow-bookclose round" aria-label="Bezár">${icon('ui-close')}</button></div></div>
     <button class="ow-adv" aria-label="Kaland"><span class="ow-adv-ic"></span><span class="ow-pips"></span></button>
     <button class="ow-guide round" aria-label="Merre van?" hidden><span class="ow-guide-ic"></span><span class="ow-guide-arrow">${icon('ui-jump')}</span></button></div>`;
   const root = container.querySelector('.ow'), canvas = root.querySelector('.ow-gl');
@@ -86,7 +93,7 @@ export function run(container, opts = {}) {
     szilank: new THREE.OctahedronGeometry(0.42, 0), mag: new THREE.SphereGeometry(0.3, 10, 8).scale(0.8, 1.15, 0.8),
     toll: new THREE.ConeGeometry(0.22, 1.0, 6).scale(1, 1, 0.35), kristaly: new THREE.OctahedronGeometry(0.34, 0).scale(0.8, 1.6, 0.8),
     glow: new THREE.SphereGeometry(0.75, 10, 8),
-    mote: new THREE.PlaneGeometry(0.26, 0.2),
+    mote: new THREE.PlaneGeometry(0.26, 0.2), ring: new THREE.TorusGeometry(1.0, 0.07, 6, 32).rotateX(Math.PI / 2),
   };
   const M = {
     ground: lookMat({ vertexColors: true }),
@@ -97,6 +104,7 @@ export function run(container, opts = {}) {
     landmark: lookMat({ vertexColors: true }),
     item: lookMat({ color: 0xffffff, emissive: 0x333333 }), glow: new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3, depthWrite: false }),
     mote: new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }),
+    critter: lookMat({ vertexColors: true }), ring: new THREE.MeshBasicMaterial({ color: 0xffe680, transparent: true, opacity: 0.85 }),
     fly: new THREE.MeshBasicMaterial({ color: 0xfff7b0, fog: false }), halo: new THREE.MeshBasicMaterial({ color: 0xfff08a, transparent: true, opacity: 0.35, depthWrite: false, fog: false }),
   };
   const S = { dx: 0, dz: 0, d: 0 };
@@ -120,6 +128,7 @@ export function run(container, opts = {}) {
 
   // --- világ: chunkok ---
   const chunks = new Map(), key = (cx, cz) => cx + ',' + cz;
+  const critters = new Map();                         // a varázslények (a játék végéig megmarad az állapotuk, a figura csak közelről él)
   const picked = new Set();                           // ebben a játékban már felszedett dolgok (a chunk újragyártásakor sem jönnek vissza)
   const landmarks = new Map();                        // a most legyártott nevezetességek: hely kulcsa → { site, mesh, sy }
   function makeChunk(cx, cz) {
@@ -214,6 +223,11 @@ export function run(container, opts = {}) {
       mesh.position.set(s.x, s.y, s.z); group.add(mesh);
       for (const c of b.colliders) colliders.push({ ...c, x: s.x + c.x, z: s.z + c.z });
       landmarks.set(s.key, { site: s, mesh, sy: 1, chunk: k });
+    }
+    // varázslények helye (saját véletlen-sor; nem kerül fába, kőbe)
+    for (const c of creatureSpots(seed, cx, cz, CHUNK, biomes.biomeAt)) {
+      if (critters.has(c.key) || colliders.some(o => separation(o, c.x, c.z, S).d < o.r + 1.4)) continue;
+      critters.set(c.key, { ...c, hx: c.x, hz: c.z, ang: Math.random() * 6.28, mode: 'idle', wait: 0, modeT: -9, hop: 0, sc: 1, mesh: null, tx: 0, tz: 0 });
     }
     const items = itemSpots(seed, cx, cz, CHUNK).filter(it => !picked.has(it.key) && !colliders.some(o => separation(o, it.x, it.z, S).d < o.r + 0.8))
       .map(it => ({ ...it, y: heightAt(it.x, it.z) }));
@@ -332,6 +346,7 @@ export function run(container, opts = {}) {
     updateWorld(dt);
     updateItems(dt);
     updateBiome(dt);
+    updateCritters(dt);
     if (steer) aim(steer.x, steer.y);                 // tartott ujj: minden képkockában újra célzunk (a kamera is mozog)
     // irány: a cél felé vagy nyilakkal
     let dx = 0, dz = 0;
@@ -573,6 +588,78 @@ export function run(container, opts = {}) {
     }
     moteMesh.count = n; moteMesh.instanceMatrix.needsUpdate = true; if (moteMesh.instanceColor) moteMesh.instanceColor.needsUpdate = true;
   }
+  // --- varázslények: kivárás, nem kergetés ---
+  const ring = new THREE.Mesh(G.ring, M.ring); ring.visible = false; scene.add(ring);
+  const bookBtn = root.querySelector('.ow-book'), bookPage = root.querySelector('.ow-bookpage');
+  let shyTold = false;
+  const renderBook = () => { for (const b of bookPage.querySelectorAll('.ow-bk')) b.classList.toggle('got', b.dataset.cr ? met.has(b.dataset.cr) : found.has(b.dataset.lm)); };
+  renderBook();
+  bookBtn.addEventListener('click', () => { renderBook(); bookPage.hidden = false; bookBtn.classList.remove('new'); speak(CREATURE_LINES.book); });
+  bookPage.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b || b.classList.contains('ow-bookclose') || b === bookPage) { if (!b || b.classList.contains('ow-bookclose')) bookPage.hidden = true; return; }
+    if (b.dataset.cr) { const c = creatureById(b.dataset.cr); if (met.has(c.id)) { play(c.sound); sayT = -9; speak(c.about); } else { sayT = -9; speak(CREATURE_LINES.notYet); } }
+    else if (b.dataset.lm) { const l = landmarkById(b.dataset.lm); sayT = -9; speak(found.has(l.id) ? l.name + '. ' + WORLD_LINES.again : WORLD_LINES.notYet); }
+  });
+  bookPage.addEventListener('pointerdown', e => e.stopPropagation());
+  const faceTo = (c, dx, dz, k) => { c.ang += angDiff(c.ang, Math.atan2(-dx, -dz)) * k; };
+  function updateCritters(dt) {
+    let active = null, ad = MEET_NEAR;
+    const calm = P.speed < 0.6 && P.grounded;
+    for (const c of critters.values()) {
+      const dx = P.x - c.x, dz = P.z - c.z, d = Math.hypot(dx, dz);
+      if (d > 70) { if (c.mesh) { scene.remove(c.mesh); c.mesh = null; } continue; }
+      if (!c.mesh && d < 50) { c.mesh = new THREE.Mesh(creatureGeo(c.kind), M.critter); c.mesh.rotation.order = 'YXZ'; scene.add(c.mesh); }
+      const since = t - c.modeT;
+      if (c.mode === 'idle') {
+        if (d < SHY_R && P.speed > 2 && since > 0.8) {                    // odarohant: elugrik egy kicsit (nem fut el messzire)
+          const ux = -dx / (d || 1), uz = -dz / (d || 1); let tx = c.x + ux * 4, tz = c.z + uz * 4;
+          const hd = Math.hypot(tx - c.hx, tz - c.hz); if (hd > 7) { tx = c.hx + (tx - c.hx) * 7 / hd; tz = c.hz + (tz - c.hz) * 7 / hd; }
+          Object.assign(c, { mode: 'shy', modeT: t, sx: c.x, sz: c.z, tx, tz, wait: 0 }); play('boing');
+          if (!met.has(c.kind) && !shyTold && t - sayT > 15) { shyTold = true; sayT = t; say(CREATURE_LINES.shy, { remember: false }); }
+        } else if (d < ad && d > 2.2 && since > 1.5) { active = c; ad = d; }
+        if (d < 20) faceTo(c, dx, dz, Math.min(1, dt * 3));
+        c.hop = Math.abs(Math.sin(t * 2 + c.hx)) * 0.06;
+      } else if (c.mode === 'shy') {                                      // ugrás ívben, aztán lapul egy kicsit
+        const k = Math.min(1, since / 0.6); c.x = c.sx + (c.tx - c.sx) * k; c.z = c.sz + (c.tz - c.sz) * k; c.hop = Math.sin(k * Math.PI) * 0.9;
+        c.sc = 1 - 0.25 * Math.sin(Math.min(1, since / 1.6) * Math.PI);
+        if (since > 1.6) { c.mode = 'idle'; c.modeT = t; c.sc = 1; }
+      } else if (c.mode === 'come') {                                     // odajön az unikornishoz
+        faceTo(c, dx, dz, Math.min(1, dt * 6));
+        if (d > 1.9) { const v = Math.min(3.2, d * 2) * dt; c.x += dx / d * v; c.z += dz / d * v; c.hop = Math.abs(Math.sin(t * 9)) * 0.25; }
+        else greetCritter(c);
+      } else if (c.mode === 'stay') {                                     // örül: ugrál, néz
+        faceTo(c, dx, dz, Math.min(1, dt * 5)); c.hop = Math.abs(Math.sin(since * 6)) * 0.35 * Math.max(0, 1 - since / 3);
+        if (since > 7 || d > 12) { c.mode = 'back'; c.modeT = t; }
+      } else if (c.mode === 'back') {                                     // hazaballag a helyére
+        const hx = c.hx - c.x, hz = c.hz - c.z, hd = Math.hypot(hx, hz);
+        if (hd > 0.3) { const v = Math.min(2.2, hd * 2) * dt; c.x += hx / hd * v; c.z += hz / hd * v; faceTo(c, hx, hz, Math.min(1, dt * 5)); c.hop = Math.abs(Math.sin(t * 7)) * 0.12; }
+        else { c.mode = 'idle'; c.modeT = t + 3; }                       // egy kis szünet, mielőtt újra lehet várni rá
+      }
+      if (c.mesh) {
+        const fly = c.kind === 'pillango' ? 0.6 + Math.sin(t * 2 + c.hx) * 0.2 : 0;
+        c.mesh.position.set(c.x, heightAt(c.x, c.z) + c.hop + fly, c.z); c.mesh.rotation.y = c.ang; c.mesh.scale.set(c.sc, c.sc, c.sc);
+      }
+    }
+    // a legközelebbi lény: ha az unikornis nyugodtan áll a közelében, telik a gyűrű a lény lába alatt
+    for (const c of critters.values()) if (c !== active && c.mode === 'idle') c.wait = Math.max(0, c.wait - dt);
+    if (active) {
+      const need = met.has(active.kind) ? 1 : WAIT_S;
+      active.wait = calm ? active.wait + dt / need : Math.max(0, active.wait - dt * 2);
+      if (active.wait >= 1) { active.wait = 0; active.mode = 'come'; active.modeT = t; play(creatureById(active.kind).sound); }
+    }
+    const show = active && active.wait > 0.02;
+    ring.visible = !!show;
+    if (show) { ring.position.set(active.x, heightAt(active.x, active.z) + 0.05, active.z); ring.scale.setScalar(0.3 + active.wait * 0.9); M.ring.opacity = 0.4 + active.wait * 0.5; }
+  }
+  function greetCritter(c) {
+    c.mode = 'stay'; c.modeT = t; const info = creatureById(c.kind);
+    play(info.sound);
+    if (!met.has(c.kind)) {                                             // új barát: egy mondat, egy szív, a könyvbe kerül
+      met.add(c.kind); finaleT = t; play('yay'); sayT = t; say(info.meet, { remember: false });
+      opts.world?.onMeet?.(c.kind); opts.heart?.(); renderBook(); bookBtn.classList.add('new');
+    }
+  }
   container.__busy = () => t - finaleT < 2.5;           // a megtalálás pillanatában a jutalomidő nem ér véget
 
   function updatePals(dt) {
@@ -675,6 +762,7 @@ export function run(container, opts = {}) {
     trees: () => [...chunks.values()].flatMap(c => c.trees),
     siteAt, landmarks: () => [...landmarks.values()], found: () => [...found], goal: () => goal, guide: guideBtn, album,
     items: () => [...chunks.values()].flatMap(c => c.items),
+    critters: () => [...critters.values()], met: () => [...met], bookBtn, bookPage, ring: () => ring,
     biome: () => biome.id, biomes, motes: () => motes.map(m => m.type), sky: () => scene.background.getHex(), shakeNear, adventure: () => ({ ...adv, item: cur.item, need: cur.need, pending }), advBtn,
     setTarget: (x, z) => { TGT.x = x; TGT.z = z; P.target = TGT; P.tap = true; P.best = Infinity; P.stall = 0; },
     stats: () => ({ chunks: chunks.size, pals: pals.length, batch: batch.size - 1 /* a játékos unikornisa nélkül */, instances: batch.meshes.reduce((s, m) => s + m.count, 0), calls: renderer.info.render.calls, triangles: renderer.info.render.triangles }),
@@ -684,7 +772,7 @@ export function run(container, opts = {}) {
     alive = false; cancelAnimationFrame(raf); ro?.disconnect();
     window.removeEventListener('resize', size); window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku);
     for (const c of chunks.values()) disposeChunk(c);
-    chunks.clear(); landmarks.clear(); pals.length = 0; batch.dispose(); hearts.dispose(); itemMesh.dispose(); glowMesh.dispose(); moteMesh.dispose(); delete container.__busy;
+    chunks.clear(); landmarks.clear(); pals.length = 0; batch.dispose(); hearts.dispose(); itemMesh.dispose(); glowMesh.dispose(); moteMesh.dispose(); for (const c of critters.values()) if (c.mesh) scene.remove(c.mesh); critters.clear(); disposeCreatureGeos(); delete container.__busy;
     Object.values(G).forEach(g => g.dispose()); Object.values(M).forEach(m => m.dispose());
     renderer.dispose(); renderer.forceContextLoss?.();
   };

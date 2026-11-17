@@ -121,7 +121,7 @@ Az M4 mérföldkő kész: **mind a 8 generálható állomás** sablonokból kés
     világa is ugyanaz marad** (minden gyereknek saját világa van), így legközelebb folytathatja a keresést. A már
     megtalált nevezetességnél csak egy halk csengés szól.
   - **Eltérés a tervtől:** a terv messziről látszó fényoszlopot írt, de a köd és a kamera miatt a távoli tárgy nem
-    látszik, ezért a fény és a képes jelző vezet. A térkép, a varázslények és az album a következő
+    látszik, ezért a fény és a képes jelző vezet. A térkép a következő
     szeletekben jönnek.
 - **Varázsvilág (M7, 2. szelet): kalandok.** Egyszerre egy kaland fut: egyféle csillogó dolgot kell összeszedni
   (csillagszilánk, virágmag, madártoll, kristály; 12, 14, 16, 18 darab, utána elölről). A jobb felső sarokban a dolog
@@ -148,6 +148,19 @@ Az M4 mérföldkő kész: **mind a 8 generálható állomás** sablonokból kés
     (a havas dombon) hó pottyan le róla, egy puffanással.
   - **Teljesítmény:** az apróságok egyetlen közös rajzolás (legfeljebb nyolcvan darab); a jelenet így is bőven a
     150 rajzolási hívásos kereten belül marad.
+- **Varázsvilág (M7, 4. szelet): varázslények és a Varázskönyv.** Minden tájnak saját, félénk varázslénye van
+  (`CREATURES` a `js/world-map.js`-ben, a figurák a `js/rewards/creatures3d.js`-ben): Felhőbárány (rét), Gombatündér
+  (tündérerdő), Csillagszarvas (őszi erdő), Kristálypillangó (kristálydombok), Parázs, a kis sárkány (havas domb).
+  A kezdőhely mögött mindig vár egy Felhőbárány, a többiek elszórva laknak a saját tájukon.
+  - **Nem kergetjük, megvárjuk** (tisztelet és türelem): ha az unikornis odarohan, a lény elugrik egy kicsit, és Rozi
+    egyszer szól: „Psszt! Ne rohanj oda! Állj meg, és várd meg!" Ha a közelében megáll, a lény lába alatt egy
+    aranygyűrű kezd nőni; kb. két és fél másodperc nyugodt várakozás után a lény odajön, és barátok lesznek: Rozi egy
+    mondata („Megvárt a Felhőbárány! A türelemből barátság lett."), a lény saját hangja és egy szív. Utána kicsit
+    ugrál az unikornis mellett, majd hazaballag. A régi barát egy másodperc várakozás után jön, csak a hangja szól.
+  - **Varázskönyv:** a jobb felső könyvre koppintva kinyílik egy lap kilenc nagy képpel: az öt varázslény és a négy
+    nevezetesség. Ami megvan, színes és sárga keretes, ami még nincs, halvány árnyék. Koppintásra Rozi megmondja,
+    ki az (a barát a hangját is hallatja), vagy hogy vele még nem találkoztunk. Új barát után a könyv ugrál.
+  - **Mentés:** a barátnak fogadott lények a profilban maradnak (`world.met`).
 - **Barátok:** akinek köszönsz (odafutsz hozzá), veled jön; egyszerre legfeljebb négyen, sorban, egymást kikerülve.
   A követő barát nem tűnik el, akármilyen messzire futsz.
 - **Hangok:** patadobogás, ugrás, érkezés, koccanás; a versenyben visszaszámlálás, rajt és ujjongás. A verseny végén a két

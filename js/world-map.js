@@ -192,3 +192,43 @@ export function mixHex(w, pick) {
   for (let i = 0; i < w.length; i++) { if (w[i] < 1e-4) continue; const h = pick(BIOMES[i]); r += ((h >> 16) & 255) * w[i]; g += ((h >> 8) & 255) * w[i]; b += (h & 255) * w[i]; }
   return (Math.round(r) << 16) | (Math.round(g) << 8) | Math.round(b);
 }
+
+// --- Varázslények (M7, 4. szelet) ---
+// Minden tájnak saját, félénk varázslénye van. Nem kell kergetni: ha az unikornis odarohan, a lény elugrik; ha a közelében
+// megáll és vár, a lény magától odajön, és barátok lesznek (tisztelet és türelem, a kiáltvány szerint). Akivel a gyerek
+// már barátságot kötött, az a profiljában marad, és a Varázskönyvben (album) látszik.
+export const MEET_NEAR = 13;        // ennyin belül kell megállni és várni
+export const SHY_R = 6;             // ennyire közel rohanva a lény elugrik
+export const WAIT_S = 2.5;          // ennyi másodperc nyugodt várakozás után jön oda (a régi barát hamarabb)
+export const CREATURE_P = 0.12;     // ekkora eséllyel lakik egy chunkban varázslény
+export const CREATURES = [
+  { id: 'barany', name: 'Felhőbárány', biome: 'ret', sound: 'baa',
+    meet: 'Megvárt a Felhőbárány! A türelemből barátság lett.', about: 'Ő a Felhőbárány. Puha, mint egy felhő.' },
+  { id: 'tunder', name: 'Gombatündér', biome: 'erdo', sound: 'chitter',
+    meet: 'Megvárt a Gombatündér! A türelemből barátság lett.', about: 'Ő a Gombatündér. A gombák alatt lakik.' },
+  { id: 'szarvas', name: 'Csillagszarvas', biome: 'osz', sound: 'trill',
+    meet: 'Megvárt a Csillagszarvas! A türelemből barátság lett.', about: 'Ő a Csillagszarvas. Csillagok ragyognak az agancsán.' },
+  { id: 'pillango', name: 'Kristálypillangó', biome: 'kristaly', sound: 'ooh',
+    meet: 'Megvárt a Kristálypillangó! A türelemből barátság lett.', about: 'Ő a Kristálypillangó. A szárnya csillog, mint a jég.' },
+  { id: 'sarkany', name: 'Parázs, a kis sárkány', biome: 'ho', sound: 'chuff',
+    meet: 'Megvárt Parázs, a kis sárkány! A türelemből barátság lett.', about: 'Ő Parázs, a kis sárkány. Meleget ad a hóban.' },
+];
+export const CREATURE_LINES = {
+  shy: 'Psszt! Ne rohanj oda! Állj meg, és várd meg!',
+  notYet: 'Ezzel a varázslénnyel még nem találkoztunk.',
+  book: 'Ez a Varázskönyv. Itt vannak a barátaid és a helyek.',
+};
+export const creatureById = id => CREATURES.find(c => c.id === id) || null;
+export const creatureOfBiome = biomeId => CREATURES.find(c => c.biome === biomeId) || CREATURES[0];
+// Egy chunk varázslényei: { key, kind, x, z }. biomeAt: a táj egy pontban (makeBiomes). A kezdőhely mögött mindig lakik egy
+// Felhőbárány (ott tanulja meg a gyerek, hogy meg kell várni); a kulcsa a világban egyedi.
+export function creatureSpots(seed, cx, cz, size, biomeAt) {
+  const out = [], ox = cx * size, oz = cz * size, m = 4;
+  if (hash2(cx, cz, seed + 601) < CREATURE_P) {
+    const x = ox + (hash2(cx, cz, seed + 613) - 0.5) * (size - 2 * m), z = oz + (hash2(cx, cz, seed + 617) - 0.5) * (size - 2 * m);
+    if (Math.hypot(x, z) > 30) out.push({ key: 'c' + cx + ',' + cz, kind: creatureOfBiome(biomeAt(x, z).id).id, x, z });
+  }
+  const s0 = siteOfCell(seed, 0, 0), d0 = Math.hypot(s0.x, s0.z), hx = -s0.x / d0 * 22, hz = -s0.z / d0 * 22;
+  if (Math.floor((hx + size / 2) / size) === cx && Math.floor((hz + size / 2) / size) === cz) out.push({ key: 'otthon', kind: 'barany', x: hx, z: hz });
+  return out;
+}

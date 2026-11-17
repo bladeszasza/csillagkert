@@ -2,7 +2,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LANDMARKS, WORLD_LINES, landmarkById, siteOfCell, makeTerrain, guideGoal, CELL, SITE_FLAT, SITE_BLEND, FIND_R,
-  ITEMS, ADVENTURES, adventureAt, cleanAdventure, itemSpots, TRAIL, PICK_R, BIOMES, makeBiomes, mixHex, HOME_R } from '../js/world-map.js';
+  ITEMS, ADVENTURES, adventureAt, cleanAdventure, itemSpots, TRAIL, PICK_R, BIOMES, makeBiomes, mixHex, HOME_R,
+  CREATURES, CREATURE_LINES, creatureById, creatureSpots, creatureOfBiome } from '../js/world-map.js';
 import { newRewardSession, adventureReward } from '../js/economy.js';
 import { ICONS } from '../js/icons.js';
 import { openProfiles } from '../js/progress.js';
@@ -102,11 +103,11 @@ test('a gyerek világa és a megtalált nevezetességek a profiljában maradnak 
   const again = openProfiles(st).get().world;
   assert.equal(again.seed, w.seed); assert.deepEqual(again.found, ['kut', 'fa']);
   assert.ok(p.use(p.importData(p.exportData())));
-  assert.deepEqual(p.get().world, { seed: w.seed, found: ['kut', 'fa'], adv: { i: 0, n: 0 } });
+  assert.deepEqual(p.get().world, { seed: w.seed, found: ['kut', 'fa'], adv: { i: 0, n: 0 }, met: [] });
   const bad = p.exportData(); bad.profile.world = { seed: 'x', found: ['<b>'] };
   assert.ok(p.use(p.importData(bad))); assert.equal(p.get().world, null);
   const odd = p.exportData(); odd.profile.world = { seed: -5, found: ['kut', '<x>', 'kut', 9] };
-  assert.ok(p.use(p.importData(odd))); assert.deepEqual(p.get().world, { seed: 0, found: ['kut'], adv: { i: 0, n: 0 } });
+  assert.ok(p.use(p.importData(odd))); assert.deepEqual(p.get().world, { seed: 0, found: ['kut'], adv: { i: 0, n: 0 }, met: [] });
   p.reset(); assert.equal(p.get().world, null, 'újrakezdéskor új világ jön');
 });
 
@@ -242,4 +243,43 @@ test('élőhelyek: a határon a színek simán olvadnak (nincs éles vonal a tal
     }
     assert.ok(worst < 24, `mag ${seed}: a legnagyobb ugrás ${worst} (0–255)`);
   }
+});
+
+// --- varázslények (M7, 4. szelet) ---
+test('varázslények: minden tájnak saját lénye, saját ikonja; rövid, kimondható mondatok', () => {
+  assert.equal(new Set(CREATURES.map(c => c.id)).size, CREATURES.length);
+  for (const b of BIOMES) assert.equal(creatureOfBiome(b.id).biome, b.id, 'nincs lénye: ' + b.id);
+  for (const c of CREATURES) {
+    assert.ok(ICONS['cr-' + c.id], 'nincs ikon: ' + c.id); assert.equal(creatureById(c.id), c);
+    assert.match(c.meet, /^Megvárt/); assert.ok(c.about.includes(c.name.split(',')[0]), c.about);
+    for (const t of [c.meet, c.about]) { assert.doesNotMatch(t, /[0-9]/); for (const s of sentences(t)) assert.ok(words(s) <= 12, 'túl hosszú: ' + s); }
+  }
+  for (const t of Object.values(CREATURE_LINES)) for (const s of sentences(t)) assert.ok(words(s) <= 12, 'túl hosszú: ' + s);
+  assert.ok(ICONS['ui-book']);
+});
+
+test('varázslények helye: a magból jön, a táj lénye lakik ott, és a kezdőhely mögött mindig vár egy Felhőbárány', () => {
+  for (const seed of SEEDS) {
+    const B = makeBiomes(seed), keys = new Set(); let n = 0, home = null;
+    assert.deepEqual(creatureSpots(seed, 3, -2, CH, B.biomeAt), creatureSpots(seed, 3, -2, CH, B.biomeAt));
+    for (let cx = -8; cx <= 8; cx++) for (let cz = -8; cz <= 8; cz++) for (const c of creatureSpots(seed, cx, cz, CH, B.biomeAt)) {
+      assert.ok(!keys.has(c.key)); keys.add(c.key); n++;
+      assert.equal(Math.floor((c.x + CH / 2) / CH), cx); assert.equal(Math.floor((c.z + CH / 2) / CH), cz);
+      if (c.key === 'otthon') home = c; else assert.equal(c.kind, creatureOfBiome(B.biomeAt(c.x, c.z).id).id);
+    }
+    assert.ok(home && home.kind === 'barany' && Math.abs(Math.hypot(home.x, home.z) - 22) < 1e-6, 'mag ' + seed + ': nincs otthoni bárány');
+    const s0 = siteOfCell(seed, 0, 0); assert.ok(home.x * s0.x + home.z * s0.z < 0, 'a bárány az első nevezetességgel ellentétes oldalon');
+    assert.ok(n >= 20 && n <= 70, 'mag ' + seed + ': ' + n + ' lény 17×17 chunkon');
+  }
+});
+
+test('a varázslény-barátok a profilban maradnak, és rossz adatból is rendbe jönnek', () => {
+  const st = new FakeStorage(), p = openProfiles(st);
+  p.world(); p.metCreature('barany'); p.metCreature('barany'); p.metCreature('tunder');
+  assert.deepEqual(openProfiles(st).get().world.met, ['barany', 'tunder']);
+  assert.ok(p.use(p.importData(p.exportData()))); assert.deepEqual(p.get().world.met, ['barany', 'tunder']);
+  const bad = p.exportData(); bad.profile.world.met = ['<x>', 'barany', 7, 'barany'];
+  assert.ok(p.use(p.importData(bad))); assert.deepEqual(p.get().world.met, ['barany']);
+  const old = p.exportData(); delete old.profile.world.met;
+  assert.ok(p.use(p.importData(old))); assert.deepEqual(p.get().world.met, []);
 });

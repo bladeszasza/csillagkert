@@ -30,7 +30,7 @@ const fresh = () => ({
   rewardsDone: 0,    // hány jutalomjátékot játszott már összesen
   roundsDay: '', roundsToday: 0,   // ma hány jutalomkört játszott: aznap minden kör után több csillag kell, másnap elölről
   dress: null,       // az öltöztető állása
-  world: null,       // a Varázsvilág: { seed, found, adv } – a világ magja, a megtalált nevezetességek, a kaland állása { i, n } (js/world-map.js)
+  world: null,       // a Varázsvilág: { seed, found, adv, met } – a világ magja, a megtalált nevezetességek, a kaland állása { i, n }, a varázslény-barátok (js/world-map.js)
   story: null,       // a mostani kör meséje { id, step, ended } (js/story.js)
   storiesUsed: [],   // a már sorra került mesék (hogy ne ismétlődjenek, amíg mind sorra nem kerül)
   name: '', nameAsked: false, mark: MARKS[0], age: 5,
@@ -50,7 +50,7 @@ function normalize(raw) {
   if (!s.story || typeof s.story !== 'object' || Array.isArray(s.story)) s.story = null;
   if (typeof s.roundsDay !== 'string') s.roundsDay = '';
   if (!s.world || typeof s.world !== 'object' || !Number.isFinite(+s.world.seed)) s.world = null;
-  else { if (!Array.isArray(s.world.found)) s.world.found = []; s.world.adv = cleanAdventure(s.world.adv); }
+  else { if (!Array.isArray(s.world.found)) s.world.found = []; if (!Array.isArray(s.world.met)) s.world.met = []; s.world.adv = cleanAdventure(s.world.adv); }
   s.roundsToday = Math.max(0, Math.floor(+s.roundsToday || 0));
   for (const k of ['total', 'meter', 'rewardsDone']) s[k] = Math.max(0, Math.floor(+s[k] || 0));
   if (!MARKS.includes(s.mark)) s.mark = MARKS[0];
@@ -89,7 +89,7 @@ function sanitize(raw) {
   if (Array.isArray(raw.friends)) s.friends = [...new Set(raw.friends.filter(word))].slice(0, 60);
   // a mese állása: az ismeretlen mese-azonosítót a js/story.js kezeli (helyette új mese jön)
   if (obj(raw.story) && word(raw.story.id)) s.story = { id: raw.story.id, step: int(raw.story.step, 0, 20, 0), ended: raw.story.ended === true };
-  if (obj(raw.world) && Number.isFinite(+raw.world.seed)) s.world = { seed: int(raw.world.seed, 0, 2147483647, 0), found: Array.isArray(raw.world.found) ? [...new Set(raw.world.found.filter(word))].slice(0, 40) : [], adv: cleanAdventure(obj(raw.world.adv) ? raw.world.adv : null) };
+  if (obj(raw.world) && Number.isFinite(+raw.world.seed)) s.world = { seed: int(raw.world.seed, 0, 2147483647, 0), found: Array.isArray(raw.world.found) ? [...new Set(raw.world.found.filter(word))].slice(0, 40) : [], adv: cleanAdventure(obj(raw.world.adv) ? raw.world.adv : null), met: Array.isArray(raw.world.met) ? [...new Set(raw.world.met.filter(word))].slice(0, 20) : [] };
   if (Array.isArray(raw.storiesUsed)) s.storiesUsed = raw.storiesUsed.filter(word).slice(-80);
   if (raw.dress && typeof raw.dress === 'object' && !Array.isArray(raw.dress)) {
     s.dress = {};
@@ -218,7 +218,9 @@ export function openProfiles(storage) {
     avatar: () => normalizeDress(state.dress, id => state.owned.includes(id)),
     takeNewDecor() { const d = state.newDecor.slice(); if (d.length) { state.newDecor = []; save(); } return d; },
     // a Varázsvilág: a gyerek saját világa (első belépéskor kap magot), és amit ott megtalált
-    world() { if (!state.world) { state.world = { seed: Math.floor(Math.random() * 2147483647), found: [], adv: cleanAdventure(null) }; save(); } if (!state.world.adv) state.world.adv = cleanAdventure(null); return state.world; },
+    world() { if (!state.world) { state.world = { seed: Math.floor(Math.random() * 2147483647), found: [], adv: cleanAdventure(null), met: [] }; save(); } if (!state.world.adv) state.world.adv = cleanAdventure(null); if (!state.world.met) state.world.met = []; return state.world; },
+    // varázslény-barát: akit a gyerek türelmesen megvárt
+    metCreature(id) { const w = api.world(); if (id && !w.met.includes(id) && w.met.length < 20) { w.met.push(id); save(); } },
     // kaland: egy felszedett darab (azonnal mentve, így a kör közepén véget érő játék sem veszít semmit)
     pickItem() { const a = api.world().adv; if (a.n < adventureAt(a.i).need) { a.n++; save(); } return a.n; },
     // kész kaland: ajándék és a következő kaland, egyetlen mentéssel (kétszer nem fizethet); körönként legfeljebb egy
