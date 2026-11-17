@@ -40,7 +40,8 @@ document.addEventListener('touchend', e => {
   if (e.target.closest?.('input, select, textarea')) { lastTap.t = -1e9; return; }
   if (t - lastTap.t < 450 && Math.hypot(c.clientX - lastTap.x, c.clientY - lastTap.y) < 70) {
     e.preventDefault(); lastTap.t = -1e9;
-    const b = e.target.closest?.('button, a, label, summary'); if (b && !b.disabled) b.click();
+    // a kattintást magára a koppintott elemre adjuk (felbuborékol): a nem gomb célpontok (kártyák, lépések) is megkapják
+    if (!e.target.closest?.('button:disabled')) e.target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, clientX: c.clientX, clientY: c.clientY }));
     return;
   }
   lastTap = { t, x: c.clientX, y: c.clientY };
