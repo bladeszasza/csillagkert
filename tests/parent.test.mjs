@@ -25,7 +25,8 @@ test('pihenő: csak a látható játékidő számít, a beállított perc után 
   let t = 0; const now = () => t; let m = 20;
   const b = createBreakTimer({ now, minutes: () => m });
   assert.equal(b.due(), false, 'indulás előtt nem esedékes');
-  b.start(); t = 19 * MIN; assert.equal(b.due(), false);
+  b.visible(false); t = 10 * MIN; b.visible(true); t = 30 * MIN; assert.equal(b.elapsed(), 0, 'a kezdőképernyőn töltött idő nem számít');
+  t = 0; b.start(); t = 19 * MIN; assert.equal(b.due(), false);
   b.visible(false); t += 3 * MIN; b.visible(true);                 // rövid háttér: nem számít bele, de nem is pihenő
   assert.equal(Math.round(b.elapsed() / MIN), 19);
   t += 1 * MIN; assert.equal(b.due(), true, '20 perc látható játék után');

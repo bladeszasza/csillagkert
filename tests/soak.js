@@ -78,8 +78,10 @@ export async function runSoak(list) {
     ok('próbafutás: a memória nem szalad el', !h2 || hl < h2 * 1.6, h2 ? `${Math.round(h2 / 1e6)} MB → ${Math.round(hl / 1e6)} MB` : 'a böngésző nem méri');
     ok('próbafutás: a képkocka-frissítés gyors (a rajzolás nélkül)', avg < 4 && p99 < 16, `átlag ${avg.toFixed(2)} ms, 99%: ${p99.toFixed(2)} ms`);
     ok('próbafutás: nem ragad be', stuck <= 1, `beragadt ötmásodperces szakasz: ${stuck}`);
-    ok('próbafutás: Rozi ritkán szól (átlagban legfeljebb percenként négyszer, és nem egymás szavába)', lines / (GAME_S / 60) <= 4 && minGap >= 1.5, `${lines} mondat, legkisebb szünet ${r1(minGap)} mp`);
-    ok('próbafutás: közben tényleg játszik (nevezetesség, kaland, varázslény, tájak)', new Set(got.finds).size >= 3 && got.gifts >= 1 && new Set(got.meets).size >= 2 && biomes.size >= 3,
+    const full = GAME_S >= 600;                          // a beszéd-átlag és a "tényleg játszik" küszöbe a tízperces futásra szól
+    ok('próbafutás: Rozi ritkán szól (átlagban legfeljebb percenként négyszer, és nem egymás szavába)', (!full || lines / (GAME_S / 60) <= 4) && minGap >= 1.5, `${lines} mondat, legkisebb szünet ${r1(minGap)} mp${full ? '' : ' (rövid próba: csak a szünetet nézzük)'}`);
+    ok('próbafutás: közben tényleg játszik (nevezetesség, kaland, varázslény, tájak)', !full || (new Set(got.finds).size >= 3 && got.gifts >= 1 && new Set(got.meets).size >= 2 && biomes.size >= 3),
+      (full ? '' : 'rövid próba, nem mérjük · ') +
       `nevezetesség: ${[...new Set(got.finds)].join(',')}; felvett: ${got.picks}, kaland-ajándék: ${got.gifts}; barát: ${[...new Set(got.meets)].join(',')}; tájak: ${[...biomes].join(',')}; szív: ${got.hearts}`);
     window.__soak = { samples, lines: window.__spoken.slice(spoken0) };
   } catch (e) {

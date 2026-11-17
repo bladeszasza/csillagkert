@@ -15,9 +15,9 @@ const dir = mkdtempSync(join(process.env.SCRATCH || tmpdir(), 'flow-'));
 const proc = spawn(chrome, ['--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${dir}`, '--window-size=1024,768', '--use-angle=swiftshader', '--enable-unsafe-swiftshader',
   '--autoplay-policy=no-user-gesture-required', '--no-first-run', '--no-default-browser-check', '--disable-extensions', 'about:blank'], { stdio: 'ignore' });
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-let ws, id = 0; const pending = new Map(), exceptions = [], consoleErrors = [];
+let ws, id = 0; const pending = new Map(), exceptions = [], consoleErrors = [], harness = [];
 const send = (method, params = {}) => new Promise(res => { const i = ++id; pending.set(i, res); ws.send(JSON.stringify({ id: i, method, params })); });
-const ev = async expr => { const r = await send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true }); if (r.result?.exceptionDetails) exceptions.push('teszt: ' + JSON.stringify(r.result.exceptionDetails).slice(0, 200)); return r.result?.result?.value; };
+const ev = async expr => { const r = await send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true }); if (r.result?.exceptionDetails) harness.push(expr.slice(0, 80) + ' → ' + (r.result.exceptionDetails.exception?.description || '').slice(0, 120)); return r.result?.result?.value; };
 const results = [], ok = (name, pass, info = '') => { results.push(pass); console.log(`${pass ? 'OK  ' : 'HIBA'} ${name}${info ? ' :: ' + info : ''}`); };
 
 // kitalált tesztprofil: 40 csillag, a mérőn 3, a jutalomhoz 5 kell, pihenő 15 percenként
@@ -50,10 +50,10 @@ const solve = async () => {
       const r = x.getBoundingClientRect(), o = { bubbles: true, pointerId: 5, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, pointerType: 'touch' };
       x.dispatchEvent(new PointerEvent('pointerdown', o)); x.dispatchEvent(new PointerEvent('pointerup', o)); x.click(); return 'tap'; })()`);
     if (r === 'done') return 'done';
-    if (r === 'none' && k > 6) { await ev(`document.getElementById('stage-x').click()`); await sleep(800); return 'skip'; }
+    if (r === 'none' && k > 6) { await ev(`document.getElementById('stage-x')?.click()`); await sleep(800); return 'skip'; }
     await sleep(r === 'none' ? 700 : 1200);
   }
-  await ev(`document.getElementById('stage-x').click()`); return 'skip';
+  await ev(`document.getElementById('stage-x')?.click()`); return 'skip';
 };
 const waitFor = async (expr, ms = 15000) => { const t = Date.now(); while (Date.now() - t < ms) { if (await ev(expr)) return true; await sleep(250); } return false; };
 
@@ -71,11 +71,11 @@ try {
   await send('Runtime.enable'); await send('Page.enable');
   await send('Page.addScriptToEvaluateOnNewDocument', { source: SEED });
   await send('Page.navigate', { url });
-  await waitFor('!!document.getElementById("break").__timer', 30000); await sleep(1500);   // a modulok betöltődtek
+  await waitFor('!!document.getElementById("break")?.__timer', 30000); await sleep(1500);   // a modulok betöltődtek
 
   // 1) indulás
   let s0 = await n();
-  await ev(`document.getElementById('start-btn').click()`);
+  await ev(`document.getElementById('start-btn')?.click()`);
   const home = await waitFor(`!document.getElementById('home').hidden`);
   ok('indulás: a kezdőgomb után a kert és a térkép látszik, Rozi köszön', home && (await said(s0)).length >= 1, (await said(s0)).join(' | ').slice(0, 160));
   // 2) feladatok és etetés a jutalomkapuig (válaszgombos állomások és a "Tovább")
@@ -85,7 +85,7 @@ try {
     tries++;
     await waitFor(`!document.getElementById('home').hidden || !document.getElementById('reward').hidden`, 12000);
     if (await visible('#reward')) break;
-    await ev(st === 'next' ? `document.getElementById('next').click()` : `document.querySelector('.station[data-st=${st}]').click()`);
+    await ev(st === 'next' ? `document.getElementById('next')?.click()` : `document.querySelector('.station[data-st=${st}]')?.click()`);
     await waitFor(`!document.getElementById('stage').hidden`, 8000);
     const r = await solve(); r === 'done' ? solved++ : skipped++;
   }
@@ -93,21 +93,21 @@ try {
   await shot('flow-reward');
   ok('feladatok: megoldva a jutalomkapuig, a csillagok mentve', gate && (await state()).total >= 42, `megoldva ${solved}, kilépve ${skipped}, összes csillag ${(await state()).total}`);
   // 3) jutalomjáték és vissza
-  await ev(`document.querySelector('.choice[data-game=bubbles]').click()`); await sleep(3500);
+  await ev(`document.querySelector('.choice[data-game=bubbles]')?.click()`); await sleep(3500);
   const inGame = await visible('#game');
-  await ev(`document.getElementById('game-back').click()`);
+  await ev(`document.getElementById('game-back')?.click()`);
   const back = await waitFor(`document.getElementById('game').hidden && document.getElementById('reward').hidden`, 10000);
   ok('jutalomjáték: elindul, a vissza gombbal hazatér', inGame && back);
   await waitFor(`!document.getElementById('home').hidden`, 8000);
   // 4) pihenő: 16 perc látható játék után a következő feladat előtt
   await ev(`window.__dt = 16 * 60000`);
   s0 = await n();
-  await ev(`document.querySelector('.station[data-st=forma]').click()`);
+  await ev(`document.querySelector('.station[data-st=forma]')?.click()`);
   const brk = await waitFor(`!document.getElementById('break').hidden`, 5000);
   await sleep(500); await shot('flow-break');
   const brLine = (await said(s0)).join(' | '), taskHeld = await ev(`document.getElementById('stage').hidden`);
   ok('pihenő: a beállított idő után két feladat között jön, egy mondattal; a feladat addig vár', brk && /vizet/.test(brLine) && taskHeld, brLine);
-  await ev(`document.getElementById('break-go').click()`);
+  await ev(`document.getElementById('break-go')?.click()`);
   const after = await waitFor(`document.getElementById('break').hidden && !document.getElementById('stage').hidden`, 8000);
   ok('pihenő: a nagy gombra eltűnik, és a választott feladat indul', after);
   await solve(); await waitFor(`!document.getElementById('home').hidden`, 10000);
@@ -132,11 +132,11 @@ try {
   ok('szülői sarok: a pihenő-beállítás a profilé (15 perc)', (await ev(`document.getElementById('p-break').value`)) === '15');
   // kiejtés-javító: felvesz egy javítást, Rozi azonnal a javított alakot mondja
   s0 = await n();
-  await ev(`(() => { document.getElementById('p-fix').open = true; document.getElementById('p-fix-word').value = 'Csillagkert'; document.getElementById('p-fix-say').value = 'Csil-lag-kert'; document.getElementById('p-fix-add').click(); })()`);
+  await ev(`(() => { document.getElementById('p-fix').open = true; document.getElementById('p-fix-word').value = 'Csillagkert'; document.getElementById('p-fix-say').value = 'Csil-lag-kert'; document.getElementById('p-fix-add')?.click(); })()`);
   await sleep(600);
   const fixSaid = (await said(s0)).join(' | '), fixRows = await ev(`document.querySelectorAll('#p-fix-list .fx').length`);
   ok('kiejtés-javító: a javítás megmarad, és Rozi úgy mondja', fixRows === 1 && /Csil-lag-kert/.test(fixSaid) && /Csil-lag-kert/.test(await ev(`localStorage.getItem('csillagkert:device')`)), fixSaid);
-  await ev(`document.getElementById('p-break').value = '30'`); await ev(`document.getElementById('p-close').click()`); await sleep(800);
+  await ev(`document.getElementById('p-break').value = '30'`); await ev(`document.getElementById('p-close')?.click()`); await sleep(800);
   ok('szülői sarok: a "Kész" a pihenő-beállítást menti (30 perc)', (await state()).breakMin === 30);
   // 6) újratöltés: minden megmarad
   const before = await state();
@@ -145,6 +145,7 @@ try {
   ok('újratöltés: a csillagok, a mérő, a pihenő és a kiejtés-javítás megmaradt', re.total === before.total && re.meter === before.meter && re.breakMin === 30 && /Csil-lag-kert/.test(dev), `csillag ${re.total}, mérő ${re.meter}`);
   // 7) hibamentesség
   const log = await ev(`localStorage.getItem('csillagkert_errors')`);
+  if (harness.length) console.log('(a teszt saját parancsai közül hibát dobott: ' + harness.join(' | ') + ')');
   ok('konzol: nincs kivétel, nincs konzol-hiba, üres a hibanapló', !exceptions.length && !consoleErrors.length && (!log || log === '[]'), [...exceptions, ...consoleErrors].join(' | ').slice(0, 400) || 'tiszta');
 } catch (e) {
   ok('szimulált ülés: kivétel', false, e.stack || e);

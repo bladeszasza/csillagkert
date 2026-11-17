@@ -78,11 +78,12 @@
   const KEY = 'csillagkert-ipad';
   let done = new Set(); try { done = new Set(JSON.parse(localStorage.getItem(KEY) || '[]')); } catch (e) {}
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const link = s => s.replace(/tests\/([a-z]+\.html(\?[a-z=]+)?)/g, (m, p) => `<a href="${p}">${m}</a>`);   // az oldalak egymás mellett vannak
   let n = 0;
   document.getElementById('doc').innerHTML = `<h1>iPades ellenőrző lista</h1>
     <p class="sub">${new Date().toISOString().slice(0, 10)} · amit csak az iPaden lehet eldönteni</p>
     <div class="how">Pipáld ki, ami rendben van. Amit nem pipálsz ki, arról írj pár szót (vagy csak a sor számát), és megjavítom.</div>` +
-    LIST.map(([g, rows]) => `<h2>${esc(g)}</h2>` + rows.map(([id, t, h]) => `<label class="${done.has(id) ? 'done' : ''}"><input type="checkbox" data-id="${id}" ${done.has(id) ? 'checked' : ''}><span>${++n}. ${esc(t)}${h ? `<small>${esc(h)}</small>` : ''}</span></label>`).join('')).join('');
+    LIST.map(([g, rows]) => `<h2>${esc(g)}</h2>` + rows.map(([id, t, h]) => `<label class="${done.has(id) ? 'done' : ''}"><input type="checkbox" data-id="${id}" ${done.has(id) ? 'checked' : ''}><span>${++n}. ${esc(t)}${h ? `<small>${link(esc(h))}</small>` : ''}</span></label>`).join('')).join('');
   const all = LIST.flatMap(([, r]) => r.map(x => x[0]));
   const counter = () => { document.getElementById('cnt').textContent = `${all.length} pont, rendben: ${[...done].filter(x => all.includes(x)).length}`; };
   counter();

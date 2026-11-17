@@ -6,10 +6,11 @@ export const BREAK_DEFAULT = 20;
 export const REST_MS = 5 * 60000;
 
 export function createBreakTimer({ now = () => Date.now(), minutes = () => BREAK_DEFAULT } = {}) {
-  let active = 0, since = null, hiddenAt = null;
+  let active = 0, since = null, hiddenAt = null, started = false;   // a kezdőképernyőn töltött idő nem számít
   const api = {
-    start() { if (since == null && hiddenAt == null) since = now(); },
+    start() { started = true; if (since == null && hiddenAt == null) since = now(); },
     visible(v) {
+      if (!started) return;
       const t = now();
       if (!v) { if (since != null) active += t - since; since = null; if (hiddenAt == null) hiddenAt = t; return; }
       if (hiddenAt != null && t - hiddenAt >= REST_MS) active = 0;

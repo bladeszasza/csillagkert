@@ -4,7 +4,7 @@ A terv 6. része: minden kategória, kérdés és minijáték külön-külön, m
 mi ellenőrzi, mi az állapota. Jelek: ✅ gép ellenőrzi és zöld · ⚖️ eltérés a tervtől, indokkal elfogadva ·
 📱 csak a szülő tudja eldönteni az iPaden (lásd a végén és a `tests/ipad.html` nyomtatható listát).
 
-**Parancsok** (a böngészős részek a helyi tesztszerveren, `node serve.cjs`, a 8124-es teszt-porton):
+**Parancsok** (a böngészős részek a helyi kiszolgálón: `node serve.cjs . 8124`, a mentést módosító tesztek csak ezen a teszt-porton futnak; a README `8080`-as címei a sima kipróbálásra valók):
 
 - Node: `node --test tests/content.test.mjs tests/profiles.test.mjs tests/reward-timer.test.mjs tests/generated.test.mjs tests/scheduler.test.mjs tests/economy.test.mjs tests/avatar.test.mjs tests/quality.test.mjs tests/icons.test.mjs tests/facts.test.mjs tests/story.test.mjs tests/world.test.mjs tests/parent.test.mjs` (a CI is ezt futtatja)
 - Böngészős füstteszt: `tests/smoke.html?only=rest`, `?only=games`, `?only=generated`
@@ -37,7 +37,8 @@ mi ellenőrzi, mi az állapota. Jelek: ✅ gép ellenőrzi és zöld · ⚖️ e
 | Forgatás és átméretezés | a füstteszt a fő képernyőket fekvő és álló méretben is méri (kert, öltöztető); a valódi forgatás | ✅ / 📱 |
 | Apple Pencil és ujj: nyomás, tenyér, több ujj | szintetikus pointer-események a füsttesztben (szabad futás: koppintás, tartott ujj, két ujj, tenyér; tenyérszűrő a rajzos feladatokon); a valódi Pencil | ✅ / 📱 |
 | Hang: egyensúly, néma kapcsoló, beszédmennyiség | hangerő-mérés (RMS) a füsttesztben, egyetlen hang-kontextus, beszédkorlát etetésnél és a Varázsvilágban (`soak.html`); a valódi hangszóró és a néma kapcsoló | ✅ / 📱 |
-| Teljesítmény: rajzolási hívás, háromszög, memória | füstteszt (kert, minden jutalomjáték ≤ 150 hívás), `soak.html` (10 perc: ≤ 150 hívás, ≤ 150k háromszög, a memória nem nő) | ✅ |
+| Teljesítmény: rajzolási hívás, háromszög | füstteszt (kert, minden jutalomjáték ≤ 150 hívás) | ✅ |
+| Tízperces memória-mérés | ⚖️ csak a Varázsvilágra (`soak.html`: a memória nem nő); a többi játék rövid, és a füstteszt kilépéskor ellenőrzi, hogy nem marad 3D-jelenet, hang-kontextus és időzítő | ⚖️ |
 | Nincs büntetés, mindig van kiút | a füstteszt minden típusnál: tévedés után is befejezhető, X mindig megállít; `story.test` (tanulság, nem kioktatás) | ✅ |
 | Ajándék és csillag a megfelelő forrásból, mentés után is | `?only=gifts`, `economy.test` | ✅ |
 
@@ -45,7 +46,8 @@ mi ellenőrzi, mi az állapota. Jelek: ✅ gép ellenőrzi és zöld · ⚖️ e
 
 | Ellenőrzés | Mi ellenőrzi | Állapot |
 |---|---|---|
-| Szimulált ülés: feladatok → csillagok → kapu → játék → vissza → pihenő → szülői sarok → újratöltés után minden megmarad | `node tests/flow.mjs` (12 ellenőrzés) | ✅ |
+| Szimulált ülés: feladatok → csillagok → kapu → játék → vissza → pihenő → szülői sarok → újratöltés után minden megmarad | `node tests/flow.mjs` (12 ellenőrzés): egy rövid kör a valódi oldalon, az órát előreállítva | ✅ |
+| A terv 30 perces ülése (ajándék → ruha → kert is) | ⚖️ nem egyetlen hosszú futás: a `flow.mjs` rövid köre, a `?only=gifts` (minden játék ajándéka, az ajándék-pillanat, a kerti díszek és a ruha) és a tízperces Varázsvilág-próbafutás együtt fedik le | ⚖️ |
 | Régi mentés átemelése (csillagok, látott feladatok, ajándékok, név) 1. profilként | `profiles.test` („régi mentés…”, „nagyon régi mentés…”, „sérült…”), `economy.test` (régi ajándékok) | ✅ |
 | Első indulás, két profil váltogatása, mentés fájlba és visszatöltés | `profiles.test` („két gyerek…”, „két megnyitott lap…”, „mentés fájlba…”, „visszatöltés…”) | ✅ |
 | Konzol-hibamentesség | `tests/flow.mjs` (nincs kivétel, konzol-hiba, hibanapló-bejegyzés a teljes ülésben), a füstteszt kivétel-figyelése | ✅ |
