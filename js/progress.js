@@ -4,7 +4,7 @@
 //   csillagkert:device        – az eszköz beállításai (felolvasó hang, beszéd hangereje): minden gyereknél ugyanaz
 // A régi, egyetlen mentés (csillagkert_v1) az első profil lesz; a régi kulcs érintetlenül megmarad biztonsági másolatnak.
 // Minden tároló-hívás védett: privát módban is működik, csak nem ment.
-import { migrateEconomy, payStarGift, sessionGift, sessionHeart, adventureReward, dayKey, roundsToday } from './economy.js';
+import { migrateEconomy, payStarGift, sessionGift, sessionHeart, adventureReward, dayKey, roundsToday, useItem } from './economy.js';
 import { cleanAdventure, adventureAt } from './world-map.js';
 import { normalizeDress } from './avatar.js';
 import { BREAK_CHOICES, BREAK_DEFAULT } from './break-timer.js';
@@ -26,6 +26,8 @@ const fresh = () => ({
   starGifts: 0,      // hány 20-csillagos ajándék jár már kifizetve
   hearts: 0,         // szívek a jó tettekért (a Barátság fája ebből nő)
   gold: 0,           // eddig kapott ajándékvirágok (a létra után): fajtájuk a js/gifts.js FLOWER_CYCLE körforgásából, a kertben a legutóbbi GIFT_RING nyílik
+  items: {},          // a tarisznya: elhasználható meglepetések rekeszenként (falat, varázspor, tűzijáték); js/economy.js
+  treats: 0,         // a létra után eddig kapott meglepetések (a virágokkal felváltva jönnek)
   newDress: [], newDecor: [],   // még meg nem nézett új ruhák (az öltöztetőnél jelzés) és még meg nem mutatott kerti díszek
   friends: [],       // akit már megetettek: a csillagoktól függetlenül is a kertben lakik
   rewardsDone: 0,    // hány jutalomjátékot játszott már összesen
@@ -232,6 +234,9 @@ export function openProfiles(storage) {
     seenDress() { if (state.newDress.length) { state.newDress = []; save(); } },
     // a saját unikornis mostani ruhája (js/avatar.js): ismeretlen vagy még meg nem nyert darab nem marad rajta
     avatar: () => normalizeDress(state.dress, id => state.owned.includes(id)),
+    // a tarisznya: hány meglepetés van egy rekeszben, és egy elhasználása (mentve)
+    items: () => ({ ...(state.items || {}) }),
+    useItem(k) { const ok = useItem(state, k); if (ok) save(); return ok; },
     takeNewDecor() { const d = state.newDecor.slice(); if (d.length) { state.newDecor = []; save(); } return d; },
     // a Varázsvilág: a gyerek saját világa (első belépéskor kap magot), és amit ott megtalált
     world() { if (!state.world) { state.world = { seed: Math.floor(Math.random() * 2147483647), found: [], adv: cleanAdventure(null), met: [] }; save(); } if (!state.world.adv) state.world.adv = cleanAdventure(null); if (!state.world.met) state.world.met = []; return state.world; },

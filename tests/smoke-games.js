@@ -447,7 +447,7 @@ export async function testMinigames(ok) {
         const tabsIc = h.querySelectorAll('.du-tab svg.ico').length, nTabs = h.querySelectorAll('.du-tab').length;
         h.querySelector('.du-tab[data-t="matrica"]').click(); await wait(20);
         const stk = [...h.querySelectorAll('.du-opt[data-k="stickers"]')].every(b => b.querySelector('svg'));
-        ok('öltöztető: a fülek és a matricák saját rajzot mutatnak, minden gomb legalább 56 px', tabsIc === nTabs && nTabs === 8 && stk && !tinyButtons(h).length,
+        ok('öltöztető: a fülek és a matricák saját rajzot mutatnak, minden gomb legalább 56 px', tabsIc === nTabs && nTabs === 11 && stk && !tinyButtons(h).length,
           `ikonos fülek ${tabsIc}/${nTabs}, matricák rajzzal: ${stk}; kicsi: ${tinyButtons(h).join(', ') || '–'}`);
       },
     });

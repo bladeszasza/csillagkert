@@ -736,3 +736,15 @@ button { touch-action: none; }
 .du-opts { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
 @media (max-height: 560px) { #stage { padding-top: calc(84px + env(safe-area-inset-top, 0px)); } .du-tab { height: 48px; } }   /* kis telefon fekvő helyzetben (nem iPad) */
 #reward h2 { padding: 0 54px; } #reward h2 .ico { vertical-align: -0.12em; }
+/* 2. kör: a tarisznya gombja a játékokban (falat, varázspor, tűzijáték) – a rajza és hány van még */
+.treat-btn { position: absolute; z-index: 6; right: calc(22px + env(safe-area-inset-right, 0px)); bottom: calc(150px + env(safe-area-inset-bottom, 0px));
+  width: 84px; height: 84px; border-radius: 50%; border: 4px solid #3b2a63; background: #fff; box-shadow: 0 6px 0 #cdb8f2; font-size: 58px; line-height: 1; padding: 0;
+  display: flex; align-items: center; justify-content: center; animation: treat-hi 1.6s ease-in-out 3; transition: opacity .5s, transform .5s; }
+.treat-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #cdb8f2; }
+.treat-btn .n { position: absolute; right: -6px; top: -6px; min-width: 32px; height: 32px; border-radius: 16px; background: #ff5d8f; color: #fff; border: 3px solid #3b2a63; font-size: 19px; font-weight: 800; line-height: 26px; }
+.treat-btn.gone { opacity: 0; transform: scale(.6); pointer-events: none; }
+@keyframes treat-hi { 50% { transform: scale(1.1) rotate(-6deg); } }
+#home .treat-btn { position: fixed; right: auto; bottom: auto; left: calc(18px + env(safe-area-inset-left, 0px)); top: calc(300px + env(safe-area-inset-top, 0px)); width: 72px; height: 72px; font-size: 48px; }
+.pet-toys { position: absolute; z-index: 4; left: calc(18px + env(safe-area-inset-left, 0px)); bottom: calc(130px + env(safe-area-inset-bottom, 0px)); width: 110px; height: 110px; font-size: 104px; line-height: 1; padding: 0; border: 0; background: none; }
+.pet-toys:active { transform: scale(.92); }
+.treat-btn.pet-treat { bottom: calc(140px + env(safe-area-inset-bottom, 0px)); }

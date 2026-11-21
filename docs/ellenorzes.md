@@ -41,6 +41,7 @@ mi ellenőrzi, mi az állapota. Jelek: ✅ gép ellenőrzi és zöld · ⚖️ e
 | Tízperces memória-mérés | ⚖️ csak a Varázsvilágra (`soak.html`: a memória nem nő); a többi játék rövid, és a füstteszt kilépéskor ellenőrzi, hogy nem marad 3D-jelenet, hang-kontextus és időzítő | ⚖️ |
 | Nincs büntetés, mindig van kiút | a füstteszt minden típusnál: tévedés után is befejezhető, X mindig megállít; `story.test` (tanulság, nem kioktatás) | ✅ |
 | Ajándék és csillag a megfelelő forrásból, mentés után is | `?only=gifts`, `economy.test` | ✅ |
+| Játékokon belüli jutalmak (2. kör): pálya-téma, lufik, varázsnyom, buborék-alak, a tarisznya gombjai, játéksarok, lámpás; a tarisznya mentése | `?only=gifts` 5. rész (ajándékkal és nélküle), `economy.test` („a tarisznya…”), `avatar.test` (az új ruhadarabok látszanak, a játék-kinézet nem az unikornison) | ✅ |
 
 ## 6.3 Egységként
 

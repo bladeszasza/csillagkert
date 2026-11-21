@@ -27,6 +27,8 @@ const unicornHead = `<circle cx="46" cy="24" r="7" fill="#ff8fc8" ${L()}/><circl
   <path d="M27 16L21 1l12 12z" fill="#ffcf3f" ${L(K, 2.5)}/><path d="M23.5 7.5l5-1.5M25.5 12l4.5-2" ${L(K, 2)}/>
   <path d="M35 17l4-9 4 10z" fill="#fff" ${L(K, 2.5)}/><circle cx="29" cy="23" r="2.6" fill="${K}"/><circle cx="14.5" cy="35" r="1.6" fill="${K}"/><circle cx="24" cy="31" r="3" fill="#ffb3d6"/>`;
 
+import { ART, TAB_ART } from './gift-art.js';
+
 export const ICONS = {
   // --- állomások (a kert térképén) ---
   'st-ceruza': `<g transform="rotate(40 32 32)"><path d="M25 8h14v34H25z" fill="#ffcf3f" ${L()}/><path d="M32 18v22" ${L('#e8a800', 2.5)}/>
@@ -208,6 +210,7 @@ export const ICONS = {
     <rect x="23" y="29" width="18" height="21" fill="#ffc9e4" ${L(K, 2.5)}/><rect x="15" y="24" width="9" height="26" fill="#ffc9e4" ${L(K, 2.5)}/><rect x="40" y="24" width="9" height="26" fill="#ffc9e4" ${L(K, 2.5)}/>
     <path d="M13.5 25l6-11 6 11zM38.5 25l6-11 6 11z" fill="#8e5be8" ${L(K, 2.5)}/><path d="M28 50v-7a4 4 0 0 1 8 0v7z" fill="#8e5be8" ${L(K, 2)}/><path d="M23 29v-4h4v4M30 29v-4h4v4M37 29v-4h4v4" fill="#ffc9e4" ${L(K, 2)}/>`),
   'neck-pearls': `${Array.from({ length: 9 }, (_, i) => { const a = Math.PI * (0.08 + i * 0.105); return `<circle cx="${(32 - Math.cos(a) * 24).toFixed(1)}" cy="${(12 + Math.sin(a) * 30).toFixed(1)}" r="5.2" fill="#fff" ${L(K, 2.2)}/>`; }).join('')}`,
+  ...Object.fromEntries(Object.entries(ART).map(([k, v]) => ["gift-" + k, v])), ...TAB_ART,
 };
 
 // Az öltöztető elemeinek saját ikonja ("csoport:elem"). A színek színes körként jelennek meg, a matricák a saját rajzukkal (avatar-svg.js).
@@ -223,6 +226,9 @@ export const DRESS_ICON = {
   'eyes:normal': 'eyes-normal', 'eyes:glasses': 'eyes-glasses', 'eyes:hearts': 'eyes-hearts',
   'neck:scarf': 'tab-nyak', 'neck:cape': 'neck-cape',
   'bg:garden': 'tab-hatter', 'bg:night': 'bg-night', 'bg:clouds': 'bg-clouds', 'bg:sea': 'bg-sea', 'bg:castle': 'bg-castle',
+  // 2. kör: az ajándék-darabok a saját ajándékrajzukat kapják (js/gift-art.js)
+  'tail:none': 'ui-none', 'feet:none': 'ui-none', 'back:none': 'ui-none', 'trail:none': 'ui-none', 'track:clouds': 'track-clouds', 'bubble:round': 'bubble-round',
+  ...Object.fromEntries(Object.keys(ART).filter(k => !/^(deco|fogy):/.test(k)).map(k => [k, 'gift-' + k])),
 };
 
 // Egy ikon beágyazható SVG-ként (1em × 1em, a betűmérethez igazodik). Ismeretlen névre üres szöveg.

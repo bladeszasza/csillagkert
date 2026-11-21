@@ -56,8 +56,9 @@ function unicorn(s) {
     s.manestyle === 'wild' ? `<path d="M170 250 L80 210 L110 250 L60 270 L120 285 L90 330 L175 285Z" fill="${maneFill}" ${line}/>` :
     `<path d="M170 245 C90 215 60 280 100 340 C115 300 130 285 175 285Z" fill="${maneFill}" ${line}/>`;
   o += tail;
+  if (s.tail === 'ribbon') o += `<path d="M172 262 l-26 -18 v36Z M172 262 l26 -18 v36Z" fill="#8e5be8" ${line}/><circle cx="172" cy="262" r="8" fill="#c9a3ff" ${line}/>${star(128, 318, 13, '#ffcf3f')}`;
   // lábak
-  for (const [x, back] of [[200, 1], [240, 1], [350, 0], [392, 0]]) o += `<path d="M${x} 320 h34 v90 q0 14 -17 14 q-17 0 -17 -14Z" fill="${body}" ${line}/><path d="M${x} 400 h34 v14 q0 10 -17 10 q-17 0 -17 -10Z" fill="${dark}" opacity="${back ? .85 : 1}"/>`;
+  for (const [x, back] of [[200, 1], [240, 1], [350, 0], [392, 0]]) o += `<path d="M${x} 320 h34 v90 q0 14 -17 14 q-17 0 -17 -14Z" fill="${body}" ${line}/><path d="M${x} 400 h34 v14 q0 10 -17 10 q-17 0 -17 -10Z" fill="${s.feet === 'shoes' ? '#ff8fc8' : dark}" opacity="${back ? .85 : 1}"/>${s.feet === 'shoes' ? `<circle cx="${x + 17}" cy="${406}" r="5" fill="#ffcf3f" stroke="${dark}" stroke-width="2"/>` : ''}`;
   // test + minta
   o += `<ellipse cx="290" cy="270" rx="140" ry="85" fill="${body}" ${line}/>`;
   const pc = body === '#3b2a63' ? '#ffffff' : '#c9b3f5';
@@ -67,10 +68,14 @@ function unicorn(s) {
     if (s.pattern === 'stripes') o += [200, 240, 280, 320, 360].map(x => `<path d="M${x} 180 l-30 170" stroke="${pc}" stroke-width="14"/>`).join('');
     if (s.pattern === 'stars') o += [[220, 240], [300, 290], [350, 245], [260, 320]].map(([x, y]) => star(x, y, 15, '#ffcf3f')).join('');
     if (s.pattern === 'hearts') o += [[220, 245], [300, 295], [350, 245], [255, 320]].map(([x, y]) => heart(x, y, 1.6, '#ff5d8f')).join('');
+    if (s.pattern === 'sparkle') o += [[215, 240, 14], [300, 290, 12], [350, 240, 15], [255, 318, 10], [320, 215, 9]].map(([x, y, r]) => `<path d="M${x} ${y - r} L${x + r * 0.3} ${y - r * 0.3} L${x + r} ${y} L${x + r * 0.3} ${y + r * 0.3} L${x} ${y + r} L${x - r * 0.3} ${y + r * 0.3} L${x - r} ${y} L${x - r * 0.3} ${y - r * 0.3}Z" fill="#b48cff"/>`).join('') + [[245, 270], [330, 320], [280, 230]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="4" fill="#fff"/>`).join('');
     o += `</g>`;
   }
   // köpeny / nyak
-  if (s.neck === 'cape') o += `<path d="M360 215 C300 200 200 220 150 330 C250 300 320 300 380 260Z" fill="#c53b6e" ${line}/>`;
+  if (s.neck === 'cape' || s.neck === 'lilacape') o += `<path d="M360 215 C300 200 200 220 150 330 C250 300 320 300 380 260Z" fill="${s.neck === 'lilacape' ? '#a77bf0' : '#c53b6e'}" ${line}/>`;
+  if (s.neck === 'lilacape') o += star(250, 268, 10, '#fff') + star(310, 250, 8, '#fff');
+  // virágos nyereg a háton
+  if (s.back === 'saddle') o += `<path d="M230 200 C260 180 330 180 350 205 C345 240 240 245 230 200Z" fill="#c98a52" ${line}/>` + [[255, 205, '#ff8fc8'], [290, 198, '#ffcf3f'], [325, 207, '#8e5be8']].map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="10" fill="${c}" stroke="${dark}" stroke-width="2.5"/><circle cx="${x}" cy="${y}" r="3.5" fill="#fff"/>`).join('');
   // nyak + fej
   o += `<path d="M360 230 C380 150 410 120 445 105 L520 150 C500 190 470 215 430 270Z" fill="${body}" ${line}/>`;
   o += `<ellipse cx="480" cy="160" rx="64" ry="48" transform="rotate(18 480 160)" fill="${body}" ${line}/>`;
@@ -97,6 +102,7 @@ function unicorn(s) {
   // fejdísz
   const head = { crown: `<path d="M440 112 l10 -34 l16 22 l18 -28 l18 30 l14 -18 l6 38Z" transform="rotate(8 480 100)" fill="#ffd24d" ${line}/><circle cx="470" cy="94" r="5" fill="#ff5d8f"/><circle cx="490" cy="88" r="5" fill="#4aa8ff"/>`,
     flowers: [[440, 118], [462, 104], [486, 100], [508, 110]].map(([x, y], i) => `<g transform="translate(${x} ${y})">${[0, 1, 2, 3, 4].map(k => `<circle cx="${Math.cos(k * 1.256) * 9}" cy="${Math.sin(k * 1.256) * 9}" r="7" fill="${['#ff8fc8', '#ffcf3f', '#8e5be8', '#ff9f43'][i]}"/>`).join('')}<circle r="5" fill="#fff"/></g>`).join(''),
+    tiara: `<path d="M440 112 q40 -22 80 0" fill="none" stroke="#d8dcef" stroke-width="9" stroke-linecap="round"/><path d="M452 104 l6 -22 l12 16 l10 -30 l10 30 l12 -16 l6 22" fill="#eef1ff" ${line}/><circle cx="480" cy="92" r="6" fill="#ff8fc8" stroke="${dark}" stroke-width="2"/>`,
     bow: `<g transform="translate(444 106)"><path d="M0 0 l-30 -18 v36Z M0 0 l30 -18 v36Z" fill="#ff5d8f" ${line}/><circle r="8" fill="#ff2f7a" ${line}/></g>`,
     wizard: `<g transform="rotate(10 470 100)"><path d="M430 112 L486 -20 L530 112Z" fill="#6a3fc0" ${line}/><ellipse cx="480" cy="112" rx="64" ry="12" fill="#5a2fb0" ${line}/>${star(486, 40, 14, '#ffe14d')}${star(466, 82, 8, '#ffe14d')}</g>` };
   o += head[s.head] || '';

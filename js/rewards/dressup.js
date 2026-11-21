@@ -17,6 +17,10 @@ import { dressSvg, backdropSvg, stickerLayer, stickerSvg } from '../avatar-svg.j
 import { icon, DRESS_ICON } from '../icons.js';
 import { calm } from '../motion.js';
 import { makeCharacter, animateCharacter, measureCharacter, createCharacterBatch } from '../three/characters.js';
+import { createTrail } from '../three/trail.js';
+// 2. kör: a varázsnyom itt is látszik (az unikornis körül időnként felszáll egy csokor); a pálya és a buborék a
+// játékokban látszik, ezért ott Rozi egy mondatban elmondja, hol fogja látni.
+const WHERE = { track: 'A versenyen ilyen pályán futsz majd!', bubble: 'A buborékok ilyen alakúak lesznek!' };
 
 // A ruhatár a játszó gyerek profiljában él (mindenkinek saját unikornisa van)
 const load = () => progress.avatar();
@@ -50,7 +54,7 @@ export function run(container) {
   const zoomBtn = container.querySelector('.du-zoom'), hint = container.querySelector('.du-hint');
 
   // --- 3D: átlátszó vászon a rajzolt háttér előtt; a talaj egy korong puha árnyékkal ---
-  let renderer = null, scene = null, camera = null, crowd = null, model = null, ground = null, raf = 0, alive = true, quality = null;
+  let renderer = null, scene = null, camera = null, crowd = null, model = null, ground = null, raf = 0, alive = true, quality = null, trail = null, puffT = 0;
   const still = calm();                                    // kevesebb mozgásnál nem forog magától (megnyitáskor dől el)
   let rotY = Math.PI - 0.6, spinT = performance.now(), hopT = -1e9, zoom = 0, zoomGoal = 0, size = { w: 1, h: 1 };
   try {
@@ -73,6 +77,7 @@ export function run(container) {
     ground.material.color.setHex(GROUND[sel.bg] ?? GROUND.garden);
     if (model) crowd.remove(model);
     model = makeCharacter('unicorn', sel); crowd.add(model);
+    if (trail?.kind !== sel.trail) { trail?.dispose(); trail = createTrail(scene, sel.trail, { calm, scale: 0.9 }); puffT = 0; }
     if (celebrate) hopT = performance.now();
   }
   function resize() {
@@ -94,6 +99,10 @@ export function run(container) {
     model.rotation.y = rotY;
     model.position.y = hop > 0 ? Math.abs(Math.sin(hop * Math.PI * 2)) * 0.35 : 0;
     animateCharacter(model, t, 0, hop > 0);               // új darabnál ugrik egyet és integet (szárnnyal csapkod)
+    if (trail) {                                            // varázsnyom: másfél másodpercenként egy csokor a farka mögül
+      if (now > puffT) { puffT = now + 1500; const bx = Math.sin(rotY) * 0.75, bz = Math.cos(rotY) * 0.75; trail.puff(bx, 0.9, bz, now, still ? 3 : 6); }
+      trail.step(now);
+    }
     quality.tick(); crowd.update(); placeCamera(); renderer.render(scene, camera);
     raf = requestAnimationFrame(frame);
   }
@@ -130,7 +139,8 @@ export function run(container) {
     msg.textContent = '';
     if (key === 'stickers') { const i = sel.stickers.indexOf(id); if (i >= 0) sel.stickers.splice(i, 1); else sel.stickers.push(id); if (sel.stickers.length > MAX_STICKERS) sel.stickers.shift(); }
     else sel[key] = id;
-    save(sel); play('magic'); build(key !== 'bg' && key !== 'stickers'); renderOpts();
+    save(sel); play('magic'); build(key !== 'bg' && key !== 'stickers' && !(key in WHERE)); renderOpts();
+    if (WHERE[key]) say(WHERE[key], { remember: false });
   });
 
   const ro = 'ResizeObserver' in window ? new ResizeObserver(resize) : null; ro?.observe(view);
@@ -139,12 +149,12 @@ export function run(container) {
   if (renderer) raf = requestAnimationFrame(frame);
 
   // teszteléshez: a forgatás, a nagyítás és a mostani ruha (nem része a játéknak)
-  container.__dress = { sel: () => ({ ...sel, stickers: sel.stickers.slice() }), model: () => model, rot: () => rotY, zoom: () => zoomGoal, calls: () => renderer?.info.render.calls ?? 0,
+  container.__dress = { trail: () => trail, sel: () => ({ ...sel, stickers: sel.stickers.slice() }), model: () => model, rot: () => rotY, zoom: () => zoomGoal, calls: () => renderer?.info.render.calls ?? 0,
     height: () => (model ? measureCharacter(model).height : 0), render: () => { if (renderer) { crowd.update(); placeCamera(); renderer.render(scene, camera); } } };
   return () => {
     alive = false; cancelAnimationFrame(raf); ro?.disconnect(); window.removeEventListener('resize', resize);
     if (renderer) {
-      crowd.dispose();
+      crowd.dispose(); trail?.dispose(); trail = null;
       scene.traverse(o => { o.geometry?.dispose?.(); const m = o.material; if (m) (Array.isArray(m) ? m : [m]).forEach(x => x.dispose?.()); });
       renderer.dispose(); renderer.forceContextLoss?.();
     }

@@ -134,4 +134,44 @@ export async function testGifts(ok) {
       garden.goTo(null); await wait(1600);
     }
   } finally { garden.pause(true); canvas.remove(); }
+
+  // 5) a játékokon belüli jutalmak (2. kör): pálya-téma, lufik, varázsnyom, buborék-alak, a tarisznya gombjai, játéksarok, lámpás
+  {
+    const run = async (k, ctx, drive) => {
+      const errs = [], onErr = e => errs.push(e.message || String(e.reason?.message || e.reason));
+      window.addEventListener('error', onErr); window.addEventListener('unhandledrejection', onErr);
+      const h = box(); let out = null, dispose = null;
+      try { dispose = (await REWARDS[k]()).run(h, { ...(OPTS[k] || {}), gift: () => null, heart: () => true, ...ctx }); await wait(300); out = await drive(h); }
+      catch (e) { errs.push(e.stack || e.message); }
+      try { dispose?.(); } catch (e) { errs.push('kilépés: ' + e.message); }
+      await wait(100); window.removeEventListener('error', onErr); window.removeEventListener('unhandledrejection', onErr);
+      h.remove();                                            // a játék törzsét a főprogram üríti ki (clearGameBody)
+      return { ...out, errs };
+    };
+    const used = [], pouch = n => ({ items: { falat: n, varazspor: n, tuzijatek: n }, useItem: key => { used.push(key); return true; } });
+    const r = await run('race', { avatar: { track: 'night', trail: 'stars' }, owned: ['deco:balloons'] }, async h => {
+      const R = h.__race; R.S.phase = 'run'; for (let i = 0; i < 90; i++) { R.step(1 / 30); if (i % 10 === 0) R.render(); } R.render();
+      return { night: R.theme.sky === 0x231858, balloons: R.balloons, live: R.trail()?.live() || 0, calls: R.info().calls };
+    });
+    ok('játékbeli jutalom (verseny): csillagos éjszakai pálya, lufik, csillagnyom, a kereten belül', r.night && r.balloons && r.live > 0 && r.calls <= 150 && !r.errs.length, JSON.stringify(r));
+    const r0 = await run('race', { avatar: {}, owned: [] }, async h => ({ clouds: h.__race.theme.sky === 0xbfe9ff, balloons: h.__race.balloons, trail: !!h.__race.trail() }));
+    ok('játékbeli jutalom (verseny): ajándék nélkül a régi felhőpálya, lufi és nyom nélkül', r0.clouds && !r0.balloons && !r0.trail && !r0.errs.length, JSON.stringify(r0));
+    const b = await run('bubbles', { avatar: { bubble: 'stars' }, ...pouch(1) }, async h => {
+      const B = h.__bub, had = !!B.button(); B.button()?.click(); await wait(400);
+      return { shape: B.shape, had, rain: B.raining(), gone: !B.button() || B.button().disabled };
+    });
+    ok('játékbeli jutalom (buborékok): csillag alakú buborékok; a varázspor gombja buborékesőt indít, az utolsó után eltűnik', b.shape === 'stars' && b.had && b.rain && b.gone && used.includes('varazspor') && !b.errs.length, JSON.stringify(b));
+    const nb = await run('bubbles', { avatar: {}, items: { varazspor: 0 }, useItem: () => true }, async h => ({ shape: h.__bub.shape, btn: !!h.__bub.button() }));
+    ok('játékbeli jutalom (buborékok): üres tarisznyánál nincs gomb, a buborék kerek', nb.shape === 'round' && !nb.btn && !nb.errs.length, JSON.stringify(nb));
+    const p = await run('pet', { owned: ['deco:toys'], ...pouch(2) }, async h => {
+      h.__pet.choose(0); await wait(400); const toys = !!h.__pet.toys(); h.__pet.treat()?.click(); await wait(200);
+      return { toys, dancing: h.__pet.dancing(), n: h.__pet.treat()?.querySelector('.n')?.textContent };
+    });
+    ok('játékbeli jutalom (Barátom): a játéksarok ott van; a különleges falattól a barát táncol, a gombon eggyel kevesebb', p.toys && p.dancing && p.n === '1' && used.includes('falat') && !p.errs.length, JSON.stringify(p));
+    const w = await run('openworld', { avatar: { trail: 'hearts' }, owned: ['deco:lantern'] }, async h => {
+      const ow = h.__ow; ow.setTarget(0, -12); for (let i = 0; i < 60; i++) ow.update(DT);
+      return { lantern: !!ow.lantern(), live: ow.trail()?.live() || 0 };
+    });
+    ok('játékbeli jutalom (Varázsvilág): lámpás a kapunál, szívnyom a futó unikornis mögött', w.lantern && w.live > 0 && !w.errs.length, JSON.stringify(w));
+  }
 }

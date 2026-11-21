@@ -17,6 +17,7 @@ import { nextGift, newRewardSession, roundStars, roundsToday, dayKey } from './e
 import { giftById } from './gifts.js';
 import { showGift, giftBusy, clearGifts, floatHeart, BOX_SVG } from './gift-moment.js';
 import { REWARDS } from './rewards/index.js';
+import { treatButton } from './rewards/treat-button.js';
 import { icon } from './icons.js';
 import { applyCalm, setupPress } from './motion.js';
 import { createBreakTimer } from './break-timer.js';
@@ -126,8 +127,16 @@ function fillFor() {
 }
 // --- Szívek és a következő ajándék a fejlécben (olvasni nem kell: kép és koppintásra Rozi mondja) ---
 $('gift-next').querySelector('.bow').innerHTML = BOX_SVG;
+// A tarisznya tűzijátéka a főképernyőn (2. kör): ha van, egy gomb a kert sarkában; koppintásra a kert fölött felszáll
+function renderHomeTreat() {
+  document.querySelector('#home > .treat-btn')?.remove();
+  treatButton($('home'), 'tuzijatek', { items: progress.items(), useItem: k => progress.useItem(k) }, () => {
+    garden?.fireworks(); play('yay'); say('Tűzijáték! Nézd, milyen szép!', { remember: false });
+  });
+}
 function renderTreasure() {
   const st = progress.get();
+  renderHomeTreat();
   $('gift-next').querySelector('.ic').innerHTML = nextGift(st).icon;          // a következő ajándék árnyképe
   $('hearts').querySelector('.n').textContent = String(st.hearts || 0);
   document.querySelector('.choice[data-game="dressup"]')?.classList.toggle('new', (st.newDress || []).length > 0);
@@ -400,7 +409,10 @@ document.querySelectorAll('.choice').forEach(btn => btn.addEventListener('click'
         onMeet: id => progress.metCreature(id),
         onAdventure() { if (sess !== rewardSess) return null; const g = progress.adventureDone(sess); if (g) { renderTreasure(); showGift(g, { name: name() }); } return g; },
       },
-      avatar: progress.avatar(),                             // a saját unikornis ruhája (futás, verseny, Barátom)
+      avatar: progress.avatar(),                             // a saját unikornis ruhája (futás, verseny, Barátom), a varázsnyom és a játékok kinézete
+      owned: progress.get().owned.slice(),                   // a megnyert díszek a játékokban (lufik, lámpás, játékok)
+      items: progress.items(),                               // a tarisznya meglepetései; useItem: egy elhasználása (mentve)
+      useItem: k => progress.useItem(k),
       gift() { if (sess !== rewardSess) return null; const g = progress.rewardGift(sess, src); if (g) { renderTreasure(); showGift(g, { name: name() }); } return g; },
       heart(at) { if (sess !== rewardSess) return false; const ok = progress.rewardHeart(sess, src); if (ok) { renderTreasure(); floatHeart(at); } return ok; },
     };

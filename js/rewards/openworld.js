@@ -20,6 +20,8 @@ import { play, animalVoice } from '../sounds.js';
 import { makeTerrain, guideGoal, LANDMARKS, landmarkById, WORLD_LINES, SITE_CLEAR, FIND_R, itemSpots, adventureAt, cleanAdventure, PICK_R, makeBiomes, mixHex, BIOMES,
   CREATURES, CREATURE_LINES, creatureById, creatureSpots, MEET_NEAR, SHY_R, WAIT_S } from '../world-map.js';
 import { creatureGeo, disposeCreatureGeos } from './creatures3d.js';
+import { createTrail } from '../three/trail.js';
+import { calm as calmMotion } from '../motion.js';
 import { buildLandmark } from './landmarks3d.js';
 export { makeTerrain };
 
@@ -299,6 +301,22 @@ export function run(container, opts = {}) {
   unicorn.scale.setScalar(1.15);
   unicorn.rotation.order = 'YXZ';                     // előbb a fordulás, utána a bólintás: ugráskor nem dől oldalra
   scene.add(unicorn); batch.add(unicorn);
+  const trail = createTrail(scene, opts.avatar?.trail, { calm: calmMotion, scale: 1.15 });   // varázsnyom (ha az öltöztetőben választott)
+  // varázslámpás a kapunál (2. kör: ajándék-dísz): a kezdőhely mellett világít, lassan lüktet
+  let lantern = null;
+  if ((opts.owned || []).includes('deco:lantern')) {
+    const lg = new THREE.Group(), parts = [];
+    const add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); lg.add(m); parts.push(m); return m; };
+    const wood = lookMat({ color: 0x8e5be8 }), glow = new THREE.MeshBasicMaterial({ color: 0xffe9a0 }), halo = new THREE.MeshBasicMaterial({ color: 0xfff3b0, transparent: true, opacity: 0.35, depthWrite: false });
+    add(new THREE.CylinderGeometry(0.08, 0.1, 2.2, 8), wood, 0, 1.1, 0);
+    add(new THREE.BoxGeometry(0.5, 0.12, 0.5), wood, 0, 2.2, 0);
+    const lamp = add(new THREE.CylinderGeometry(0.22, 0.26, 0.5, 8), glow, 0, 2.52, 0);
+    add(new THREE.ConeGeometry(0.36, 0.34, 8), wood, 0, 2.94, 0);
+    const aura = add(new THREE.SphereGeometry(0.7, 14, 10), halo, 0, 2.55, 0);
+    lg.position.set(-2.4, heightAt(-2.4, 0.8), 0.8); scene.add(lg);
+    lantern = { group: lg, step: t => { const k = 1 + Math.sin(t * 2.2) * 0.12; aura.scale.setScalar(k); lamp.material.color.setHSL(0.13, 1, 0.78 + Math.sin(t * 2.2) * 0.06); },
+      dispose: () => { scene.remove(lg); parts.forEach(m => m.geometry.dispose()); [wood, glow, halo].forEach(m => m.dispose()); } };
+  }
   const P = { x: 0, z: 0, y: 0, vy: 0, grounded: true, ang: 0, speed: 0, target: null, tap: false, best: Infinity, stall: 0, bump: 0, tilt: 0, avoid: null, avoidSide: 1, moved: 0 };
   const ray = new THREE.Raycaster(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), ndc = new THREE.Vector2(), hit = new THREE.Vector3(), TGT = { x: 0, z: 0 };
   function aim(clientX, clientY) {
@@ -418,6 +436,8 @@ export function run(container, opts = {}) {
     const gy = heightAt(P.x, P.z);
     unicorn.position.set(P.x, gy + P.y + (P.bump > 0 ? Math.sin(P.bump * 30) * 0.05 : 0), P.z);
     unicorn.rotation.y = P.ang;
+    lantern?.step(t);
+    if (trail) { const nowMs = performance.now(); trail.follow(P.x + Math.sin(P.ang) * 0.85, gy + P.y + 0.9, P.z + Math.cos(P.ang) * 0.85, nowMs); trail.step(nowMs); }
     P.tilt += ((P.grounded ? 0 : P.vy > 0 ? -0.25 : 0.12) - P.tilt) * Math.min(1, dt * 8);
     unicorn.rotation.x = P.tilt;
     animateRunner(unicorn, t, P.grounded ? Math.min(1, P.speed / WALK) : 0.6, !P.grounded);
@@ -756,7 +776,7 @@ export function run(container, opts = {}) {
 
   // tesztekhez
   container.__ow = {
-    P, chunks, seed, canvas, camera, update, render, jump, heightAt, isReady: () => ready, player: () => unicorn,
+    P, chunks, seed, canvas, camera, update, render, jump, heightAt, isReady: () => ready, player: () => unicorn, trail: () => trail, lantern: () => lantern,
     pals: () => pals, followers: () => pals.filter(p => p.follow),
     colliders: () => [...chunks.values()].flatMap(c => c.colliders),
     trees: () => [...chunks.values()].flatMap(c => c.trees),
@@ -772,7 +792,7 @@ export function run(container, opts = {}) {
     alive = false; cancelAnimationFrame(raf); ro?.disconnect();
     window.removeEventListener('resize', size); window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku);
     for (const c of chunks.values()) disposeChunk(c);
-    chunks.clear(); landmarks.clear(); pals.length = 0; batch.dispose(); hearts.dispose(); itemMesh.dispose(); glowMesh.dispose(); moteMesh.dispose(); for (const c of critters.values()) if (c.mesh) scene.remove(c.mesh); critters.clear(); disposeCreatureGeos(); delete container.__busy;
+    chunks.clear(); landmarks.clear(); pals.length = 0; batch.dispose(); trail?.dispose(); lantern?.dispose(); hearts.dispose(); itemMesh.dispose(); glowMesh.dispose(); moteMesh.dispose(); for (const c of critters.values()) if (c.mesh) scene.remove(c.mesh); critters.clear(); disposeCreatureGeos(); delete container.__busy;
     Object.values(G).forEach(g => g.dispose()); Object.values(M).forEach(m => m.dispose());
     renderer.dispose(); renderer.forceContextLoss?.();
   };

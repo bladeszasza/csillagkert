@@ -4,8 +4,17 @@
 //   nom: a neve (alanyeset), acc: tárgyesettel, névelővel, kézzel kiírva ("egy lámpást") – a gép nem ragoz
 //   icon: saját rajz (SVG, 64×64), sziluettként is jól felismerhető
 //   spot: a kerti dísz helye [kertrész, x, z, forgatás, méret?] – a tópart és a tanya szabad zugaiban (js/decor3d.js építi meg)
+//   2. kör (a szülő kérésére, 2026-11-21): a játékokon belüli jutalmak
+//     'dress' + iconOnly: az öltöztetőben választható, de nem az unikornison látszik (varázsnyom, pálya, buborék): az
+//         ajándék-pillanat a saját rajzát mutatja, nem az unikornist
+//     'gamedeco': dísz egy játékban (game: melyikben); ha megvan, magától ott van
+//     'treat': elhasználható meglepetés a tarisznyában (item: a tarisznya rekesze); semmi előnyt nem ad, csak örömöt
+//   where: Rozi második mondata az ajándékról (hol találja)
+
+import { ART } from './gift-art.js';
 
 const svg = body => `<svg viewBox="0 0 64 64" width="1em" height="1em" aria-hidden="true">${body}</svg>`;
+const art = id => svg(ART[id]);
 const RB = ['#ff5d5d', '#ffb020', '#ffe14d', '#4cc38a', '#4a7dff', '#8e5be8'];
 
 export const CATALOG = [
@@ -56,6 +65,32 @@ export const CATALOG = [
     icon: svg('<rect x="29" y="34" width="6" height="28" fill="#9a6a3a"/><path d="M12 36 V22 a10 10 0 0 1 10 -10 H44 a10 10 0 0 1 10 10 V36Z" fill="#4aa8ff" stroke="#2a6ab0" stroke-width="3"/><path d="M44 12 a10 10 0 0 0 -10 10 V36" fill="none" stroke="#2a6ab0" stroke-width="3"/><path d="M50 18 V6 h8 v6 h-8" fill="#f2545b" stroke="#a83a3f" stroke-width="2"/>') },
   { id: 'garden:homokozo', kind: 'garden', nom: 'homokozó', acc: 'egy homokozót', spot: ['tanya', 16.0, 0.75, 0.3],
     icon: svg('<path d="M4 40 L32 30 L60 40 L32 52Z" fill="#ffe3a3" stroke="#e6bb82" stroke-width="3" stroke-linejoin="round"/><path d="M4 40 V46 L32 58 L60 46 V40 M32 52 V58" fill="none" stroke="#9a6a3a" stroke-width="3" stroke-linejoin="round"/><path d="M38 20 h12 l-2 14 h-8z" fill="#ff5d8f" stroke="#c53b6e" stroke-width="2"/><path d="M38 20 q6 -8 12 0" fill="none" stroke="#c53b6e" stroke-width="2"/><path d="M16 26 l4 12" stroke="#4aa8ff" stroke-width="4" stroke-linecap="round"/><ellipse cx="21" cy="40" rx="5" ry="3" fill="#4aa8ff"/>') },
+  // --- 2. kör: új ruhadarabok (az unikornison mindenhol látszanak) ---
+  { id: 'tail:ribbon', kind: 'dress', nom: 'csillagos farokszalag', acc: 'egy csillagos farokszalagot', icon: art('tail:ribbon') },
+  { id: 'feet:shoes', kind: 'dress', nom: 'patkócipők', acc: 'patkócipőket', icon: art('feet:shoes') },
+  { id: 'back:saddle', kind: 'dress', nom: 'virágos nyereg', acc: 'egy virágos nyerget', icon: art('back:saddle') },
+  { id: 'pattern:sparkle', kind: 'dress', nom: 'csillámos minta', acc: 'csillámos mintát', icon: art('pattern:sparkle') },
+  { id: 'neck:lilacape', kind: 'dress', nom: 'lila köpeny', acc: 'egy lila köpenyt', icon: art('neck:lilacape') },
+  { id: 'head:tiara', kind: 'dress', nom: 'tiara', acc: 'egy tiarát', icon: art('head:tiara') },
+  // --- varázsnyomok: az unikornis után szállnak a Varázsvilágban és a versenyen ---
+  { id: 'trail:stars', kind: 'dress', iconOnly: true, nom: 'csillagnyom', acc: 'csillagnyomot', where: 'Csillagok szállnak majd utánad! Az öltöztetőben választhatod ki.', icon: art('trail:stars') },
+  { id: 'trail:hearts', kind: 'dress', iconOnly: true, nom: 'szívnyom', acc: 'szívnyomot', where: 'Szívek szállnak majd utánad! Az öltöztetőben választhatod ki.', icon: art('trail:hearts') },
+  { id: 'trail:rainbow', kind: 'dress', iconOnly: true, nom: 'szivárványnyom', acc: 'szivárványnyomot', where: 'Szivárvány fut majd utánad! Az öltöztetőben választhatod ki.', icon: art('trail:rainbow') },
+  { id: 'trail:bubbles', kind: 'dress', iconOnly: true, nom: 'buboréknyom', acc: 'buboréknyomot', where: 'Buborékok szállnak majd utánad! Az öltöztetőben választhatod ki.', icon: art('trail:bubbles') },
+  // --- a játékok kinézete: versenypálya és buborékok ---
+  { id: 'track:sunset', kind: 'dress', iconOnly: true, nom: 'naplementés pálya', acc: 'egy naplementés versenypályát', where: 'Az öltöztetőben választhatod ki a versenyhez.', icon: art('track:sunset') },
+  { id: 'track:night', kind: 'dress', iconOnly: true, nom: 'csillagos éjszakai pálya', acc: 'egy csillagos éjszakai versenypályát', where: 'Az öltöztetőben választhatod ki a versenyhez.', icon: art('track:night') },
+  { id: 'track:candy', kind: 'dress', iconOnly: true, nom: 'cukorkapálya', acc: 'egy cukorkapályát', where: 'Az öltöztetőben választhatod ki a versenyhez.', icon: art('track:candy') },
+  { id: 'bubble:hearts', kind: 'dress', iconOnly: true, nom: 'szívbuborékok', acc: 'szív alakú buborékokat', where: 'Az öltöztetőben választhatod ki a buborékokhoz.', icon: art('bubble:hearts') },
+  { id: 'bubble:stars', kind: 'dress', iconOnly: true, nom: 'csillagbuborékok', acc: 'csillag alakú buborékokat', where: 'Az öltöztetőben választhatod ki a buborékokhoz.', icon: art('bubble:stars') },
+  // --- díszek a játékokban (maguktól ott vannak) ---
+  { id: 'deco:balloons', kind: 'gamedeco', game: 'race', nom: 'lufik és zászlók', acc: 'lufikat és zászlókat a versenypályára', where: 'A versenypálya szélén várnak.', icon: art('deco:balloons') },
+  { id: 'deco:lantern', kind: 'gamedeco', game: 'openworld', nom: 'varázslámpás', acc: 'egy varázslámpást', where: 'A Varázsvilág kapujánál világít.', icon: art('deco:lantern') },
+  { id: 'deco:toys', kind: 'gamedeco', game: 'pet', nom: 'labda és párna', acc: 'egy labdát és egy puha párnát', where: 'A Barátom szobájában várnak.', icon: art('deco:toys') },
+  // --- a tarisznya meglepetései (elhasználhatók, de újra jönnek) ---
+  { id: 'fogy:falat', kind: 'treat', item: 'falat', nom: 'különleges falat', acc: 'egy különleges falatot', where: 'A Barátom játékban adhatod oda.', icon: art('fogy:falat') },
+  { id: 'fogy:varazspor', kind: 'treat', item: 'varazspor', nom: 'varázspor', acc: 'egy zacskó varázsport', where: 'A buborékoknál szórhatod szét.', icon: art('fogy:varazspor') },
+  { id: 'fogy:tuzijatek', kind: 'treat', item: 'tuzijatek', nom: 'tűzijáték', acc: 'egy tűzijátékot', where: 'A kertben lőheted fel.', icon: art('fogy:tuzijatek') },
 ];
 
 // --- AJÁNDÉKVIRÁGOK: ha a létra minden fokát megszerezte (nincs üres ajándék) ---
@@ -80,9 +115,19 @@ export const flowerGiftAt = j => FLOWER_GIFTS.find(g => g.id === FLOWER_CYCLE[((
 // így annak, akinek már minden ruhája megvan, a következő ajándék kerti dísz lesz.
 export const LADDER = ['head:crown', 'garden:lampas', 'wing:rainbow', 'garden:pad', 'bg:castle', 'garden:hinta', 'horn:rainbow', 'garden:odu',
   'neck:cape', 'garden:kapu', 'wing:fairy', 'garden:szelforgo', 'head:wizard', 'garden:kut', 'mane:rainbow', 'garden:gombahaz', 'bg:sea', 'garden:mehkas',
-  'neck:pearls', 'garden:napraforgo', 'garden:posta', 'garden:homokozo'];
+  'neck:pearls', 'garden:napraforgo', 'garden:posta', 'garden:homokozo',
+  // 2. kör: a játékokon belüli jutalmak, vegyesen (ruha, nyom, dísz, meglepetés, kinézet)
+  'trail:stars', 'deco:balloons', 'tail:ribbon', 'fogy:falat', 'track:sunset', 'feet:shoes', 'bubble:hearts', 'deco:lantern',
+  'trail:hearts', 'back:saddle', 'fogy:varazspor', 'track:night', 'pattern:sparkle', 'deco:toys', 'trail:rainbow', 'bubble:stars',
+  'fogy:tuzijatek', 'neck:lilacape', 'track:candy', 'head:tiara', 'trail:bubbles'];
 // A régi (2.0 előtti) feloldási sorrend: a régi mentés "unlockedCount" darab eleme ebből a listából való
 export const OLD_ORDER = ['head:crown', 'wing:rainbow', 'bg:castle', 'horn:rainbow', 'neck:cape', 'wing:fairy', 'head:wizard', 'mane:rainbow', 'bg:sea', 'neck:pearls'];
 
 export const giftById = id => CATALOG.find(g => g.id === id) || FLOWER_GIFTS.find(g => g.id === id) || null;
 export const DECOR = CATALOG.filter(g => g.kind === 'garden');
+// A tarisznya meglepetései: a létra után a virágokkal felváltva jönnek (falat, varázspor, tűzijáték)
+export const TREATS = CATALOG.filter(g => g.kind === 'treat');
+export const TREAT_CYCLE = ['fogy:falat', 'fogy:varazspor', 'fogy:tuzijatek'];
+export const treatAt = j => giftById(TREAT_CYCLE[((j % TREAT_CYCLE.length) + TREAT_CYCLE.length) % TREAT_CYCLE.length]);
+export const ITEM_KEYS = TREATS.map(g => g.item);
+export const ITEM_MAX = 9;                           // egy rekeszben legfeljebb ennyi (a régi meglepetés nem vész el, csak nem gyűlik végtelenül)

@@ -35,7 +35,7 @@ export function clearGifts() {
 }
 
 async function itemHtml(g) {
-  if (g.kind === 'dress') {
+  if (g.kind === 'dress' && !g.iconOnly) {          // a varázsnyom, a pálya és a buborék a saját rajzát mutatja
     try {                                                    // a saját unikornis, rajta az új ruhadarab (az öltöztető rajzolja)
       const { preview } = await import('./rewards/dressup.js');
       return `<img class="gm-uni" alt="" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(preview(g.id))}">`;

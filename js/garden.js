@@ -12,6 +12,7 @@ import { DECOR, giftById } from './gifts.js';
 import { buildDecorGeo, createFriendTree } from './decor3d.js';
 import { buildFloraGeo } from './flora3d.js';
 import { createGiftFlowers } from './gift-flowers3d.js';
+import { createFireworks } from './fireworks3d.js';
 import { mat as lookMat, addLights, createQuality } from './three/look.js';
 
 const FOV = 50, TAN = Math.tan(FOV * Math.PI / 360);
@@ -84,6 +85,7 @@ export function createGarden(canvas) {
     return mat;
   };
   const mainGroup = new THREE.Group(); scene.add(mainGroup);
+  const fireworks = createFireworks(scene, { calm: () => document.documentElement.classList.contains('calm') });
   const stems = new THREE.InstancedMesh(stemGeo, swaying(lookMat({ vertexColors: true })), MAX_FLOWERS);
   const petals = new THREE.InstancedMesh(petalGeo, swaying(lookMat({ color: 0xffffff })), MAX_FLOWERS);
   stems.count = petals.count = 0; stems.frustumCulled = petals.frustumCulled = false; mainGroup.add(stems, petals);
@@ -370,7 +372,7 @@ export function createGarden(canvas) {
     sway.value = t;
     for (let i = 0; i < 6; i++) { cloudX[i] += 0.24 * (1 + i * 0.1) * dt; if (cloudX[i] > 16) cloudX[i] = -16; }
     placeClouds(panAt(now));
-    stepFlowers(now); giftFlowers.step(now);
+    stepFlowers(now); giftFlowers.step(now); fireworks.step(now);
     for (let k = popping.length - 1; k >= 0; k--) {                // új kerti dísz: kipattan a helyén
       const p = popping[k], a = (now - p.t0) / 700;
       if (a < 0) continue;
@@ -503,6 +505,9 @@ export function createGarden(canvas) {
     setStars, setGifts, setAvatar, beginFeed, endFeed, places, setDay, goTo, areas, flowerAt,
     decorArea: id => giftById(id)?.spot?.[0] || null,
     area: () => pan.area,
+    // tűzijáték a kert fölött (a tarisznyából): a kép közepe körül
+    fireworks(now = performance.now()) { fireworks.launch(camera.position.x, now); },
+    fireworksBusy: () => fireworks.busy(),
     cheer() { const now = performance.now(); let k = 0; actors.forEach(a => { a.hop = now + 900 + (k++ % 3) * 70; }); },   // új csillag: mindenki ugrik egyet
     pause(p) { paused = !!p; if (!paused && !raf) raf = requestAnimationFrame(loop); },
     qualityTick: ms => { quality.tick(ms); return { ...quality.state(), buffer: [renderer.domElement.width, renderer.domElement.height] }; },   // teszthez: egy képkocka adott idővel    // tesztekhez és hibakereséshez: rajzolási hívások, lakók, virágok, a barátok helye a képernyőn

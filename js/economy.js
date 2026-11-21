@@ -4,7 +4,7 @@
 // Ajándékot minden játék ad (jutalomkörönként egyet, az első igazi játék-pillanatnál), és minden 20. csillag.
 // Itt csak tiszta függvények vannak egy profil-állapoton (a mentést a js/progress.js végzi), hogy Node-ban is tesztelhetők legyenek.
 // Minden szám saját beállítás (README: „Ajándékok és szívek").
-import { LADDER, OLD_ORDER, giftById, flowerGiftAt } from './gifts.js';
+import { LADDER, OLD_ORDER, giftById, flowerGiftAt, treatAt, ITEM_KEYS, ITEM_MAX } from './gifts.js';
 import { named } from './lines.js';
 
 export const STAR_STEP = 20;                              // ennyi csillagonként jár egy ajándék (a régi szabály)
@@ -24,6 +24,8 @@ export const GIFT_SOURCES = ['race', 'healthy', 'pet', 'foodcatch', 'bubbles', '
 const int = (v, lo, hi, d) => (v !== null && v !== '' && Number.isFinite(+v) ? Math.max(lo, Math.min(hi, Math.floor(+v))) : d);
 const OLD_ENTRY = /^[\p{L}0-9:_-]{1,24}$/u;               // a régi mentés ajándék-bejegyzései (pl. "race-1700000000000")
 const isGift = id => typeof id === 'string' && !!giftById(id) && giftById(id).kind !== 'flower';   // a virág nem tárgy: a kertben nyílik és elhervad
+// a tarisznya: rekeszenként hány meglepetés van benne (0…ITEM_MAX); ismeretlen rekesz nem marad meg
+export const cleanItems = v => Object.fromEntries(ITEM_KEYS.map(k => [k, int(v && typeof v === 'object' && !Array.isArray(v) ? v[k] : 0, 0, ITEM_MAX, 0)]));
 
 // Átemelés és rendbetétel. s: a már ellenőrzött profil (total, friends rendben); raw: a beolvasott nyers adat
 // (saját mentés vagy fájlból visszatöltött, NEM megbízható). Többször futtatva is ugyanazt adja.
@@ -41,6 +43,9 @@ export function migrateEconomy(s, raw) {
   s.starGifts = 'starGifts' in r ? int(r.starGifts, 0, paidMax, paidMax) : paidMax;
   s.hearts = 'hearts' in r ? int(r.hearts, 0, 100000, 0) : Math.min(60, Array.isArray(s.friends) ? s.friends.length : 0);
   s.gold = int(r.gold, 0, 100000, 0);
+  s.items = cleanItems(r.items);
+  // a létra utáni meglepetések száma; a régi mentésben nincs: ott annyinak számít, ahány virágot kapott (így felváltva folytatódik)
+  s.treats = 'treats' in r ? int(r.treats, 0, s.gold + 1, s.gold) : s.gold;
   const kindOf = id => giftById(id)?.kind;
   s.newDress = Array.isArray(r.newDress) ? [...new Set(r.newDress.filter(id => s.owned.includes(id) && kindOf(id) === 'dress'))] : [];
   s.newDecor = Array.isArray(r.newDecor) ? [...new Set(r.newDecor.filter(id => s.owned.includes(id) && kindOf(id) === 'garden'))] : [];
@@ -48,9 +53,16 @@ export function migrateEconomy(s, raw) {
   return s;
 }
 
-// A következő ajándék: a létra első még meg nem szerzett foka; ha minden megvan, a következő ajándékvirág a körforgásból
-// (tulipán, harangvirág, margaréta, aranyvirág): s.gold = eddig kapott ajándékvirágok száma
-export const nextGiftId = s => LADDER.find(id => !s.owned.includes(id)) || flowerGiftAt(s.gold || 0).id;
+// A következő ajándék: a létra első még meg nem szerzett foka; ha minden megvan, felváltva egy ajándékvirág a körforgásból
+// (tulipán, harangvirág, margaréta, aranyvirág; s.gold = eddig kapott ajándékvirágok) és egy meglepetés a tarisznyába
+// (falat, varázspor, tűzijáték; s.treats = eddig kapott). Ha az a rekesz tele van, virág jön (üres ajándék nincs).
+export function nextGiftId(s) {
+  const step = LADDER.find(id => !s.owned.includes(id));
+  if (step) return step;
+  const t = treatAt(s.treats || 0);
+  if ((s.treats || 0) < (s.gold || 0) && ((s.items || {})[t.item] || 0) < ITEM_MAX) return t.id;
+  return flowerGiftAt(s.gold || 0).id;
+}
 export const nextGift = s => giftById(nextGiftId(s));
 export const owns = (s, id) => s.owned.includes(id);
 
@@ -58,12 +70,22 @@ export const owns = (s, id) => s.owned.includes(id);
 export function grantGift(s) {
   const g = nextGift(s);
   if (g.kind === 'flower') s.gold = (s.gold || 0) + 1;
+  else if (g.kind === 'treat' && s.owned.includes(g.id)) { addItem(s, g.item); s.treats = (s.treats || 0) + 1; }   // a létra után
   else {
+    if (g.kind === 'treat') addItem(s, g.item);            // a létrán: az első ilyen meglepetés
     s.owned.push(g.id);
     if (g.kind === 'dress') s.newDress.push(g.id);
     if (g.kind === 'garden') s.newDecor.push(g.id);
   }
   return g;
+}
+
+const addItem = (s, k) => { s.items = cleanItems(s.items); s.items[k] = Math.min(ITEM_MAX, s.items[k] + 1); };
+// Egy meglepetés elhasználása (a játék gombja): igaz, ha volt a rekeszben
+export function useItem(s, k) {
+  s.items = cleanItems(s.items);
+  if (!(s.items[k] > 0)) return false;
+  s.items[k]--; return true;
 }
 
 // Csillag-ajándék: ha a gyűjtött csillagok átléptek egy újabb 20-as határt (feladatonként legfeljebb egy)
@@ -76,6 +98,7 @@ export function payStarGift(s) {
 
 // Rozi mondata az ajándékról: mi az, és hol találja. A csillagokat nem számolja; a név csak néha (és csak helyben ismert).
 export function giftLine(g, name = '', rand = Math.random) {
+  if (g.where) return named(`Ajándékot kaptál{, N}: ${g.acc}! ${g.where}`, name, rand, 0.4);
   if (g.kind === 'dress') return named(`Ajándékot kaptál{, N}: ${g.acc}! Az öltöztetőben vár.`, name, rand, 0.4);
   if (g.kind === 'garden') return named(`Ajándékot kaptál a kertbe{, N}: ${g.acc}!`, name, rand, 0.4);
   return named(`Ajándékot kaptál{, N}: ${g.acc}! Kinyílt a kertben.`, name, rand, 0.4);

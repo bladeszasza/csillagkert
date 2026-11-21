@@ -8,6 +8,10 @@ import { createStage } from './stage3d.js';
 import { makeGardenCat, animateCat, CAT_HEIGHT } from './cat3d.js';
 import { makeFriend, animateFriend } from './creatures.js';
 import { makeCharacter, animateCharacter, measureCharacter, createCharacterBatch } from '../three/characters.js';
+import { treatButton } from './treat-button.js';
+import { giftById } from '../gifts.js';
+// 2. kör: ha megnyerte a játéksarkot (labda és párna), az a szoba sarkában vár (koppintásra a barát örül);
+// a különleges falattól (a tarisznyából) a barát táncra perdül.
 const KIND = { cica: 'cat', nyuszi: 'bunny', kutya: 'dog', róka: 'fox', maci: 'bear', panda: 'panda', unikornis: 'unicorn' };
 
 // az utolsó a gyerek saját unikornisa, a mostani ruhájában (ctx.avatar)
@@ -41,6 +45,18 @@ export function run(container, ctx = {}) {
         <div class="pet-fx" id="pet-fx"></div>
         <div class="pet-tools"><button class="pet-tool sel" data-m="brush">${icon('ui-comb')}<small>fésülés</small></button><button class="pet-tool" data-m="pet">${icon('ui-hand')}<small>simogatás</small></button><button class="pet-tool" data-m="ball">${icon('ui-ball')}<small>labdázás</small></button></div>
       </div>`;
+    let danceT0 = -1e9, danceUntil = 0;
+    const stageEl = view.querySelector('#pet-stage');
+    if ((ctx.owned || []).includes('deco:toys')) {
+      const toys = document.createElement('button'); toys.className = 'pet-toys'; toys.type = 'button'; toys.setAttribute('aria-label', 'játékok');
+      toys.innerHTML = giftById('deco:toys').icon; stageEl.appendChild(toys);
+      toys.addEventListener('click', e => { e.stopPropagation(); unlockAudio(); play('boing'); happy(emoji); hopUntil = performance.now() + 900; setJoy(5); const R = rect(), b = toys.getBoundingClientRect(); spawn('💖', 2, b.left - R.left + b.width / 2, b.top - R.top); });
+    }
+    const treatBtn = treatButton(stageEl, 'falat', ctx, () => {
+      unlockAudio(); const now = performance.now(); danceT0 = now; danceUntil = now + 3200; hopUntil = danceUntil;
+      happy(emoji); later(() => happy(emoji), 700); later(() => happy(emoji), 1500); spawn('🎵', 4); spawn('💖', 4); setJoy(25);
+      talk(`${withArt(name, true)} táncol örömében!`, true);
+    }, { cls: 'pet-treat' });
     const stage = view.querySelector('#pet-stage'), animal = view.querySelector('#pet-animal'), fx = view.querySelector('#pet-fx'), fill = view.querySelector('.pet-meter .fill');
     // a 3D állat az emoji helyén jelenik meg (az emoji csak a hely és az érintés célpontja)
     let model = null, modelH = 1.9; const kind = KIND[name] || 'cat', uni = kind === 'unicorn';
@@ -119,7 +135,7 @@ export function run(container, ctx = {}) {
         const rr = st3.hostRect(), r = animal.getBoundingClientRect(), t = now / 1000, hop = now < hopUntil, wig = animal.classList.contains('wiggle');
         st3.place(model, r.left - rr.left + r.width / 2, r.bottom - rr.top - (hop ? Math.abs(Math.sin(t * 9)) * 30 : 0), r.height * (kind === 'cat' ? 1.35 : uni ? 1.2 : 1.45), modelH);
         const dxb = ball && chasing ? (ball.x - (animalPos.x + r.width / 2)) / 220 : 0;
-        model.rotation.y = model.userData.facing + Math.max(-0.9, Math.min(0.9, dxb)) + Math.sin(t) * 0.12;
+        model.rotation.y = model.userData.facing + Math.max(-0.9, Math.min(0.9, dxb)) + Math.sin(t) * 0.12 + (now < danceUntil ? (now - danceT0) / 1000 * 4.5 : 0);   // tánc: körbeforog
         if (kind === 'cat') animateCat(model, t, { hop: hop ? (t * 1.5) % 1 : 0, shake: wig ? (t * 3) % 1 : 0, cheer: hop });
         else if (uni) animateCharacter(model, t, chasing ? 0.8 : 0, hop || wig); else animateFriend(model, t, chasing ? 0.8 : 0, hop || wig);
         crowd?.update(); st3.render();
@@ -139,7 +155,7 @@ export function run(container, ctx = {}) {
     }));
     view.querySelector('.pet-back').addEventListener('click', chooser);
     told.add('brush'); talk(`Szia! Fésülj meg, simogass meg, vagy dobj labdát!`, true);
-    container.__pet = Object.assign(container.__pet || {}, { celebrate, animalRect: () => animal.getBoundingClientRect(), tool: m => view.querySelector('.pet-tool[data-m=' + m + ']')?.click(), back: () => view.querySelector('.pet-back')?.click(), model: () => model, crowd: () => crowd });
+    container.__pet = Object.assign(container.__pet || {}, { celebrate, dancing: () => performance.now() < danceUntil, treat: () => treatBtn, toys: () => view.querySelector('.pet-toys'), animalRect: () => animal.getBoundingClientRect(), tool: m => view.querySelector('.pet-tool[data-m=' + m + ']')?.click(), back: () => view.querySelector('.pet-back')?.click(), model: () => model, crowd: () => crowd });
     cleanup = () => { cancelAnimationFrame(raf); timers.forEach(clearTimeout); timers.clear(); if (st3 && model) { crowd?.remove(model); st3.remove(model); } model = null; };
   }
 

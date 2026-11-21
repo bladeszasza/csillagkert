@@ -10,6 +10,7 @@ import { makeCharacter, measureCharacter, createCharacterBatch } from '../js/thr
 import { CATALOG } from '../js/gifts.js';
 
 const LOOKS_2D = new Set(['bg', 'stickers']);                    // ezek a háttérben látszanak, nem az unikornison
+const IN_GAMES = new Set(['trail', 'track', 'bubble']);          // ezek a játékokban látszanak (varázsnyom, pálya, buborék): a játékok tesztjei nézik
 const signature = cfg => {
   const g = makeCharacter('unicorn', cfg); g.updateMatrixWorld(true);
   return g.userData.parts.map(p => {
@@ -55,6 +56,7 @@ test('minden választható elem látszik: az unikornison, a háttérképen, vagy
   for (const t of TABS) for (const g of t.groups) for (const it of g.items) {
     const cfg = withItem(g.key, it.id);
     if (g.key !== 'stickers' && it.id === DEFAULT[g.key]) continue;
+    if (IN_GAMES.has(g.key)) { assert.equal(signature(cfg), base, `${g.key}:${it.id} nem az unikornison látszik`); continue; }
     n++;
     if (LOOKS_2D.has(g.key)) {
       assert.notEqual(backdropSvg(cfg) + stickerLayer(cfg), bg0, `${g.key}:${it.id} a háttéren`);
@@ -77,14 +79,15 @@ test('a legnehezebb öltözet is a keretben marad (alkatrész és háromszög)',
   // csoportonként a legtöbb alkatrészt adó elem
   const heavy = { ...DEFAULT };
   for (const g of GROUPS) {
-    if (LOOKS_2D.has(g.key)) continue;
+    if (LOOKS_2D.has(g.key) || IN_GAMES.has(g.key)) continue;
     let best = null, bestN = -1;
     for (const it of g.items) { const n = makeCharacter('unicorn', withItem(g.key, it.id)).userData.parts.length; if (n > bestN) { bestN = n; best = it.id; } }
     heavy[g.key] = best;
   }
   const gh = makeCharacter('unicorn', heavy), g0 = makeCharacter('unicorn');
   assert.ok(g0.userData.parts.length <= 40, `alap: ${g0.userData.parts.length}`);
-  assert.ok(gh.userData.parts.length <= 120, `legnehezebb: ${gh.userData.parts.length} (${JSON.stringify(heavy)})`);
+  // a 2. kör (farokszalag, cipő, nyereg) kb. 15 alkatrésszel több; a kötegelt rajzolásban ez nem új rajzolási hívás
+  assert.ok(gh.userData.parts.length <= 140, `legnehezebb: ${gh.userData.parts.length} (${JSON.stringify(heavy)})`);
   // a kert saját kerete 250 ezer háromszög; a saját unikornis ebből legfeljebb kb. 5% (mérve: alap kb. 5,3 ezer, legnehezebb kb. 9,3 ezer)
   assert.ok(tris(gh) <= 12000, `háromszög: ${tris(gh)}`);
   const m = measureCharacter(gh);

@@ -4,18 +4,21 @@ test('Rozi mondata az ajándékról: rövid, számjegy nélküli, és nem számo
   for (const g of [...CATALOG, ...FLOWER_GIFTS]) for (const [name, r] of [['', 0], ['Teszt Elek', 0], ['Minta Kata', 0.99]]) {
     const t = giftLine(g, name, () => r);
     assert.ok(t.includes(g.acc), `${g.id}: ${t}`);
-    assert.ok(!/[0-9]/.test(t) && !/csillag/i.test(t), `${g.id}: ${t}`);
+    assert.ok(!/[0-9]/.test(t) && !/csillago[dk]?|csillagot|csillagért|csillagod/i.test(t), `${g.id}: ${t}`);   // a csillagokat nem számolja (a csillagnyom, csillagos szalag lehet)
     for (const sent of t.split(/[.!?]/).map(x => x.trim()).filter(Boolean)) assert.ok(sent.split(/s+/).length <= 12, `túl hosszú mondat: ${sent}`);
     if (name && r === 0) assert.ok(t.includes(name), 'a név néha elhangzik');
     if (r > 0.5) assert.ok(!t.includes('Minta'), 'és néha nem');
   }
   assert.match(giftLine(giftById('neck:cape')), /öltöztető/);
   assert.match(giftLine(giftById('garden:kut')), /kertbe/);
+  assert.match(giftLine(giftById('fogy:falat')), /Barátom/);
+  assert.match(giftLine(giftById('track:night')), /versenyhez/);
+  for (const g of CATALOG) if (g.kind !== 'dress' || g.iconOnly) if (g.kind !== 'garden') assert.ok(g.where, `${g.id}: Rozi elmondja, hol találja`);
 });
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CATALOG, LADDER, OLD_ORDER, GOLD, DECOR, giftById, FLOWER_CYCLE, FLOWER_GIFTS } from '../js/gifts.js';
-import { giftLine, migrateEconomy, nextGift, grantGift, payStarGift, starGiftDue, newRewardSession, sessionGift, sessionHeart, GIFT_SOURCES, HEART_CAPS, STAR_STEP, roundStars, roundsToday, dayKey } from '../js/economy.js';
+import { CATALOG, LADDER, OLD_ORDER, GOLD, DECOR, giftById, FLOWER_CYCLE, FLOWER_GIFTS, TREAT_CYCLE, ITEM_MAX } from '../js/gifts.js';
+import { giftLine, migrateEconomy, nextGift, grantGift, useItem, payStarGift, starGiftDue, newRewardSession, sessionGift, sessionHeart, GIFT_SOURCES, HEART_CAPS, STAR_STEP, roundStars, roundsToday, dayKey } from '../js/economy.js';
 import { openProfiles } from '../js/progress.js';
 import { FRIENDS, AREAS } from '../js/friends.js';
 
@@ -33,7 +36,12 @@ test('a létra: minden ajándék pontosan egyszer szerepel, ruhák és kerti dí
   const ids = CATALOG.map(g => g.id);
   assert.equal(new Set(ids).size, ids.length);
   assert.deepEqual([...LADDER].sort(), [...ids].sort());
-  assert.deepEqual(LADDER.filter(id => giftById(id).kind === 'dress'), OLD_ORDER);   // a régi sorrend a létrában is megmarad
+  assert.deepEqual(LADDER.filter(id => giftById(id).kind === 'dress').slice(0, OLD_ORDER.length), OLD_ORDER);   // a régi sorrend a létrában is megmarad
+  // a 2. kör (játékokon belüli jutalmak) a régi létra után jön: aki mindent megszerzett, az ezeket kapja
+  const second = LADDER.slice(LADDER.indexOf('garden:homokozo') + 1);
+  assert.ok(second.length >= 20, `${second.length} új fok`);
+  for (const kind of ['dress', 'gamedeco', 'treat']) assert.ok(second.some(id => giftById(id).kind === kind), kind);
+  for (let i = 1; i < second.length; i++) assert.ok(second[i].split(':')[0] !== second[i - 1].split(':')[0], `két egyforma egymás után: ${second[i]}`);
   assert.ok(DECOR.length >= 10, `${DECOR.length} kerti dísz`);
   for (let i = 1; i < 20; i++) assert.ok(giftById(LADDER[i]).kind !== giftById(LADDER[i - 1]).kind || i >= 20, `váltakozás a ${i}. foknál`);
 });
@@ -86,13 +94,30 @@ test('300 csillagos (minden ruhát birtokló) gyerek: minden játék valódi, ú
 test('elfogyott létra: ajándékvirágok körforgásban, minden negyedik aranyvirág (nincs üres ajándék); a csillag-ajándék 20 csillagonként egyszer jár', () => {
   const s = profile({ total: 0 });
   for (let i = 0; i < LADDER.length; i++) assert.equal(grantGift(s).id, LADDER[i]);
-  const got = Array.from({ length: 9 }, () => { const id = nextGift(s).id; assert.equal(grantGift(s).id, id, 'a jelzett következő ajándék jön'); return id; });
-  assert.deepEqual(got, [...FLOWER_CYCLE, ...FLOWER_CYCLE, FLOWER_CYCLE[0]]); assert.equal(got[3], GOLD.id); assert.equal(s.gold, 9);
+  assert.deepEqual(s.items, { falat: 1, varazspor: 1, tuzijatek: 1 }, 'a létrán minden meglepetésből egy');
+  const got = Array.from({ length: 16 }, () => { const id = nextGift(s).id; assert.equal(grantGift(s).id, id, 'a jelzett következő ajándék jön'); return id; });
+  // felváltva: virág, meglepetés, virág, meglepetés… (a virágok és a meglepetések is a saját körforgásukban)
+  assert.deepEqual(got.filter((_, i) => i % 2 === 0), [...FLOWER_CYCLE, ...FLOWER_CYCLE]); assert.equal(got[6], GOLD.id); assert.equal(s.gold, 8);
+  assert.deepEqual(got.filter((_, i) => i % 2 === 1), [...TREAT_CYCLE, ...TREAT_CYCLE, TREAT_CYCLE[0], TREAT_CYCLE[1]]); assert.equal(s.treats, 8);
+  assert.deepEqual(s.items, { falat: 4, varazspor: 4, tuzijatek: 3 });
   assert.ok(FLOWER_CYCLE.every(id => giftById(id)?.kind === 'flower'), 'minden ajándékvirág ismert');
   assert.equal(new Set(FLOWER_CYCLE).size, 4, 'négy különböző virág');
   assert.equal(s.owned.length, LADDER.length);
   const t = profile({ total: 319 }); assert.equal(payStarGift(t), null);
   t.total = 320; assert.ok(payStarGift(t)); assert.equal(payStarGift(t), null); assert.equal(t.starGifts, 320 / STAR_STEP);
+});
+
+test('a tarisznya: elhasználható, rekeszenként korlátos; tele rekesz helyett virág jön; régi mentés felváltva folytatódik', () => {
+  const s = profile({ owned: LADDER, gold: 5 });
+  assert.deepEqual(s.items, { falat: 0, varazspor: 0, tuzijatek: 0 }); assert.equal(s.treats, 5, 'a régi mentésben annyi, ahány virág');
+  assert.equal(nextGift(s).kind, 'flower', 'a régi mentés virággal folytatja');
+  grantGift(s); assert.equal(nextGift(s).kind, 'treat');
+  assert.equal(useItem(s, 'falat'), false, 'üres rekeszből nem lehet');
+  const t = grantGift(s); assert.equal(useItem(s, t.item), true); assert.equal(s.items[t.item], 0);
+  const full = profile({ owned: LADDER, gold: 3, treats: 0, items: { falat: 99, varazspor: -4, tuzijatek: 'x', titok: 5 } });
+  assert.deepEqual(full.items, { falat: ITEM_MAX, varazspor: 0, tuzijatek: 0 }, 'fájlból: korlátos számok, ismeretlen rekesz nélkül');
+  assert.equal(nextGift(full).kind, 'flower', 'tele rekesz: virág jön (nincs üres ajándék)');
+  assert.ok(profile({ owned: LADDER, gold: 2, treats: 999 }).treats <= 3, 'a meglepetés-számláló nem szaladhat el');
 });
 
 test('szívek: csak jó tettért, játékonként korlátozva egy jutalomkörben', () => {

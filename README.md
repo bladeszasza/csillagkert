@@ -348,6 +348,18 @@ nem a belépéskor:
 
 - **Az ajándéklétra** (`js/gifts.js`) rögzített sorrendű, véletlen nincs benne: a tíz ruhadarab és tizenkét kerti dísz
   felváltva jön (korona, lámpás, szivárványszárny, kerti pad, …). Ami megvan, nem jön újra.
+- **A játékokon belüli jutalmak** (a szülő kérésére, 2026-11-21) a régi létra után jönnek, vegyesen (21 fok):
+  - új ruhadarabok, amelyek mindenhol látszanak, ahol az unikornis megjelenik: csillagos farokszalag, patkócipők, virágos
+    nyereg, csillámos minta, lila köpeny, tiara (az öltöztető új „kiegészítők" fülén és a régi füleken);
+  - **varázsnyom** (új „varázs" fül): csillag-, szív-, szivárvány- vagy buboréknyom száll az unikornis után a Varázsvilágban
+    és a Felhővár-versenyen, az öltöztetőben is felszáll egy-egy csokor (`js/three/trail.js`, egy rajzolási hívás);
+  - **a játékok kinézete** (új „játék" fül): naplementés, csillagos éjszakai és cukorkapálya a versenyhez; szív és csillag
+    alakú buborékok. Választáskor Rozi elmondja, hol fogja látni;
+  - **díszek a játékokban** (maguktól ott vannak): lufik és zászlók a versenypálya szélén, varázslámpás a Varázsvilág
+    kapujánál, labda és párna a Barátom szobájában;
+  - **a tarisznya meglepetései** (elhasználhatók, előnyt nem adnak): különleges falat a Barátomban (a barát táncra perdül),
+    varázspor a buborékoknál (szivárványos buborékeső), tűzijáték a kertben (gomb a főképernyő bal oldalán). A gombon
+    egy kis szám mutatja, hány van még; rekeszenként legfeljebb 9 (`ITEM_MAX`).
   Ha a létra elfogyott, **ajándékvirág** nyílik a kertben, így soha nincs üres ajándék (a szülő kérésére, 2026-11-21:
   az örökös, sárgának látszó aranyvirág unalmas volt). Négyféle, alakra is különböző virág jön körforgásban: tulipán
   (piros kehely), harangvirág (kék, lógó harangok), margaréta (fehér, sok szirom) és minden negyedik az **aranyvirág**
@@ -355,6 +367,8 @@ nem a belépéskor:
   legfeljebb 24 nyílik (`GIFT_RING`), a 25. helyén a legrégebbi elhervad. Nem az órához kötött: amíg nem játszik, nem
   hervad semmi. A helyük (`giftSpot`) a kert látható részén, a barátok mögötti sávban van: nem nő barát elé, a jelek
   elé és virágra. A régi mentés aranyvirág-számlálója (`gold`) maradt, a fajtákat a körforgás adja. Modell: `js/gift-flowers3d.js`.
+  A létra után a virágok és a tarisznya meglepetései **felváltva** jönnek (virág, falat, virág, varázspor, virág, tűzijáték…);
+  ha az a rekesz tele van, virág jön helyette. A régi mentés virággal folytatja (`treats` = eddig kapott meglepetések).
 - **A következő ajándék** sziluettje a jobb felső sarokban látszik; koppintásra Rozi megmondja, mi lesz az.
   A bal felső ❤ jel a szívek száma; koppintásra Rozi elmondja, mire valók.
 - **Az ajándék-pillanat** (`js/gift-moment.js`): egy doboz megremeg és kinyílik, kiugrik belőle az ajándék
@@ -494,7 +508,7 @@ ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba ment
   a rajzokban nincs külső hivatkozás, azonosító vagy szöveg, a betűfájlok helyben vannak, licenccel).
 - Automatikus minőség: `node --test tests/quality.test.mjs` (60 fps mellett nem csökken, tartós akadozásnál lépcsőnként,
   ha a lépcső nem segít, visszalép és megáll, a kiugró képkockák nem számítanak, 1 alá nem megy).
-- Ajándékok és szívek: `node --test tests/economy.test.mjs` (a régi mentés átvétele, a létra sorrendje, ajándékvirágok körforgása a végén,
+- Ajándékok és szívek: `node --test tests/economy.test.mjs` (a régi mentés átvétele, a létra sorrendje, ajándékvirágok és meglepetések felváltva a végén, a tarisznya,
   20 csillagonként egy ajándék, jutalomkörönként egy ajándék, a szív-korlátok, Rozi ajándék-mondatai számok nélkül).
 - Ütemező: `node --test tests/scheduler.test.mjs` (300 feladatos szimuláció ismétlés nélkül, 90 szimulált
   gyereknél is: 5–7 évesek, gyenge–erős; szintlépés és visszalépés; kezdőnek csak a szintjéhez illő készség, egy állomás

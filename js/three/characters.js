@@ -610,6 +610,15 @@ function unicornAvatar(k, a) {
   if (a.pattern === 'stars') each((x, y, z) => onBody(x, y, z, STAR, '#ffcf3f', [0.075, 0.075, 0.08]));
   if (a.pattern === 'hearts') each((x, y, z) => onBody(x, y, z, HEART, '#ff5d8f', [0.075, 0.075, 0.08]));
   if (a.pattern === 'stripes') for (const sx of [-1, 1]) for (const z of [-0.42, -0.14, 0.14, 0.42]) onBody(sx, 0.2, z, BEAD, a.patternColor, [0.035, 0.17, 0.015]);
+  if (a.pattern === 'sparkle') {                   // csillámos: lila csillagocskák, köztük fehér csillámpöttyök
+    each((x, y, z) => onBody(x, y, z, STAR, '#b48cff', [0.055, 0.055, 0.06]));
+    for (const sx of [-1, 1]) for (const [y, z] of [[0.05, -0.2], [0.55, 0.15], [-0.1, 0.35], [0.3, -0.7]]) onBody(sx, y, z, BEAD, '#ffffff', [0.028, 0.028, 0.012]);
+  }
+  if (a.back === 'saddle') {                       // virágos nyereg a hát közepén, három virággal
+    k.ball(bodyN, '#c98a52', 0.5, [0, 0.255, 0.02], [0.66, 0.2, 0.5]);
+    k.ball(bodyN, '#e7b07a', 0.3, [0, 0.33, 0.02], [0.8, 0.22, 0.8]);
+    [['#ff8fc8', -0.13], ['#ffcf3f', 0.02], ['#8e5be8', 0.17]].forEach(([c, z]) => { bead(bodyN, c, 0.05, [0, 0.39, z], [1, 0.55, 1]); bead(bodyN, '#ffffff', 0.02, [0, 0.42, z]); });
+  }
 
   // nyak, fej, arc
   k.ball(k.inner, B, 0.28, [0, 1.3, -0.62], [0.8, 1.3, 0.9], [-0.5, 0, 0]);
@@ -694,6 +703,12 @@ function unicornAvatar(k, a) {
     for (const sx of [-1, 1]) k.cone(head, '#ff5d8f', 0.06, 0.13, [sx * 0.07, 0.29, 0.12], [0, 0, sx * Math.PI / 2], true);
     bead(head, '#ff2f7a', 0.038, [0, 0.29, 0.12]);
   }
+  if (a.head === 'tiara') {                        // tiara: ezüst pánt, elöl három csúcs, középen rózsaszín kő
+    k.cyl(head, '#e6e9f7', 0.118, 0.035, [0, 0.262, -0.02]);
+    [[-0.55, 0.09], [0, 0.15], [0.55, 0.09]].forEach(([t, h]) => k.cone(head, '#eef1ff', 0.028, h, [Math.sin(t) * 0.112, 0.28 + h / 2, -0.02 - Math.cos(t) * 0.112], null, true));
+    bead(head, '#ff8fc8', 0.034, [0, 0.31, -0.14], [1, 1.3, 0.6]);
+    for (const t of [-0.55, 0.55]) bead(head, '#4aa8ff', 0.018, [Math.sin(t) * 0.124, 0.275, -0.02 - Math.cos(t) * 0.124], [1, 1, 0.6]);
+  }
   if (a.head === 'wizard') {
     k.cyl(head, '#5a2fb0', 0.21, 0.025, [0, 0.255, 0.05], [0.25, 0, 0]);
     k.cone(head, '#6a3fc0', 0.15, 0.4, [0, 0.45, 0.1], [0.35, 0, 0]);
@@ -717,12 +732,20 @@ function unicornAvatar(k, a) {
     k.ring(neckN, '#ff5d8f', 0.225, [0, 0, 0], new THREE.Quaternion().setFromAxisAngle(V3(0, 1, 0), -phi).multiply(new THREE.Quaternion().setFromAxisAngle(V3(1, 0, 0), Math.PI / 2)));
     bead(neckN, '#ff5d8f', 0.06, around(0.45, 0.05, -0.14), [0.8, 2.2, 0.45]); bead(neckN, '#ffffff', 0.03, around(0.45, 0.08, -0.2), [1.4, 0.5, 0.4]);
   }
-  if (a.neck === 'cape') {
-    k.ball(k.inner, '#c53b6e', 0.5, [0, 1.06, 0.05], [0.8, 0.5, 1.2]);
+  if (a.neck === 'cape' || a.neck === 'lilacape') {
+    const lilac = a.neck === 'lilacape';
+    k.ball(k.inner, lilac ? '#a77bf0' : '#c53b6e', 0.5, [0, 1.06, 0.05], [0.8, 0.5, 1.2]);
+    if (lilac) for (const sx of [-1, 1]) k.put(k.inner, STAR, '#ffffff', [sx * 0.4, 1.02, 0.12], [0.05, 0.05, 0.05], qLook(V3(sx, 0.1, 0)));
     bead(neckN, '#ffd24d', 0.045, around(0, 0.03)); for (const p of [-0.7, 0.7]) bead(neckN, '#ffd24d', 0.028, around(p, 0.02));
   }
 
   const legsN = legs(k, B, QUAD(0.2, 0.38), 0.78, { r: 0.07, foot: 'hoof', footColor: a.hoof });
+  if (a.feet === 'shoes') legsN.forEach(h => { bead(h, '#ffcf3f', 0.03, [0, -0.7, -0.075], [1, 1, 0.6]); bead(h, '#ffffff', 0.02, [0, -0.62, -0.07], [1.4, 0.6, 0.6]); });   // patkócipő: arany csat, fehér szegély
+  if (a.tail === 'ribbon') {                       // csillagos farokszalag: lila masni a farok tövén, alatta arany csillag
+    for (const sx of [-1, 1]) k.cone(tail, '#8e5be8', 0.055, 0.12, [sx * 0.065, 0.04, 0.1], [0, 0, sx * Math.PI / 2], true);
+    bead(tail, '#c9a3ff', 0.035, [0, 0.04, 0.1]);
+    k.put(tail, STAR, '#ffcf3f', [0, -0.08, 0.2], [0.05, 0.05, 0.06], qLook(V3(0, 0, 1)));
+  }
   return { body: bodyN, head, ...f, tail, tailWag: 0.6, wings: wingN, legs: legsN, avatar: true };
 }
 

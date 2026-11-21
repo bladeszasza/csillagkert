@@ -7,6 +7,8 @@ import { icon } from '../icons.js';
 import * as THREE from '../../vendor/three.module.js';
 import { mat as lookMat, addLights, createQuality } from '../three/look.js';
 import { makeCharacter, animateRunner, createCharacterBatch } from '../three/characters.js';
+import { createTrail } from '../three/trail.js';
+import { calm } from '../motion.js';
 // az ellenfél: kék barát-unikornis (az öltöztető színeiből)
 const RIVAL_LOOK = { body: 'c2', mane: 'c2', horn: 'ice' }, RIVAL_ALT = { body: 'c5', mane: 'c3', horn: 'pink' };   // ha a gyereké is kék: menta
 import { say } from '../voice.js';
@@ -17,6 +19,13 @@ const LANE = 1.7;                        // a két sáv távolsága a középvon
 const HURDLE_EVERY = 16;                 // akadályok közti távolság
 const BASE = 9, RIVAL = 8.5;             // alapsebesség (a gyerek kicsit gyorsabb, ha nem hibázik)
 const GRAV = -26, JUMP = 9.5;
+// A pálya kinézete (2. kör: az öltöztető "játék" fülén választható, ha megnyerte): égbolt, pálya, tornyok, felhők
+export const THEMES = {
+  clouds: { sky: 0xbfe9ff, track: 0xf4eeff, line: 0xd9c8ff, towers: [0xffd6ea, 0xe6d6ff, 0xd6e6ff, 0xfff0b8], roof: 0x8e5be8, flag: 0xff8fc8, win: 0xffe08a, puff: 0xffffff, cloud: 0xffffff },
+  sunset: { sky: 0xffb37a, track: 0xffe6d6, line: 0xff9f6b, towers: [0xffd0b0, 0xffc0d0, 0xf0c8ff, 0xffe8a8], roof: 0xd0457a, flag: 0xffe14d, win: 0xfff3b0, puff: 0xffd9c4, cloud: 0xffc7b0, sun: 0xffe14d },
+  night: { sky: 0x231858, track: 0x9b8cf0, line: 0xffe14d, towers: [0x6a4fc0, 0x5b3bb0, 0x7a5fd0, 0x4f63c8], roof: 0x2b1a6b, flag: 0xffe14d, win: 0xffe14d, puff: 0x8f80d8, cloud: 0xfff7b0, stars: true, sun: 0xfff3c4 },
+  candy: { sky: 0xffe0f0, track: 0xffffff, line: 0xff5d8f, towers: [0xff8fc8, 0x8fd6ff, 0xfff0b8, 0xc8f2dd], roof: 0xff5d5d, flag: 0x4cc38a, win: 0xffffff, puff: 0xffc9e4, cloud: 0xffd6ea },
+};
 
 export function run(container, ctx = {}) {
   container.innerHTML = `<div class="race"><canvas class="race-gl"></canvas>
@@ -29,7 +38,8 @@ export function run(container, ctx = {}) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   const quality = createQuality(renderer, { max: 2 });
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xbfe9ff); scene.fog = new THREE.Fog(0xbfe9ff, 30, 120);
+  const TH = THEMES[ctx.avatar?.track] || THEMES.clouds;
+  scene.background = new THREE.Color(TH.sky); scene.fog = new THREE.Fog(TH.sky, 30, 120);
   const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 200);
   const { sun } = addLights(scene, { ground: 0xcdb7ff, sunAt: [6, 12, 4] });
 
@@ -44,18 +54,18 @@ export function run(container, ctx = {}) {
     items.forEach(([x, y, z, sx, sy, sz, c, rx = 0], i) => { tmp.position.set(x, y, z); tmp.scale.set(sx, sy, sz); tmp.rotation.set(rx, 0, 0); tmp.updateMatrix(); m.setMatrixAt(i, tmp.matrix); m.setColorAt(i, col.setHex(c)); });
     scene.add(m); return m;
   }
-  const track = new THREE.Mesh(G(new THREE.BoxGeometry(LANE * 2 + 3.2, 0.5, LEN + 60)), Mt(lookMat({ color: 0xf4eeff })));
+  const track = new THREE.Mesh(G(new THREE.BoxGeometry(LANE * 2 + 3.2, 0.5, LEN + 60)), Mt(lookMat({ color: TH.track })));
   track.position.set(0, -0.3, -LEN / 2 + 10); scene.add(track);
-  inst(G(new THREE.PlaneGeometry(0.1, LEN + 60)), basic, [-LANE, LANE].map(x => [x, -0.04, -LEN / 2 + 10, 1, 1, 1, 0xd9c8ff, -Math.PI / 2]));
-  const towerColors = [0xffd6ea, 0xe6d6ff, 0xd6e6ff, 0xfff0b8], towers = [], roofs = [], flags = [], wins = [], puffs = [];
+  inst(G(new THREE.PlaneGeometry(0.1, LEN + 60)), basic, [-LANE, LANE].map(x => [x, -0.04, -LEN / 2 + 10, 1, 1, 1, TH.line, -Math.PI / 2]));
+  const towerColors = TH.towers, towers = [], roofs = [], flags = [], wins = [], puffs = [];
   for (let z = 6; z > -LEN - 40; z -= 17) {
     for (const side of [-1, 1]) {
       const x = side * (6.5 + Math.random() * 4), h = 4 + Math.random() * 5;
       towers.push([x, h / 2 - 1, z, 1, h, 1, towerColors[(Math.random() * 4) | 0]]);
-      roofs.push([x, h, z, 1, 1, 1, 0x8e5be8]);
-      flags.push([x + 0.4, h + 1.8, z, 1, 1, 1, 0xff8fc8]);
-      wins.push([x - side * 1.2, h / 2, z, 1, 1, 1, 0xffe08a]);
-      puffs.push([x, -1.2, z, 1.6 * 2.2, 0.6 * 2.2, 1.2 * 2.2, 0xffffff]);
+      roofs.push([x, h, z, 1, 1, 1, TH.roof]);
+      flags.push([x + 0.4, h + 1.8, z, 1, 1, 1, TH.flag]);
+      wins.push([x - side * 1.2, h / 2, z, 1, 1, 1, TH.win]);
+      puffs.push([x, -1.2, z, 1.6 * 2.2, 0.6 * 2.2, 1.2 * 2.2, TH.puff]);
     }
   }
   inst(G(new THREE.CylinderGeometry(1.2, 1.4, 1, 10)), lambert, towers);
@@ -63,8 +73,13 @@ export function run(container, ctx = {}) {
   inst(G(new THREE.BoxGeometry(0.7, 0.4, 0.05)), lambert, flags);
   inst(G(new THREE.BoxGeometry(0.4, 0.6, 0.1)), basic, wins);
   const cloudGeo = G(new THREE.SphereGeometry(1, 12, 10)), sky = [];
-  for (let i = 0; i < 28; i++) { const r = 1.5 + Math.random() * 1.5; sky.push([(Math.random() - 0.5) * 60, 6 + Math.random() * 10, -Math.random() * (LEN + 40), 1.8 * r, 0.7 * r, 1.2 * r, 0xffffff]); }
-  inst(cloudGeo, lambert, [...puffs, ...sky]);
+  for (let i = 0; i < 28; i++) { const r = 1.5 + Math.random() * 1.5; sky.push([(Math.random() - 0.5) * 60, 6 + Math.random() * 10, -Math.random() * (LEN + 40), 1.8 * r, 0.7 * r, 1.2 * r, TH.cloud]); }
+  if (TH.stars) {                                           // csillagos éjszaka: felhők helyett csillagok az égen
+    inst(cloudGeo, lambert, puffs);
+    inst(G(new THREE.SphereGeometry(1, 6, 4)), basic, Array.from({ length: 90 }, () => { const r = 0.08 + Math.random() * 0.12; return [(Math.random() - 0.5) * 80, 5 + Math.random() * 22, -Math.random() * (LEN + 60), r, r, r, Math.random() < 0.3 ? 0xffe680 : 0xffffff]; }));
+  } else inst(cloudGeo, lambert, [...puffs, ...sky]);
+  const orb = TH.sun ? new THREE.Mesh(G(new THREE.CircleGeometry(6, 32)), Mt(new THREE.MeshBasicMaterial({ color: TH.sun, fog: false }))) : null;   // a naplemente napja / a hold
+  if (orb) scene.add(orb);
   const arcs = [], RAINBOW = [0xff5d5d, 0xffb020, 0xffe14d, 0x4cc38a, 0x4a7dff];
   for (let z = -10; z > -LEN; z -= 38) RAINBOW.forEach((c, i) => { const k = (5.2 - i * 0.28) / 5.2; arcs.push([0, -0.3, z, k, k, k, c]); });   // szivárványívek a pálya fölött
   inst(G(new THREE.TorusGeometry(5.2, 0.14, 8, 24, Math.PI)), lambert, arcs);
@@ -73,6 +88,22 @@ export function run(container, ctx = {}) {
   inst(G(new THREE.CylinderGeometry(0.2, 0.2, 5, 10)), lambert, [-LANE - 1.4, LANE + 1.4].map(x => [x, 2.2, -LEN, 1, 1, 1, 0xffd24d]));
   inst(box, lambert, [[0, 4.5, -LEN, LANE * 2 + 3, 0.9, 0.12, 0xff5d8f]]);
   inst(box, basic, [[0, 0.7, -LEN, LANE * 2 + 2.8, 0.14, 0.05, 0xffffff], ...Array.from({ length: 8 }, (_, i) => [-LANE - 1 + i * 0.6, 0.05, -LEN - 0.5, 0.6, 0.01, 0.6, i % 2 ? 0x222222 : 0xffffff])]);
+
+  // --- lufik és zászlók a pálya két szélén (2. kör: ajándék-dísz, ha megvan) ---
+  const balloons = (ctx.owned || []).includes('deco:balloons');
+  if (balloons) {
+    const BC = [0xff5d8f, 0xffcf3f, 0x4aa8ff, 0x4cc38a, 0x8e5be8], heads = [], strings = [], pennants = [];
+    let ci = 0;
+    for (let z = 2; z > -LEN - 6; z -= 14) for (const side of [-1, 1]) {
+      const x = side * (LANE + 2.1);
+      strings.push([x, 1.0, z, 1, 1, 1, 0xffffff]);
+      [[-0.3, 2.25, 0], [0.3, 2.35, 0.15], [0, 2.75, -0.1]].forEach(([dx, y, dz]) => heads.push([x + dx, y, z + dz, 0.34, 0.42, 0.34, BC[ci++ % BC.length]]));
+      for (let k = 1; k < 7; k++) pennants.push([x, 1.75 - Math.sin(k / 7 * Math.PI) * 0.3, z - k * 2, 0.28, 0.4, 0.05, BC[(ci + k) % BC.length], Math.PI]);
+    }
+    inst(G(new THREE.SphereGeometry(1, 12, 10)), lambert, heads);
+    inst(G(new THREE.CylinderGeometry(0.02, 0.02, 2.2, 4)), basic, strings);
+    inst(G(new THREE.ConeGeometry(1, 1, 3)), lambert, pennants);
+  }
 
   // --- akadályok (mindkét sávban, azonos helyeken): egy rúd-háló és egy oszlop-háló az összeshez ---
   const hurdles = [];
@@ -95,6 +126,7 @@ export function run(container, ctx = {}) {
   const rv = makeCharacter('unicorn', ctx.avatar?.body === RIVAL_LOOK.body ? RIVAL_ALT : RIVAL_LOOK);
   const crowd = createCharacterBatch(scene);
   [me, rv].forEach(u => { u.rotation.y = 0; scene.add(u); crowd.add(u); });
+  const trail = createTrail(scene, ctx.avatar?.trail, { calm });   // varázsnyom a gyerek unikornisa mögött
   const S = { me: null, rv: null, t: 0, phase: 'ready', countdown: 3.2, endT: 0, result: null, shown: null, hoofT: 0, goT: null };
   const racer = (x) => ({ x, z: 0, y: 0, vy: 0, grounded: true, slow: 0, blink: 0, ang: 0 });
   function reset() {
@@ -172,6 +204,8 @@ export function run(container, ctx = {}) {
       u.rotation.x = r.grounded ? 0 : -0.2;
     }
     const tz = -(hug > 0 ? Math.max(S.me.z, S.rv.z) : S.me.z);
+    if (trail) { const now = performance.now(); trail.follow(S.me.x, S.me.y + 0.9, -S.me.z + 0.8, now); trail.step(now); }
+    if (orb) orb.position.set(0, 9, tz - 70);
     camera.position.set(0, 4.6, tz + 8.5); camera.lookAt(0, 1.2, tz - 9);
     sun.position.set(6, 12, tz + 4); sun.target.position.set(0, 0, tz); sun.target.updateMatrixWorld();
     mkMe.style.left = Math.min(100, (S.me.z / LEN) * 100) + '%'; mkRv.style.left = Math.min(100, (S.rv.z / LEN) * 100) + '%';
@@ -203,12 +237,12 @@ export function run(container, ctx = {}) {
 
   // teszteléshez: gyorsított léptetés és állapot (nem része a játéknak)
   container.__busy = () => S.phase === 'run' || S.phase === 'ready';   // a jutalomidő vége megvárja a futam végét
-  container.__race = { S, step, jump, hurdles, render: draw, me, LEN, info: () => renderer.info.render, canvas, busy: () => S.phase === 'run' || S.phase === 'ready' };
+  container.__race = { S, step, jump, hurdles, render: draw, me, LEN, theme: TH, balloons, trail: () => trail, info: () => renderer.info.render, canvas, busy: () => S.phase === 'run' || S.phase === 'ready' };
 
   say('Verseny! Koppints, és az unikornisod átugorja az akadályt!');
   return () => {
     cancelAnimationFrame(raf); ro?.disconnect(); window.removeEventListener('resize', size); window.removeEventListener('keydown', key);
-    crowd.dispose();
+    crowd.dispose(); trail?.dispose();
     scene.traverse(o => { if (o.isInstancedMesh) o.dispose(); if (o.geometry) o.geometry.dispose(); if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose()); });
     geos.forEach(g => g.dispose()); mats.forEach(m => m.dispose());
     renderer.dispose(); renderer.forceContextLoss?.();

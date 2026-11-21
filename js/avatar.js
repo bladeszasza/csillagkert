@@ -13,7 +13,7 @@ const MANES = ['#ff5d8f', '#8e5be8', '#4aa8ff', '#4cc38a', '#ffb020', '#ff7ac8',
 export const TABS = [
   { id: 'test', icon: '🐴', groups: [
     { key: 'body', items: COLORS.map((c, i) => ({ id: 'c' + i, color: c })) },
-    { key: 'pattern', items: [['none', '∅'], ['spots', '⚫'], ['stripes', '🦓'], ['stars', '⭐'], ['hearts', '💗']].map(([id, icon]) => ({ id, icon })) },
+    { key: 'pattern', items: [['none', '∅'], ['spots', '⚫'], ['stripes', '🦓'], ['stars', '⭐'], ['hearts', '💗'], ['sparkle', '✨']].map(([id, icon]) => ({ id, icon })) },
   ] },
   { id: 'sor', icon: '🎀', groups: [
     { key: 'mane', items: [...MANES.map((c, i) => ({ id: 'c' + i, color: c })), { id: 'rainbow', icon: '🌈' }] },
@@ -27,11 +27,24 @@ export const TABS = [
     { key: 'wing', items: [['none', '∅'], ['feather', '🪶'], ['butterfly', '🦋'], ['fairy', '🧚'], ['rainbow', '🌈']].map(([id, icon]) => ({ id, icon })) },
   ] },
   { id: 'fej', icon: '👑', groups: [
-    { key: 'head', items: [['none', '∅'], ['crown', '👑'], ['flowers', '🌸'], ['bow', '🎀'], ['wizard', '🧙']].map(([id, icon]) => ({ id, icon })) },
+    { key: 'head', items: [['none', '∅'], ['crown', '👑'], ['flowers', '🌸'], ['bow', '🎀'], ['wizard', '🧙'], ['tiara', '💎']].map(([id, icon]) => ({ id, icon })) },
     { key: 'eyes', items: [['normal', '👁️'], ['glasses', '🕶️'], ['hearts', '😍']].map(([id, icon]) => ({ id, icon })) },
   ] },
   { id: 'nyak', icon: '🧣', groups: [
-    { key: 'neck', items: [['none', '∅'], ['necklace', '📿'], ['scarf', '🧣'], ['cape', '🦸'], ['pearls', '🤍']].map(([id, icon]) => ({ id, icon })) },
+    { key: 'neck', items: [['none', '∅'], ['necklace', '📿'], ['scarf', '🧣'], ['cape', '🦸'], ['pearls', '🤍'], ['lilacape', '🟣']].map(([id, icon]) => ({ id, icon })) },
+  ] },
+  // 2. kör: farokszalag, cipő, nyereg; varázsnyom (a Varázsvilágban és a versenyen); a játékok kinézete (pálya, buborék)
+  { id: 'kieg', icon: '🎀', groups: [
+    { key: 'tail', items: [['none', '∅'], ['ribbon', '🎀']].map(([id, icon]) => ({ id, icon })) },
+    { key: 'feet', items: [['none', '∅'], ['shoes', '👟']].map(([id, icon]) => ({ id, icon })) },
+    { key: 'back', items: [['none', '∅'], ['saddle', '🌼']].map(([id, icon]) => ({ id, icon })) },
+  ] },
+  { id: 'varazs', icon: '✨', groups: [
+    { key: 'trail', items: [['none', '∅'], ['stars', '⭐'], ['hearts', '💗'], ['rainbow', '🌈'], ['bubbles', '🫧']].map(([id, icon]) => ({ id, icon })) },
+  ] },
+  { id: 'jatek', icon: '🏁', groups: [
+    { key: 'track', items: [['clouds', '☁️'], ['sunset', '🌅'], ['night', '🌙'], ['candy', '🍭']].map(([id, icon]) => ({ id, icon })) },
+    { key: 'bubble', items: [['round', '🫧'], ['hearts', '💗'], ['stars', '⭐']].map(([id, icon]) => ({ id, icon })) },
   ] },
   { id: 'hatter', icon: '🖼️', groups: [
     { key: 'bg', items: [['garden', '🌷'], ['night', '🌙'], ['clouds', '☁️'], ['sea', '🌊'], ['castle', '🏰']].map(([id, icon]) => ({ id, icon })) },
@@ -41,7 +54,8 @@ export const TABS = [
   ] },
 ];
 export const GROUPS = TABS.flatMap(t => t.groups);
-export const DEFAULT = { body: 'c0', pattern: 'none', mane: 'c0', manestyle: 'wave', horn: 'gold', hornstyle: 'straight', wing: 'none', head: 'none', eyes: 'normal', neck: 'none', bg: 'garden', stickers: [] };
+export const DEFAULT = { body: 'c0', pattern: 'none', mane: 'c0', manestyle: 'wave', horn: 'gold', hornstyle: 'straight', wing: 'none', head: 'none', eyes: 'normal', neck: 'none', bg: 'garden', stickers: [],
+  tail: 'none', feet: 'none', back: 'none', trail: 'none', track: 'clouds', bubble: 'round' };
 export const MAX_STICKERS = 4;
 
 export const colorOf = (key, id) => GROUPS.find(g => g.key === key)?.items.find(i => i.id === id)?.color;
@@ -78,9 +92,10 @@ export function resolveAvatar(cfg = {}) {
     body, dark,
     mane: s.mane === 'rainbow' ? RB : [m, mix(m, '#ffffff', 0.35)],
     horn: s.horn === 'rainbow' ? RB : [colorOf('horn', s.horn) || '#ffd24d'],
-    hoof: dark ? '#ffd6ea' : '#8e5be8',
+    hoof: s.feet === 'shoes' ? '#ff8fc8' : dark ? '#ffd6ea' : '#8e5be8',
     pattern: s.pattern, patternColor: dark ? '#ffffff' : '#c9b3f5',
     manestyle: s.manestyle, hornstyle: s.hornstyle, wing: s.wing, head: s.head, eyes: s.eyes, neck: s.neck,
+    tail: s.tail, feet: s.feet, back: s.back, trail: s.trail,
   };
 }
 
