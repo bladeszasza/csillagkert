@@ -25,7 +25,7 @@ const fresh = () => ({
   owned: [],         // megszerzett ajándékok azonosítói (js/gifts.js): öltöztető elemei és kerti díszek
   starGifts: 0,      // hány 20-csillagos ajándék jár már kifizetve
   hearts: 0,         // szívek a jó tettekért (a Barátság fája ebből nő)
-  gold: 0,           // aranyvirágok (amikor a létra minden foka megvan)
+  gold: 0,           // eddig kapott ajándékvirágok (a létra után): fajtájuk a js/gifts.js FLOWER_CYCLE körforgásából, a kertben a legutóbbi GIFT_RING nyílik
   newDress: [], newDecor: [],   // még meg nem nézett új ruhák (az öltöztetőnél jelzés) és még meg nem mutatott kerti díszek
   friends: [],       // akit már megetettek: a csillagoktól függetlenül is a kertben lakik
   rewardsDone: 0,    // hány jutalomjátékot játszott már összesen

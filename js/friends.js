@@ -203,6 +203,8 @@ export const PLACES = [
 export const MAX_FLOWERS = 71;
 // Az aranyvirágok (ajándék) a külső gyűrűn nyílnak: nem a feladatjelek előtt, és egyik virágra sem lógnak rá.
 export const GOLD_MAX = 60;
+// Az ajándékvirágokból (js/gift-flowers3d.js) egyszerre ennyi nyílik; a legrégebbi elhervad, amikor új nyílik.
+export const GIFT_RING = 24;
 const SIGN_FRONT = 4.3, SIGN_WIDE = 4.9;                 // az alsó jelsor előtti sáv (a jelek és a Tovább gomb fölött)
 export const beforeSigns = p => p.z > SIGN_FRONT && Math.abs(p.x) < SIGN_WIDE;
 const gold = [];
@@ -217,6 +219,33 @@ export function goldSpot(k) {
   return gold[Math.min(k, gold.length - 1)];
 }
 const ZONES = [...FRIENDS.map(f => ({ x: f.home[0], z: f.home[1], r: f.id === 'cat' ? 1.7 : 1.35 })), ...PLACES.filter(p => p.z < 0).map(p => ({ x: p.x, z: p.z, r: p.r }))];
+// Az ajándékvirágok helye: a kert LÁTHATÓ részén, a barátok mögötti sávban (a külső gyűrű a képernyő szélén kívül esne).
+// Rögzített sorrendű keresés: szabad pont (virágtól, baráttól, tereptárgytól és a cicától távol, nem a jelek előtt),
+// egymástól legalább 1 egységre; előbb a középhez közeli, aztán a szélesebb helyek.
+let giftSpots = null;
+export function giftSpot(k) {
+  if (!giftSpots) {
+    const fl = Array.from({ length: MAX_FLOWERS }, (_, j) => flowerSpot(j)), homes = FRIENDS.filter(f => !f.area).map(f => ({ x: f.home[0], z: f.home[1] }));
+    const cand = [];
+    for (let zi = 0; zi <= 24; zi++) for (let xi = -28; xi <= 28; xi++) {
+      const x = xi * 0.25, z = 1.5 - zi * 0.25, p = { x, z };
+      if (beforeSigns(p) || (Math.abs(x) < 1.6 && z > -4.6)) continue;                          // a cica (és mögötte, ahol eltakarná)
+      if (homes.some(q => Math.abs(q.x - x) < 1.3 && z > q.z - 2.4 && z < q.z + 3.6)) continue;      // egy barát elé ne nőjön, és a feje mögül se lógjon ki
+      if (fl.some(q => Math.hypot(q.x - x, q.z - z) < 0.62) || homes.some(q => Math.hypot(q.x - x, q.z - z) < 1.3)) continue;
+      if (PLACES.some(q => Math.hypot(q.x - x, q.z - z) < q.r + 0.5)) continue;
+      cand.push({ x, z, score: Math.abs(x) * 0.35 + Math.abs(z + 2.6) });
+    }
+    cand.sort((a, b) => a.score - b.score || a.x - b.x);
+    giftSpots = [];
+    for (const c of cand) if (giftSpots.length < GIFT_RING && giftSpots.every(q => Math.hypot(q.x - c.x, q.z - c.z) >= 1.0)) giftSpots.push({ x: c.x, z: c.z });
+    // a régebbi virág a szélen, az újabb középen nyíljon? nem: a sorrend a kör, a j. virág a j % GIFT_RING helyre kerül;
+    // a helyeket balról jobbra váltakozva rendezzük, hogy az egymás utáni virágok ne egy kupacban nyíljanak
+    giftSpots.sort((a, b) => a.x - b.x);
+    const left = giftSpots.slice(0, GIFT_RING / 2).reverse(), right = giftSpots.slice(GIFT_RING / 2);
+    giftSpots = left.flatMap((p, i) => [right[i], p]).filter(Boolean);
+  }
+  return giftSpots[k % giftSpots.length];
+}
 const isFree = (x, z) => !(Math.abs(x - FEED_SPOT[0]) < 1.7 && z > 1.6) && !(z > 2.4 && z < 4.3 && Math.abs(x) < 4.3) && z < 6 && Math.hypot(x, z) < 12.6
   && ZONES.every(o => Math.hypot(x - o.x, z - o.z) > o.r);
 const spots = [];

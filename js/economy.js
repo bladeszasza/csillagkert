@@ -4,7 +4,7 @@
 // Ajándékot minden játék ad (jutalomkörönként egyet, az első igazi játék-pillanatnál), és minden 20. csillag.
 // Itt csak tiszta függvények vannak egy profil-állapoton (a mentést a js/progress.js végzi), hogy Node-ban is tesztelhetők legyenek.
 // Minden szám saját beállítás (README: „Ajándékok és szívek").
-import { LADDER, OLD_ORDER, GOLD, giftById } from './gifts.js';
+import { LADDER, OLD_ORDER, giftById, flowerGiftAt } from './gifts.js';
 import { named } from './lines.js';
 
 export const STAR_STEP = 20;                              // ennyi csillagonként jár egy ajándék (a régi szabály)
@@ -23,7 +23,7 @@ export const GIFT_SOURCES = ['race', 'healthy', 'pet', 'foodcatch', 'bubbles', '
 
 const int = (v, lo, hi, d) => (v !== null && v !== '' && Number.isFinite(+v) ? Math.max(lo, Math.min(hi, Math.floor(+v))) : d);
 const OLD_ENTRY = /^[\p{L}0-9:_-]{1,24}$/u;               // a régi mentés ajándék-bejegyzései (pl. "race-1700000000000")
-const isGift = id => typeof id === 'string' && id !== GOLD.id && !!giftById(id);
+const isGift = id => typeof id === 'string' && !!giftById(id) && giftById(id).kind !== 'flower';   // a virág nem tárgy: a kertben nyílik és elhervad
 
 // Átemelés és rendbetétel. s: a már ellenőrzött profil (total, friends rendben); raw: a beolvasott nyers adat
 // (saját mentés vagy fájlból visszatöltött, NEM megbízható). Többször futtatva is ugyanazt adja.
@@ -48,15 +48,16 @@ export function migrateEconomy(s, raw) {
   return s;
 }
 
-// A következő ajándék: a létra első még meg nem szerzett foka; ha minden megvan, aranyvirág
-export const nextGiftId = s => LADDER.find(id => !s.owned.includes(id)) || GOLD.id;
+// A következő ajándék: a létra első még meg nem szerzett foka; ha minden megvan, a következő ajándékvirág a körforgásból
+// (tulipán, harangvirág, margaréta, aranyvirág): s.gold = eddig kapott ajándékvirágok száma
+export const nextGiftId = s => LADDER.find(id => !s.owned.includes(id)) || flowerGiftAt(s.gold || 0).id;
 export const nextGift = s => giftById(nextGiftId(s));
 export const owns = (s, id) => s.owned.includes(id);
 
 // Egy ajándék kiosztása (mindig van mit adni). Visszaadja a tárgyat.
 export function grantGift(s) {
   const g = nextGift(s);
-  if (g.id === GOLD.id) s.gold = (s.gold || 0) + 1;
+  if (g.kind === 'flower') s.gold = (s.gold || 0) + 1;
   else {
     s.owned.push(g.id);
     if (g.kind === 'dress') s.newDress.push(g.id);

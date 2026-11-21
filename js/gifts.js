@@ -58,9 +58,23 @@ export const CATALOG = [
     icon: svg('<path d="M4 40 L32 30 L60 40 L32 52Z" fill="#ffe3a3" stroke="#e6bb82" stroke-width="3" stroke-linejoin="round"/><path d="M4 40 V46 L32 58 L60 46 V40 M32 52 V58" fill="none" stroke="#9a6a3a" stroke-width="3" stroke-linejoin="round"/><path d="M38 20 h12 l-2 14 h-8z" fill="#ff5d8f" stroke="#c53b6e" stroke-width="2"/><path d="M38 20 q6 -8 12 0" fill="none" stroke="#c53b6e" stroke-width="2"/><path d="M16 26 l4 12" stroke="#4aa8ff" stroke-width="4" stroke-linecap="round"/><ellipse cx="21" cy="40" rx="5" ry="3" fill="#4aa8ff"/>') },
 ];
 
-// Ha a létra minden fokát megszerezte: aranyvirág nyílik a kertben (nincs üres ajándék)
-export const GOLD = { id: 'gold', kind: 'gold', nom: 'aranyvirág', acc: 'egy aranyvirágot',
-  icon: svg('<path d="M32 62 V34" stroke="#58b85c" stroke-width="4"/><path d="M32 50 q-12 -8 -16 0 q10 6 16 0z" fill="#58b85c"/>' + Array.from({ length: 6 }, (_, k) => `<circle cx="${(32 + Math.cos(k * 1.047) * 12).toFixed(1)}" cy="${(24 + Math.sin(k * 1.047) * 12).toFixed(1)}" r="8" fill="#ffd24d" stroke="#e0a400" stroke-width="2"/>`).join('') + '<circle cx="32" cy="24" r="7" fill="#fff3a0" stroke="#e0a400" stroke-width="2"/>') };
+// --- AJÁNDÉKVIRÁGOK: ha a létra minden fokát megszerezte (nincs üres ajándék) ---
+// Négyféle, alakra is különböző virág, mindig ebben a körforgásban: tulipán, harangvirág, margaréta, aranyvirág (minden negyedik).
+// A kertben egyszerre legfeljebb GIFT_RING ajándékvirág nyílik (js/friends.js): a legrégebbi elhervad, amikor új nyílik.
+// Hányat kapott eddig: a profil gold mezője (a régi neve maradt); a j. ajándékvirág fajtája FLOWER_CYCLE[j % 4].
+export const FLOWER_GIFTS = [
+  { id: 'virag:tulipan', kind: 'flower', nom: 'tulipán', acc: 'egy tulipánt',
+    icon: svg('<path d="M32 62 V30" stroke="#3f9a45" stroke-width="4"/><path d="M32 52 C20 50 14 40 14 30 C24 34 30 42 32 52Z M32 56 C44 54 50 44 50 34 C40 38 34 46 32 56Z" fill="#58b85c"/><path d="M18 10 C18 30 22 36 32 36 C42 36 46 30 46 10 L39 18 L32 6 L25 18Z" fill="#f2445b" stroke="#a8203a" stroke-width="2.5" stroke-linejoin="round"/>') },
+  { id: 'virag:harang', kind: 'flower', nom: 'harangvirág', acc: 'egy harangvirágot',
+    icon: svg('<path d="M14 62 C14 30 28 10 50 8" fill="none" stroke="#3f9a45" stroke-width="4" stroke-linecap="round"/>' + [[24, 22], [40, 12], [17, 40]].map(([x, y]) => `<path d="M${x} ${y} v4" stroke="#3f9a45" stroke-width="3"/><path d="M${x - 8} ${y + 20} C${x - 8} ${y + 8} ${x - 5} ${y + 4} ${x} ${y + 4} C${x + 5} ${y + 4} ${x + 8} ${y + 8} ${x + 8} ${y + 20} L${x + 4} ${y + 17} L${x} ${y + 21} L${x - 4} ${y + 17}Z" fill="#4f7dff" stroke="#2a4fb8" stroke-width="2.5" stroke-linejoin="round"/>`).join('')) },
+  { id: 'virag:margareta', kind: 'flower', nom: 'margaréta', acc: 'egy margarétát',
+    icon: svg('<path d="M32 62 V36" stroke="#3f9a45" stroke-width="4"/>' + Array.from({ length: 14 }, (_, k) => { const a = k * Math.PI * 2 / 14, x = (32 + Math.cos(a) * 15).toFixed(1), y = (24 + Math.sin(a) * 15).toFixed(1); return `<ellipse cx="${x}" cy="${y}" rx="9" ry="3.2" transform="rotate(${(k * 360 / 14).toFixed(1)} ${x} ${y})" fill="#fff" stroke="#c9c2d8" stroke-width="1.5"/>`; }).join('') + '<circle cx="32" cy="24" r="7.5" fill="#ffc21a" stroke="#c98a00" stroke-width="2"/>') },
+  { id: 'virag:arany', kind: 'flower', nom: 'aranyvirág', acc: 'egy aranyvirágot',
+    icon: svg('<defs><radialGradient id="ga" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#fff6c0"/><stop offset=".45" stop-color="#ffc62e"/><stop offset="1" stop-color="#c07a00"/></radialGradient></defs><path d="M32 62 V38" stroke="#3f9a45" stroke-width="4"/>' + [0, 1].map(r => Array.from({ length: 6 }, (_, k) => { const a = (k + r * 0.5) * Math.PI / 3, R = r ? 13 : 19; return `<path d="M32 26 L${(32 + Math.cos(a - 0.32) * R * 0.55).toFixed(1)} ${(26 + Math.sin(a - 0.32) * R * 0.55).toFixed(1)} L${(32 + Math.cos(a) * R).toFixed(1)} ${(26 + Math.sin(a) * R).toFixed(1)} L${(32 + Math.cos(a + 0.32) * R * 0.55).toFixed(1)} ${(26 + Math.sin(a + 0.32) * R * 0.55).toFixed(1)}Z" fill="url(#ga)" stroke="#a86400" stroke-width="1.8" stroke-linejoin="round"/>`; }).join('')).join('') + '<circle cx="32" cy="26" r="6" fill="#fff3a0" stroke="#a86400" stroke-width="2"/><path d="M50 6 l1.6 4.4 4.4 1.6 -4.4 1.6 -1.6 4.4 -1.6 -4.4 -4.4 -1.6 4.4 -1.6z" fill="#fff" stroke="#ffc21a" stroke-width="1.2"/>') },
+];
+export const FLOWER_CYCLE = ['virag:tulipan', 'virag:harang', 'virag:margareta', 'virag:arany'];
+export const GOLD = FLOWER_GIFTS.find(g => g.id === 'virag:arany');
+export const flowerGiftAt = j => FLOWER_GIFTS.find(g => g.id === FLOWER_CYCLE[((j % FLOWER_CYCLE.length) + FLOWER_CYCLE.length) % FLOWER_CYCLE.length]);
 
 // A létra: a ruhák és a kerti díszek felváltva, mindig ebben a sorrendben. A régi mentésből megvan a ruhák eleje,
 // így annak, akinek már minden ruhája megvan, a következő ajándék kerti dísz lesz.
@@ -70,5 +84,5 @@ export const LADDER = ['head:crown', 'garden:lampas', 'wing:rainbow', 'garden:pa
 // A régi (2.0 előtti) feloldási sorrend: a régi mentés "unlockedCount" darab eleme ebből a listából való
 export const OLD_ORDER = ['head:crown', 'wing:rainbow', 'bg:castle', 'horn:rainbow', 'neck:cape', 'wing:fairy', 'head:wizard', 'mane:rainbow', 'bg:sea', 'neck:pearls'];
 
-export const giftById = id => (id === GOLD.id ? GOLD : CATALOG.find(g => g.id === id) || null);
+export const giftById = id => CATALOG.find(g => g.id === id) || FLOWER_GIFTS.find(g => g.id === id) || null;
 export const DECOR = CATALOG.filter(g => g.kind === 'garden');

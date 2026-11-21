@@ -1,7 +1,7 @@
 // Ajándékok és szívek: a létra, a régi mentések átemelése, a jutalomkörönkénti szabályok (js/gifts.js, js/economy.js).
 
 test('Rozi mondata az ajándékról: rövid, számjegy nélküli, és nem számolja a csillagokat', () => {
-  for (const g of [...CATALOG, GOLD]) for (const [name, r] of [['', 0], ['Teszt Elek', 0], ['Minta Kata', 0.99]]) {
+  for (const g of [...CATALOG, ...FLOWER_GIFTS]) for (const [name, r] of [['', 0], ['Teszt Elek', 0], ['Minta Kata', 0.99]]) {
     const t = giftLine(g, name, () => r);
     assert.ok(t.includes(g.acc), `${g.id}: ${t}`);
     assert.ok(!/[0-9]/.test(t) && !/csillag/i.test(t), `${g.id}: ${t}`);
@@ -14,7 +14,7 @@ test('Rozi mondata az ajándékról: rövid, számjegy nélküli, és nem számo
 });
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CATALOG, LADDER, OLD_ORDER, GOLD, DECOR, giftById } from '../js/gifts.js';
+import { CATALOG, LADDER, OLD_ORDER, GOLD, DECOR, giftById, FLOWER_CYCLE, FLOWER_GIFTS } from '../js/gifts.js';
 import { giftLine, migrateEconomy, nextGift, grantGift, payStarGift, starGiftDue, newRewardSession, sessionGift, sessionHeart, GIFT_SOURCES, HEART_CAPS, STAR_STEP, roundStars, roundsToday, dayKey } from '../js/economy.js';
 import { openProfiles } from '../js/progress.js';
 import { FRIENDS, AREAS } from '../js/friends.js';
@@ -39,7 +39,7 @@ test('a létra: minden ajándék pontosan egyszer szerepel, ruhák és kerti dí
 });
 
 test('minden ajándéknak van neve, kézzel írt tárgyesete és saját rajza; a kimondott szöveg tiszta', () => {
-  for (const g of [...CATALOG, GOLD]) {
+  for (const g of [...CATALOG, ...FLOWER_GIFTS]) {
     assert.ok(g.nom && g.acc && g.acc !== g.nom, g.id);
     assert.match(g.icon, /^<svg viewBox="0 0 64 64"[^>]*>[\s\S]+<\/svg>$/, g.id);
     assert.ok(!/<(script|foreignObject|image|use)\b|on\w+=|href/i.test(g.icon), `${g.id}: a rajzban csak alakzat van`);
@@ -83,10 +83,13 @@ test('300 csillagos (minden ruhát birtokló) gyerek: minden játék valódi, ú
   assert.equal(sessionGift(s, newRewardSession(), 'dressup'), null);               // az öltöztető fogad, nem ad
 });
 
-test('elfogyott létra: aranyvirág (nincs üres ajándék); a csillag-ajándék 20 csillagonként egyszer jár', () => {
+test('elfogyott létra: ajándékvirágok körforgásban, minden negyedik aranyvirág (nincs üres ajándék); a csillag-ajándék 20 csillagonként egyszer jár', () => {
   const s = profile({ total: 0 });
   for (let i = 0; i < LADDER.length; i++) assert.equal(grantGift(s).id, LADDER[i]);
-  assert.equal(nextGift(s).id, GOLD.id); assert.equal(grantGift(s).id, GOLD.id); assert.equal(s.gold, 1);
+  const got = Array.from({ length: 9 }, () => { const id = nextGift(s).id; assert.equal(grantGift(s).id, id, 'a jelzett következő ajándék jön'); return id; });
+  assert.deepEqual(got, [...FLOWER_CYCLE, ...FLOWER_CYCLE, FLOWER_CYCLE[0]]); assert.equal(got[3], GOLD.id); assert.equal(s.gold, 9);
+  assert.ok(FLOWER_CYCLE.every(id => giftById(id)?.kind === 'flower'), 'minden ajándékvirág ismert');
+  assert.equal(new Set(FLOWER_CYCLE).size, 4, 'négy különböző virág');
   assert.equal(s.owned.length, LADDER.length);
   const t = profile({ total: 319 }); assert.equal(payStarGift(t), null);
   t.total = 320; assert.ok(payStarGift(t)); assert.equal(payStarGift(t), null); assert.equal(t.starGifts, 320 / STAR_STEP);

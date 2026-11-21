@@ -348,8 +348,13 @@ nem a belépéskor:
 
 - **Az ajándéklétra** (`js/gifts.js`) rögzített sorrendű, véletlen nincs benne: a tíz ruhadarab és tizenkét kerti dísz
   felváltva jön (korona, lámpás, szivárványszárny, kerti pad, …). Ami megvan, nem jön újra.
-  Ha a létra elfogyott, **aranyvirág** nyílik a kertben, így soha nincs üres ajándék. Az aranyvirágok a virágos rész
-  külső gyűrűjén nyílnak: nem nőnek a feladatjelek elé, és egyik virágra sem lógnak rá.
+  Ha a létra elfogyott, **ajándékvirág** nyílik a kertben, így soha nincs üres ajándék (a szülő kérésére, 2026-11-21:
+  az örökös, sárgának látszó aranyvirág unalmas volt). Négyféle, alakra is különböző virág jön körforgásban: tulipán
+  (piros kehely), harangvirág (kék, lógó harangok), margaréta (fehér, sok szirom) és minden negyedik az **aranyvirág**
+  (két sor csillagos, mélyarany szirom, időnként megcsillan; nyugodt módban nem). Élettartamuk mint a többi virágé: egyszerre
+  legfeljebb 24 nyílik (`GIFT_RING`), a 25. helyén a legrégebbi elhervad. Nem az órához kötött: amíg nem játszik, nem
+  hervad semmi. A helyük (`giftSpot`) a kert látható részén, a barátok mögötti sávban van: nem nő barát elé, a jelek
+  elé és virágra. A régi mentés aranyvirág-számlálója (`gold`) maradt, a fajtákat a körforgás adja. Modell: `js/gift-flowers3d.js`.
 - **A következő ajándék** sziluettje a jobb felső sarokban látszik; koppintásra Rozi megmondja, mi lesz az.
   A bal felső ❤ jel a szívek száma; koppintásra Rozi elmondja, mire valók.
 - **Az ajándék-pillanat** (`js/gift-moment.js`): egy doboz megremeg és kinyílik, kiugrik belőle az ajándék
@@ -489,7 +494,7 @@ ott a csillagok elölről indulnak. Az állás a szülői sarokból fájlba ment
   a rajzokban nincs külső hivatkozás, azonosító vagy szöveg, a betűfájlok helyben vannak, licenccel).
 - Automatikus minőség: `node --test tests/quality.test.mjs` (60 fps mellett nem csökken, tartós akadozásnál lépcsőnként,
   ha a lépcső nem segít, visszalép és megáll, a kiugró képkockák nem számítanak, 1 alá nem megy).
-- Ajándékok és szívek: `node --test tests/economy.test.mjs` (a régi mentés átvétele, a létra sorrendje, aranyvirág a végén,
+- Ajándékok és szívek: `node --test tests/economy.test.mjs` (a régi mentés átvétele, a létra sorrendje, ajándékvirágok körforgása a végén,
   20 csillagonként egy ajándék, jutalomkörönként egy ajándék, a szív-korlátok, Rozi ajándék-mondatai számok nélkül).
 - Ütemező: `node --test tests/scheduler.test.mjs` (300 feladatos szimuláció ismétlés nélkül, 90 szimulált
   gyereknél is: 5–7 évesek, gyenge–erős; szintlépés és visszalépés; kezdőnek csak a szintjéhez illő készség, egy állomás

@@ -11,6 +11,7 @@ import { buildPlaces, buildLand } from './places3d.js';
 import { DECOR, giftById } from './gifts.js';
 import { buildDecorGeo, createFriendTree } from './decor3d.js';
 import { buildFloraGeo } from './flora3d.js';
+import { createGiftFlowers } from './gift-flowers3d.js';
 import { mat as lookMat, addLights, createQuality } from './three/look.js';
 
 const FOV = 50, TAN = Math.tan(FOV * Math.PI / 360);
@@ -137,9 +138,9 @@ export function createGarden(canvas) {
   // --- ajándékok a kertben: kerti díszek (tópart, tanya), aranyvirágok és a szívekből növő Barátság fája ---
   const decorMat = lookMat({ vertexColors: true }), decor = new Map(), popping = [];
   const tree = createFriendTree(scene);
-  const goldStems = new THREE.InstancedMesh(stemGeo, swaying(lookMat({ vertexColors: true })), GOLD_MAX);
-  const goldPetals = new THREE.InstancedMesh(petalGeo, swaying(lookMat({ color: 0xffc21a, emissive: 0x6a4300 })), GOLD_MAX);
-  goldStems.count = goldPetals.count = 0; goldStems.frustumCulled = goldPetals.frustumCulled = false; mainGroup.add(goldStems, goldPetals);
+  // ajándékvirágok: tulipán, harangvirág, margaréta, aranyvirág (a létra után), mint a többi virág: a legrégebbi elhervad
+  const giftFlowers = createGiftFlowers(mainGroup, { material: swaying(lookMat({ vertexColors: true })), goldMaterial: swaying(lookMat({ vertexColors: true, emissive: 0x5c3d00 })),
+    calm: () => document.documentElement.classList.contains('calm') });
   function addDecor(id, animate) {
     const g = giftById(id); if (!g?.spot || decor.has(id)) return;
     const geo = buildDecorGeo(id); if (!geo) return;
@@ -176,12 +177,7 @@ export function createGarden(canvas) {
   function setGifts({ owned = [], hearts = 0, gold = 0 } = {}, animate = false) {
     for (const id of owned) if (giftById(id)?.kind === 'garden') addDecor(id, animate);
     tree.setHearts(hearts, animate);
-    const n = Math.min(GOLD_MAX, gold | 0);
-    for (let k = goldPetals.count; k < n; k++) {
-      const p = goldSpot(k), s = 1.25;
-      m4.makeScale(s, s, s).setPosition(p.x, 0, p.z); goldStems.setMatrixAt(k, m4); goldPetals.setMatrixAt(k, m4);
-    }
-    goldStems.count = goldPetals.count = n; goldStems.instanceMatrix.needsUpdate = goldPetals.instanceMatrix.needsUpdate = true;
+    giftFlowers.set(gold, animate);
   }
 
   // --- szívek (koppintásra és evés után): rajzolt szív, nem emoji ---
@@ -374,7 +370,7 @@ export function createGarden(canvas) {
     sway.value = t;
     for (let i = 0; i < 6; i++) { cloudX[i] += 0.24 * (1 + i * 0.1) * dt; if (cloudX[i] > 16) cloudX[i] = -16; }
     placeClouds(panAt(now));
-    stepFlowers(now);
+    stepFlowers(now); giftFlowers.step(now);
     for (let k = popping.length - 1; k >= 0; k--) {                // új kerti dísz: kipattan a helyén
       const p = popping[k], a = (now - p.t0) / 700;
       if (a < 0) continue;
@@ -513,7 +509,7 @@ export function createGarden(canvas) {
     debug() {
       draw(performance.now());
       return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, shadows: crowd.shadows + [...lands.values()].reduce((s, L) => s + L.crowd.shadows, 0), quality: quality.state(),
-        drawn: { main: mainGroup.visible, ...Object.fromEntries([...lands].map(([id, L]) => [id, L.group.visible || L.crowdGroup.visible])), ...Object.fromEntries([...lands].map(([id, L]) => [id + 'Friends', L.crowdGroup.visible])) }, flowers: stems.count, bloomed, decor: [...decor.keys()], flora: [...flora.keys()], treeHearts: tree.count(), treeScale: tree.group.scale.x, gold: goldPetals.count,
+        drawn: { main: mainGroup.visible, ...Object.fromEntries([...lands].map(([id, L]) => [id, L.group.visible || L.crowdGroup.visible])), ...Object.fromEntries([...lands].map(([id, L]) => [id + 'Friends', L.crowdGroup.visible])) }, flowers: stems.count, bloomed, decor: [...decor.keys()], flora: [...flora.keys()], treeHearts: tree.count(), treeScale: tree.group.scale.x, gold: giftFlowers.count(), giftFlowers: giftFlowers.debug(),
         decorScreen: Object.fromEntries([...decor].map(([id, m]) => { v3.set(m.position.x, 0.8, m.position.z).project(camera); return [id, { x: (v3.x + 1) / 2 * W, y: (1 - v3.y) / 2 * H }]; })),
         floraScreen: Object.fromEntries([...flora].map(([id, m]) => { v3.set(m.position.x, 1.6 * m.userData.k, m.position.z).project(camera); return [id, { x: (v3.x + 1) / 2 * W, y: (1 - v3.y) / 2 * H, scale: m.scale.x / m.userData.k }]; })), friends: [...actors.keys()], zoom: zoomAt(performance.now()), pan: panAt(performance.now()), feeding: feeding && !feeding.done ? feeding.a.id : null,
         awake: Object.fromEntries([...actors.values()].filter(a => a.def.sleepy).map(a => [a.id, a.g.userData.eyes[0].scale.y > 0.5])),

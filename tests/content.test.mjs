@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CURRICULUM, STATIONS, stationOf, idOf, BASE_ITEMS, FEED_ITEMS } from '../js/curriculum.js';
 import { art, withArt, artLetter, ACC_NUM, numAttr, fromNum } from '../js/hu.js';
-import { FRIENDS, FOODS, MEALS, ANY, friendById, friendsFor, flowerSpot, MAX_FLOWERS, GOLD_MAX, goldSpot, FEED_SPOT, FEED_GATE, PLACES, AREAS, FLORA, floraFor, NEWCOMER_FROM, NEWCOMER_STEP, groundK } from '../js/friends.js';
+import { FRIENDS, FOODS, MEALS, ANY, friendById, friendsFor, flowerSpot, MAX_FLOWERS, GOLD_MAX, goldSpot, giftSpot, GIFT_RING, beforeSigns, FEED_SPOT, FEED_GATE, PLACES, AREAS, FLORA, floraFor, NEWCOMER_FROM, NEWCOMER_STEP, groundK } from '../js/friends.js';
 import { roundStars } from '../js/economy.js';
 import { FACT_TABLES } from '../js/content/facts/index.js';
 import { progress } from '../js/progress.js';
@@ -286,4 +286,17 @@ test('térkép: minden állomásnak van helye a kertben, a tereptárgyak nem ül
   for (const q of pts) for (const p of PLACES) assert.ok(Math.hypot(q.x - p.x, q.z - p.z) > 0.7, `virág a(z) ${p.id} tereptárgyon`);
   // az etetőhelyre vezető kapu a tereptárgyak sora mellett van, nem rajtuk keresztül
   for (const p of PLACES) assert.ok(Math.hypot(FEED_GATE[0] - p.x, FEED_GATE[1] - p.z) > 1 && Math.hypot(FEED_SPOT[0] - p.x, FEED_SPOT[1] - p.z) > 1, `az etetés útja a(z) ${p.id} tárgyon megy át`);
+});
+
+test('ajándékvirágok helye: a kert látható részén, egymástól, a virágoktól és a jelektől távol, barát elé nem nő', () => {
+  const spots = Array.from({ length: GIFT_RING }, (_, k) => giftSpot(k));
+  assert.equal(new Set(spots.map(p => p.x + ',' + p.z)).size, GIFT_RING, 'minden virágnak saját helye van');
+  const fl = Array.from({ length: MAX_FLOWERS }, (_, j) => flowerSpot(j));
+  for (const p of spots) {
+    assert.ok(Math.abs(p.x) <= 7.5 && p.z <= 1.5 && p.z >= -6, `a látható sávban: ${p.x},${p.z}`);
+    assert.ok(!beforeSigns(p), `nem a jelek előtt: ${p.x},${p.z}`);
+    assert.ok(fl.every(q => Math.hypot(q.x - p.x, q.z - p.z) >= 0.6), `nem lóg rá virágra: ${p.x},${p.z}`);
+    assert.ok(spots.every(q => q === p || Math.hypot(q.x - p.x, q.z - p.z) >= 1), `nem lóg rá másik ajándékvirágra: ${p.x},${p.z}`);
+    for (const f of FRIENDS.filter(f => !f.area)) assert.ok(!(Math.abs(f.home[0] - p.x) < 1.3 && p.z > f.home[1] - 2.4 && p.z < f.home[1] + 3.6), `${f.id} elé vagy feje mögé nő: ${p.x},${p.z}`);
+  }
 });
